@@ -1,4 +1,3 @@
-// src/components/Header.tsx
 import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
@@ -19,6 +18,7 @@ const Header: React.FC = () => {
           <Nav.Link href="/addRecipe">{t('addRecipe')}</Nav.Link>
           <Nav.Link href="/ingredients">{t('ingredients')}</Nav.Link>
           <Nav.Link href="/prices">{t('addPrices')}</Nav.Link>
+          <Nav.Link href="/clients">{t('clients')}</Nav.Link>
           {loading ? (
             <Nav.Link>{t('loading')}</Nav.Link>
           ) : (

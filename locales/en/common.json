@@ -61,5 +61,20 @@
   "passwordChangedSuccessfully": "Password changed successfully",
   "passwordsDoNotMatch": "Passwords do not match",
   "requestFailed": "Request failed",
-  "unknownError": "An unknown error occurred"
+  "unknownError": "An unknown error occurred",
+  "dateAdded": "Date Added",
+  "addClient": "Add Client",
+  "clients": "Clients",
+  "edit": "Edit",
+  "editClient": "Edit Client",
+  "name": "Name",
+  "surname": "Surname",
+  "telegram": "Telegram",
+  "instagram": "Instagram",
+  "phone": "Phone",
+  "address": "Address",
+  "source": "Source",
+  "updateClient": "Update Client",
+  "deleteClient": "Delete Client",
+  "confirmDeleteClient": "Are you sure you want to delete this client?"
 }

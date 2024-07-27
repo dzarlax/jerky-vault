@@ -1,10 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 import db from '../../../server/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Проверяем авторизацию пользователя
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -19,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Получаем идентификатор пользователя из сессии
     const userId = session.user.id;
 
-    // Выполняем запрос к базе данных для получения уникальных имен рецептов, 
+    // Выполняем запрос к базе данных для получения уникальных имен рецептов,
     // фильтруя их по идентификатору пользователя, если необходимо
     const [rows] = await db.query("SELECT DISTINCT name FROM recipes WHERE user_id = ?", [userId]);
     

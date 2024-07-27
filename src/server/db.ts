@@ -90,6 +90,22 @@ const createTables = async () => {
       )
     `);
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        surname VARCHAR(255) NOT NULL,
+        telegram VARCHAR(255),
+        instagram VARCHAR(255),
+        phone VARCHAR(255),
+        address TEXT,
+        date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        source VARCHAR(255),
+        user_id INT,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
+    `);
+
     console.log('All tables created successfully.');
   } catch (error) {
     console.error('Error creating tables:', error);

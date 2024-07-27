@@ -1,15 +1,15 @@
-// pages/api/profile/change-password.ts
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
 import bcrypt from 'bcrypt';
 import db from '../../../server/db';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -26,7 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Retrieve the user from the database
-    const [user] = await db.query('SELECT * FROM users WHERE id = ?', [session.user.id]);
+    const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [session.user.id]);
+    const user = rows[0];
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -50,3 +51,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Failed to change password' });
   }
 }
+

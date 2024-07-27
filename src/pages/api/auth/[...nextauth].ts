@@ -1,9 +1,16 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import db from '../../../server/db'; // Используем ваше подключение к базе данных
+import db from '../../../server/db';
 import bcrypt from 'bcrypt';
+import { RowDataPacket } from 'mysql2';
 
-export default NextAuth({
+// Определяем типы для параметров авторизации
+interface Credentials {
+  username: string;
+  password: string;
+}
+
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -11,9 +18,13 @@ export default NextAuth({
         username: { label: 'Username', type: 'text', placeholder: 'jsmith' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials: Credentials | undefined) {
+        if (!credentials) {
+          return null;
+        }
+
         const connection = await db;
-        const [rows] = await connection.query('SELECT * FROM users WHERE username = ?', [credentials.username]);
+        const [rows] = await connection.query<RowDataPacket[]>('SELECT * FROM users WHERE username = ?', [credentials.username]);
 
         if (rows.length === 0) {
           return null;
@@ -36,22 +47,25 @@ export default NextAuth({
     error: '/auth/error',
   },
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as const, // Явное указание типа
   },
   jwt: {
     secret: process.env.JWT_SECRET,
   },
   callbacks: {
     async session({ session, token }) {
-      session.user.id = token.id;
+      session.user = { ...session.user, id: token.id, email: token.email };
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = (user as any).id;
+        token.email = (user as any).email;
       }
       return token;
     },
   },
   secret: process.env.SECRET,
-});
+};
+
+export default NextAuth(authOptions);

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 import { check, validationResult } from 'express-validator';
 import db from '../../../server/db';
 import { calculateIngredientCost } from '../../../utils/calculateIngredientCost';
@@ -15,7 +16,7 @@ const validateRequest = async (req: NextApiRequest, res: NextApiResponse, valida
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }

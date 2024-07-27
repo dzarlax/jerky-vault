@@ -1,8 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 import { check, validationResult } from 'express-validator';
-import db from '../../server/db';
-import { calculateIngredientCost } from '../../utils/calculateIngredientCost';
-import { getSession } from 'next-auth/react';
+import db from '../../../server/db';
+import { calculateIngredientCost } from '../../../utils/calculateIngredientCost';
 
 // Вспомогательная функция для проверки ошибок в запросе
 const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
@@ -17,7 +18,7 @@ const validateRequest = async (req: NextApiRequest, res: NextApiResponse, valida
 
 // Функция для проверки авторизации
 const checkAuth = async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;

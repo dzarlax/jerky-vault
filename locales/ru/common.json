@@ -61,6 +61,21 @@
     "passwordChangedSuccessfully": "Пароль успешно изменен",
     "passwordsDoNotMatch": "Пароли не совпадают",
     "requestFailed": "Ошибка запроса",
-    "unknownError": "Неизвестная ошибка"
+    "unknownError": "Неизвестная ошибка",
+    "dateAdded": "Дата добавления",
+    "addClient": "Добавить клиента",
+    "clients": "Клиенты",
+    "edit": "Редактировать",
+    "editClient": "Редактировать клиента",
+    "name": "Имя",
+    "surname": "Фамилия",
+    "telegram": "Телеграм",
+    "instagram": "Инстаграм",
+    "phone": "Телефон",
+    "address": "Адрес",
+    "source": "Источник",
+    "updateClient": "Обновить клиента",
+    "deleteClient": "Удалить клиента",
+    "confirmDeleteClient": "Вы уверены, что хотите удалить этого клиента?"
   }
   
