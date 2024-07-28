@@ -4,11 +4,12 @@ import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Form, Button, Table, Container, Row, Col } from 'react-bootstrap';
 import Select from 'react-select';
+import { useRouter } from 'next/router';
 
 const Prices = () => {
-  const { t } = useTranslation('common');
-  const { data: ingredients } = useSWR('/api/ingredients', fetcher);
-  const { data: prices, mutate: mutatePrices } = useSWR('/api/prices', fetcher);
+  const { t, lang } = useTranslation('common');
+  const { data: ingredients, error: ingredientsError } = useSWR('/api/ingredients', fetcher);
+  const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR('/api/prices', fetcher);
 
   const [ingredientId, setIngredientId] = useState('');
   const [price, setPrice] = useState('');
@@ -19,10 +20,24 @@ const Prices = () => {
   const [filterDate, setFilterDate] = useState('');
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const router = useRouter();
 
   useEffect(() => {
+    console.log("Router Locale: ", router.locale);
+    console.log("Current Language in useEffect: ", lang);
+    if (ingredients && prices) {
+      setIsLoading(false);
+    }
+  }, [ingredients, prices, lang]);
+
+  useEffect(() => {
+    if (router.locale !== lang) {
+      router.push(router.pathname, router.asPath, { locale: lang });
+    }
     updateUnits();
-  }, [ingredientId]);
+  }, [ingredientId, lang, router]);
 
   const addPrice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +108,8 @@ const Prices = () => {
 
   const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : [];
   const unitOptions = units.map((unit: string) => ({ value: unit, label: t(unit) }));
+
+  if (isLoading || ingredientsError || pricesError) return <div>{t('loading')}</div>;
 
   return (
     <Container>

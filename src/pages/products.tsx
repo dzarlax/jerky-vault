@@ -9,7 +9,7 @@ import { authOptions } from './api/auth/[...nextauth]';
 
 const Products = () => {
   const { t } = useTranslation('common');
-  const { data: products, mutate: mutateProducts } = useSWR('/api/products/products', fetcher);
+  const { data: products, mutate: mutateProducts } = useSWR('/api/products/', fetcher);
   const { data: recipes, mutate: mutateRecipes } = useSWR('/api/recipes/names', fetcher);
   const { data: packages, mutate: mutatePackages } = useSWR('/api/products/packages', fetcher);
 
@@ -108,7 +108,7 @@ const Products = () => {
     const product = { name, description, price: parsedPrice, image: image || null, recipeIds, packageId };
     console.log('Sending product:', product);
 
-    await fetch('/api/products/products', {
+    await fetch('/api/products/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

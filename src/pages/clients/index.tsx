@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import fetcher from '../utils/fetcher';
+import fetcher from '../../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
 import { getCsrfToken, useSession } from 'next-auth/react';
