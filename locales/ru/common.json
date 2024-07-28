@@ -76,6 +76,22 @@
     "source": "Источник",
     "updateClient": "Обновить клиента",
     "deleteClient": "Удалить клиента",
-    "confirmDeleteClient": "Вы уверены, что хотите удалить этого клиента?"
+    "confirmDeleteClient": "Вы уверены, что хотите удалить этого клиента?",
+    "products": "Продукты",
+    "productName": "Название продукта",
+    "description": "Описание",
+    "image": "Изображение",
+    "package": "Упаковка",
+    "choosePackage": "Выберите упаковку",
+    "addProduct": "Добавить продукт",
+    "newPackage": "Новая упаковка",
+    "addPackage": "Добавить упаковку",
+    "invalidImageUrl": "Недопустимый URL изображения",
+    "recipes": "Рецепты",
+    "editProduct": "Редактировать продукт",
+    "close": "Закрыть",
+    "saveChanges": "Сохранить изменения",
+    "unknownRecipe": "Неизвестный рецепт",
+    "unknownPackage": "Неизвестная упаковка"
   }
   

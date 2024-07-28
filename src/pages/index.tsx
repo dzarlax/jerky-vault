@@ -1,10 +1,9 @@
-// src/pages/index.tsx
 import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { Container, Row, Col, Form, Button, ListGroup, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Button, ListGroup } from 'react-bootstrap';
 import Select from 'react-select';
 
 const Home: React.FC = () => {
@@ -14,11 +13,19 @@ const Home: React.FC = () => {
   const [recipes, setRecipes] = useState([]);
   const [filterName, setFilterName] = useState('');
   const [filterIngredient, setFilterIngredient] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
+
   useEffect(() => {
     console.log("Router Locale: ", router.locale);
     console.log("Current Language in useEffect: ", lang);
+    if (recipeNames && ingredients) {
+      setIsLoading(false);
+    }
+  }, [recipeNames, ingredients, lang]);
+
+  useEffect(() => {
     loadRecipes();
   }, [filterName, filterIngredient]);
 
@@ -62,10 +69,9 @@ const Home: React.FC = () => {
     setFilterIngredient(selectedOption ? selectedOption.value : '');
   };
 
-  if (recipeNamesError || ingredientsError) return <div>{t('failedToLoadRecipes')}</div>;
-  if (!recipeNames || !ingredients) return <div>{t('loading')}</div>;
+  if (isLoading || recipeNamesError || ingredientsError) return <div>{t('loading')}</div>;
 
-  const recipeOptions = Array.isArray(recipeNames) ? recipeNames.map((name: string) => ({ value: name, label: name })) : [];
+  const recipeOptions = Array.isArray(recipeNames) ? recipeNames.map((recipe: any) => ({ value: recipe.name, label: recipe.name })) : [];
   const ingredientOptions = Array.isArray(ingredients) ? ingredients.map((ingredient: any) => ({ value: ingredient.name, label: ingredient.name })) : [];
 
   return (

@@ -76,5 +76,22 @@
   "source": "Source",
   "updateClient": "Update Client",
   "deleteClient": "Delete Client",
-  "confirmDeleteClient": "Are you sure you want to delete this client?"
+  "confirmDeleteClient": "Are you sure you want to delete this client?",
+  "products": "Products",
+  "productName": "Product Name",
+  "description": "Description",
+  "image": "Image",
+  "package": "Package",
+  "choosePackage": "Choose a package",
+  "addProduct": "Add Product",
+  "newPackage": "New Package",
+  "addPackage": "Add Package",
+  "invalidImageUrl": "Invalid image URL",
+  "recipes": "Recipes",
+  "editProduct": "Edit Product",
+  "close": "Close",
+  "saveChanges": "Save Changes",
+  "unknownRecipe": "Unknown Recipe",
+  "unknownPackage": "Unknown Package"
+  
 }

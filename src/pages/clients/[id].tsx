@@ -38,7 +38,7 @@ const Client = () => {
     }
   }, [client]);
 
-  const updateClient = async (e: React.FormEvent) => {
+  const updateClient = async (e) => {
     e.preventDefault();
     await fetch(`/api/clients/${id}`, {
       method: 'PUT',
@@ -68,17 +68,38 @@ const Client = () => {
   return (
     <div className="container">
       <h1>{t('editClient')}</h1>
-      <form onSubmit={updateClient}>
-        <input type="text" placeholder={t('name')} value={name} onChange={(e) => setName(e.target.value)} required />
-        <input type="text" placeholder={t('surname')} value={surname} onChange={(e) => setSurname(e.target.value)} required />
-        <input type="text" placeholder={t('telegram')} value={telegram} onChange={(e) => setTelegram(e.target.value)} />
-        <input type="text" placeholder={t('instagram')} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-        <input type="text" placeholder={t('phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <input type="text" placeholder={t('address')} value={address} onChange={(e) => setAddress(e.target.value)} />
-        <input type="text" placeholder={t('source')} value={source} onChange={(e) => setSource(e.target.value)} />
-        <button type="submit">{t('updateClient')}</button>
+      <form onSubmit={updateClient} className="client-form">
+        <div className="form-group">
+          <label>{t('name')}</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div className="form-group">
+          <label>{t('surname')}</label>
+          <input type="text" value={surname} onChange={(e) => setSurname(e.target.value)} required />
+        </div>
+        <div className="form-group">
+          <label>{t('telegram')}</label>
+          <input type="text" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('instagram')}</label>
+          <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('phone')}</label>
+          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('address')}</label>
+          <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="address-input" />
+        </div>
+        <div className="form-group">
+          <label>{t('source')}</label>
+          <input type="text" value={source} onChange={(e) => setSource(e.target.value)} />
+        </div>
+        <button type="submit" className="submit-button">{t('updateClient')}</button>
       </form>
-      <button onClick={deleteClient} style={{ marginTop: '10px', backgroundColor: 'red', color: 'white' }}>
+      <button onClick={deleteClient} className="delete-button">
         {t('deleteClient')}
       </button>
     </div>

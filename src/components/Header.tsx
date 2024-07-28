@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import useTranslation from 'next-translate/useTranslation';
-import { Navbar, Nav, NavDropdown } from 'react-bootstrap';
+import { Navbar, Nav } from 'react-bootstrap';
 
 const Header: React.FC = () => {
   const { t } = useTranslation('common');
   const { data: session, status } = useSession();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null; // or a loading spinner
+  }
+
   const loading = status === 'loading';
 
   return (
@@ -19,25 +29,23 @@ const Header: React.FC = () => {
           <Nav.Link href="/ingredients">{t('ingredients')}</Nav.Link>
           <Nav.Link href="/prices">{t('addPrices')}</Nav.Link>
           <Nav.Link href="/clients">{t('clients')}</Nav.Link>
-          {loading ? (
+          <Nav.Link href="/products">{t('products')}</Nav.Link>
+          {loading && (
             <Nav.Link>{t('loading')}</Nav.Link>
-          ) : (
+          )}
+          {!loading && !session && (
             <>
-              {!session && (
-                <>
-                  <Nav.Link href="/auth/signin">{t('signIn')}</Nav.Link>
-                  <Nav.Link href="/auth/signup">{t('signUp')}</Nav.Link>
-                </>
-              )}
-              {session && (
-                <>
-                  <Nav.Link href="/profile">{t('profile')}</Nav.Link>
-                  <Nav.Link href="/api/auth/signout" onClick={(e) => {
-                    e.preventDefault();
-                    signOut();
-                  }}>{t('signOut')}</Nav.Link>
-                </>
-              )}
+              <Nav.Link href="/auth/signin">{t('signIn')}</Nav.Link>
+              <Nav.Link href="/auth/signup">{t('signUp')}</Nav.Link>
+            </>
+          )}
+          {!loading && session && (
+            <>
+              <Nav.Link href="/profile">{t('profile')}</Nav.Link>
+              <Nav.Link href="/api/auth/signout" onClick={(e) => {
+                e.preventDefault();
+                signOut();
+              }}>{t('signOut')}</Nav.Link>
             </>
           )}
         </Nav>

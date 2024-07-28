@@ -21,8 +21,8 @@ const Clients = ({ csrfToken, mapboxToken }) => {
   const [address, setAddress] = useState('');
   const [source, setSource] = useState('');
 
-  const addressInputRef = useRef(null);
   const geocoderContainerRef = useRef(null);
+  const geocoderRef = useRef(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -30,18 +30,23 @@ const Clients = ({ csrfToken, mapboxToken }) => {
     }
 
     if (status === 'authenticated' && geocoderContainerRef.current) {
-      const geocoder = new MapboxGeocoder({
+      geocoderRef.current = new MapboxGeocoder({
         accessToken: mapboxToken,
         placeholder: t('address'),
       });
 
-      geocoder.addTo(geocoderContainerRef.current);
+      geocoderRef.current.addTo(geocoderContainerRef.current);
 
-      geocoder.on('result', (e) => {
+      geocoderRef.current.on('result', (e) => {
         setAddress(e.result.place_name);
       });
 
-      return () => geocoder.remove(); // Clean up on unmount
+      return () => {
+        if (geocoderRef.current) {
+          geocoderRef.current.clear();
+          geocoderContainerRef.current.innerHTML = '';
+        }
+      };
     }
   }, [status, router, t, mapboxToken]);
 
@@ -70,17 +75,38 @@ const Clients = ({ csrfToken, mapboxToken }) => {
   return (
     <div className="container">
       <h1>{t('clients')}</h1>
-      <form onSubmit={addClient}>
+      <form onSubmit={addClient} className="client-form">
         <input type="hidden" name="csrfToken" value={csrfToken} />
-        <input type="text" placeholder={t('name')} value={name} onChange={(e) => setName(e.target.value)} required />
-        <input type="text" placeholder={t('surname')} value={surname} onChange={(e) => setSurname(e.target.value)} required />
-        <input type="text" placeholder={t('telegram')} value={telegram} onChange={(e) => setTelegram(e.target.value)} />
-        <input type="text" placeholder={t('instagram')} value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-        <input type="text" placeholder={t('phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <div ref={geocoderContainerRef} className="geocoder-container"></div>
-        <input type="hidden" value={address} required />
-        <input type="text" placeholder={t('source')} value={source} onChange={(e) => setSource(e.target.value)} />
-        <button type="submit">{t('addClient')}</button>
+        <div className="form-group">
+          <label>{t('name')}</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div className="form-group">
+          <label>{t('surname')}</label>
+          <input type="text" value={surname} onChange={(e) => setSurname(e.target.value)} required />
+        </div>
+        <div className="form-group">
+          <label>{t('telegram')}</label>
+          <input type="text" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('instagram')}</label>
+          <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('phone')}</label>
+          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label>{t('address')}</label>
+          <div ref={geocoderContainerRef} className="geocoder-container"></div>
+          <input type="hidden" value={address} required />
+        </div>
+        <div className="form-group">
+          <label>{t('source')}</label>
+          <input type="text" value={source} onChange={(e) => setSource(e.target.value)} />
+        </div>
+        <button type="submit" className="submit-button">{t('addClient')}</button>
       </form>
       <ul>
         {clients.map((client) => (
