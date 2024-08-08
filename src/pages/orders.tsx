@@ -6,11 +6,10 @@ import { Container, Table, Button, Form, Modal, InputGroup, FormControl } from '
 import Select from 'react-select';
 
 const Orders = () => {
-  const { t } = useTranslation('common');
+  const { t, lang } = useTranslation('common');
   const { data: orders = [], mutate: mutateOrders } = useSWR('/api/orders', fetcher);
   const { data: clients = [], mutate: mutateClients } = useSWR('/api/clients', fetcher);
   const { data: products = [], mutate: mutateProducts } = useSWR('/api/products', fetcher);
-
   const [clientId, setClientId] = useState('');
   const [items, setItems] = useState([]);
   const [showOrderModal, setShowOrderModal] = useState(false);

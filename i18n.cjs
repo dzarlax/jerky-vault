@@ -3,8 +3,6 @@ module.exports = {
   defaultLocale: 'en',
   pages: {
     '*': ['common'],
-    '/': ['home'],
-    '/addRecipe': ['addRecipe'],
-    '/ingredients': ['ingredients'],
+    
   },
 };

@@ -4,9 +4,11 @@ import { AppProps } from 'next/app';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { SessionProvider } from 'next-auth/react';
-import { appWithTranslation } from 'next-i18next';
+import useTranslation from 'next-translate/useTranslation';
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
+  const { t } = useTranslation('common'); // Пример использования перевода из 'common' namespace
+
   return (
     <SessionProvider session={session}>
       <Header />
@@ -16,6 +18,4 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   );
 }
 
-export default appWithTranslation(MyApp);
-
-
+export default MyApp;

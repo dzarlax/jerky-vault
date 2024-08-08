@@ -7,9 +7,10 @@ import { getCsrfToken, useSession } from 'next-auth/react';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Импорт стилей Bootstrap
+import { Modal, Button, Form, InputGroup, FormControl } from 'react-bootstrap';
 
 const Clients = ({ csrfToken, mapboxToken }) => {
-  const { t } = useTranslation('common');
+  const { t, lang } = useTranslation('common');
   const { data: clients, mutate } = useSWR('/api/clients', fetcher);
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -21,6 +22,8 @@ const Clients = ({ csrfToken, mapboxToken }) => {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [source, setSource] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
 
   const geocoderContainerRef = useRef(null);
   const geocoderRef = useRef(null);
@@ -29,8 +32,14 @@ const Clients = ({ csrfToken, mapboxToken }) => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
+  }, [status, router]);
 
+  useEffect(() => {
     if (status === 'authenticated' && geocoderContainerRef.current) {
+      if (geocoderRef.current) {
+        geocoderRef.current.clear();
+      }
+
       geocoderRef.current = new MapboxGeocoder({
         accessToken: mapboxToken,
         placeholder: t('address'),
@@ -41,15 +50,8 @@ const Clients = ({ csrfToken, mapboxToken }) => {
       geocoderRef.current.on('result', (e) => {
         setAddress(e.result.place_name);
       });
-
-      return () => {
-        if (geocoderRef.current) {
-          geocoderRef.current.clear();
-          geocoderContainerRef.current.innerHTML = '';
-        }
-      };
     }
-  }, [status, router, t, mapboxToken]);
+  }, [status, t, mapboxToken, showAddClientModal]);
 
   const addClient = async (e) => {
     e.preventDefault();
@@ -69,50 +71,38 @@ const Clients = ({ csrfToken, mapboxToken }) => {
     setAddress('');
     setSource('');
     mutate();
+    setShowAddClientModal(false);
   };
+
+  const filteredClients = clients?.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.telegram?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.instagram?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.source?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!clients) return <div>{t('loading')}</div>;
 
   return (
     <div className="container">
       <h1>{t('clients')}</h1>
-      <form onSubmit={addClient} className="row g-3">
-        <input type="hidden" name="csrfToken" value={csrfToken} />
-        <div className="col-md-6">
-          <label className="form-label">{t('name')}</label>
-          <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('surname')}</label>
-          <input type="text" className="form-control" value={surname} onChange={(e) => setSurname(e.target.value)} required />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('telegram')}</label>
-          <input type="text" className="form-control" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('instagram')}</label>
-          <input type="text" className="form-control" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('phone')}</label>
-          <input type="text" className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('address')}</label>
-          <div ref={geocoderContainerRef} className="geocoder-container"></div>
-          <input type="hidden" value={address} required />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">{t('source')}</label>
-          <input type="text" className="form-control" value={source} onChange={(e) => setSource(e.target.value)} />
-        </div>
-        <div className="col-12 d-flex justify-content-end">
-          <button type="submit" className="btn btn-primary">{t('addClient')}</button>
-        </div>
-      </form>
+      <InputGroup className="mb-3">
+        <FormControl
+          placeholder={t('search')}
+          aria-label={t('search')}
+          aria-describedby="basic-addon2"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Button variant="outline-secondary" onClick={() => setShowAddClientModal(true)}>
+          {t('addClient')}
+        </Button>
+      </InputGroup>
       <ul className="list-group mt-4">
-        {clients.map((client) => (
+        {filteredClients.map((client) => (
           <li key={client.id} className="list-group-item">
             <strong>{client.name} {client.surname}</strong>
             <p>
@@ -160,6 +150,48 @@ const Clients = ({ csrfToken, mapboxToken }) => {
           </li>
         ))}
       </ul>
+
+      <Modal show={showAddClientModal} onHide={() => setShowAddClientModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{t('addClient')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={addClient}>
+            <Form.Group controlId="formName">
+              <Form.Label>{t('name')}</Form.Label>
+              <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+            </Form.Group>
+            <Form.Group controlId="formSurname">
+              <Form.Label>{t('surname')}</Form.Label>
+              <Form.Control type="text" value={surname} onChange={(e) => setSurname(e.target.value)} required />
+            </Form.Group>
+            <Form.Group controlId="formTelegram">
+              <Form.Label>{t('telegram')}</Form.Label>
+              <Form.Control type="text" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+            </Form.Group>
+            <Form.Group controlId="formInstagram">
+              <Form.Label>{t('instagram')}</Form.Label>
+              <Form.Control type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+            </Form.Group>
+            <Form.Group controlId="formPhone">
+              <Form.Label>{t('phone')}</Form.Label>
+              <Form.Control type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </Form.Group>
+            <Form.Group controlId="formAddress">
+              <Form.Label>{t('address')}</Form.Label>
+              <div ref={geocoderContainerRef} className="geocoder-container"></div>
+              <Form.Control type="hidden" value={address} required />
+            </Form.Group>
+            <Form.Group controlId="formSource">
+              <Form.Label>{t('source')}</Form.Label>
+              <Form.Control type="text" value={source} onChange={(e) => setSource(e.target.value)} />
+            </Form.Group>
+            <Button variant="primary" type="submit" className="mt-3">
+              {t('addClient')}
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

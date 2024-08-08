@@ -74,6 +74,11 @@ const AddRecipe = () => {
   };
 
   const deleteIngredientFromRecipe = async (recipeId: string, ingredientId: string) => {
+    console.log("Deleting ingredient from recipe:", recipeId, ingredientId); // Логирование
+    if (!ingredientId) {
+      console.error("Ingredient ID is undefined");
+      return;
+    }
     await fetch(`/api/recipes/${recipeId}/ingredients/${ingredientId}`, {
       method: 'DELETE',
       headers: {
@@ -86,8 +91,10 @@ const AddRecipe = () => {
   const loadRecipeIngredients = async (recipeId: string) => {
     const response = await fetch(`/api/recipes/${recipeId}`);
     const data = await response.json();
+    console.log("Loaded recipe ingredients:", data.ingredients); // Логирование
     setRecipeIngredients(data.ingredients);
   };
+  
 
   const updateUnits = () => {
     if (!ingredients || !Array.isArray(ingredients)) return;
@@ -255,13 +262,17 @@ const AddRecipe = () => {
       {selectedRecipe && (
         <ListGroup className="mt-2">
           {recipeIngredients.map((ingredient: any) => (
-            <ListGroup.Item key={ingredient.id}>
-              {ingredient.name} - {ingredient.quantity} {ingredient.unit}
-              <Button variant="danger" size="sm" className="ms-2" onClick={() => deleteIngredientFromRecipe(selectedRecipe, ingredient.id)}>
-                {t('delete')}
-              </Button>
-            </ListGroup.Item>
-          ))}
+  <ListGroup.Item key={ingredient.id}>
+    {ingredient.name} - {ingredient.quantity} {ingredient.unit}
+    <Button variant="danger" size="sm" className="ms-2" onClick={() => {
+      console.log("Deleting ingredient:", ingredient.id); // Логирование
+      deleteIngredientFromRecipe(selectedRecipe, ingredient.id);
+    }}>
+      {t('delete')}
+    </Button>
+  </ListGroup.Item>
+))}
+
         </ListGroup>
       )}
     </Container>
