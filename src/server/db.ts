@@ -152,6 +152,30 @@ const createTables = async () => {
       )
     `);
 
+    await query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        client_id INT NOT NULL,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(255) NOT NULL,
+        user_id INT,
+        FOREIGN KEY (client_id) REFERENCES clients(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `);
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES orders(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+    `);
+
     console.log('All tables created successfully.');
   } catch (error) {
     console.error('Error creating tables:', error);

@@ -30,6 +30,7 @@ const Header: React.FC = () => {
           <Nav.Link href="/prices">{t('addPrices')}</Nav.Link>
           <Nav.Link href="/clients">{t('clients')}</Nav.Link>
           <Nav.Link href="/products">{t('products')}</Nav.Link>
+          <Nav.Link href="/orders">{t('orders')}</Nav.Link>
           {loading && (
             <Nav.Link>{t('loading')}</Nav.Link>
           )}
