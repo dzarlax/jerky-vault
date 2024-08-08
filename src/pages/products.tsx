@@ -16,44 +16,77 @@ const Products = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [cost, setCost] = useState('');
   const [image, setImage] = useState('');
   const [recipeIds, setRecipeIds] = useState([]);
   const [packageId, setPackageId] = useState('');
 
   const [newPackage, setNewPackage] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   useEffect(() => {
-    console.log("Products:", products);
-    console.log("Recipes:", recipes);
-    console.log("Packages:", packages);
-  }, [products, recipes, packages]);
+    setFilteredProducts(products || []);
+  }, [products]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [selectedRecipe, selectedPackage, selectedProduct]);
+
+  const applyFilters = () => {
+    let filtered = products || [];
+
+    if (selectedRecipe) {
+      filtered = filtered.filter(product => 
+        product.recipe_ids.split(',').map(id => parseInt(id, 10)).includes(selectedRecipe.value)
+      );
+    }
+
+    if (selectedPackage) {
+      filtered = filtered.filter(product => product.package_id === selectedPackage.value);
+    }
+
+    if (selectedProduct) {
+      filtered = filtered.filter(product => product.id === selectedProduct.value);
+    }
+
+    setFilteredProducts(filtered);
+  };
 
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setName(product.name);
     setDescription(product.description);
     setPrice(product.price);
+    setCost(product.cost);
     setImage(product.image);
     setRecipeIds(product.recipe_ids.split(',').map((id) => parseInt(id, 10)));
     setPackageId(product.package_id);
-    setShowModal(true);
+    setShowProductModal(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseProductModal = () => {
     setEditingProduct(null);
     setName('');
     setDescription('');
     setPrice('');
+    setCost('');
     setImage('');
     setRecipeIds([]);
     setPackageId('');
-    setShowModal(false);
+    setShowProductModal(false);
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveProductChanges = async () => {
     const parsedPrice = parseFloat(price);
+    const parsedCost = parseFloat(cost);
 
     const isValidUrl = (url) => {
       if (!url) return true;
@@ -70,7 +103,7 @@ const Products = () => {
       return;
     }
 
-    const product = { name, description, price: parsedPrice, image: image || null, recipeIds, packageId };
+    const product = { name, description, price: parsedPrice, cost: parsedCost, image: image || null, recipeIds, packageId };
 
     if (editingProduct) {
       await fetch(`/api/products/${editingProduct.id}`, {
@@ -81,51 +114,21 @@ const Products = () => {
         body: JSON.stringify(product),
       });
       mutateProducts();
+    } else {
+      await fetch('/api/products/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(product),
+      });
+      mutateProducts();
     }
 
-    handleCloseModal();
+    handleCloseProductModal();
   };
 
-  const addProduct = async (e) => {
-    e.preventDefault();
-    const parsedPrice = parseFloat(price);
-
-    const isValidUrl = (url) => {
-      if (!url) return true;
-      try {
-        new URL(url);
-        return true;
-      } catch (_) {
-        return false;
-      }
-    };
-
-    if (!isValidUrl(image)) {
-      alert('Invalid image URL');
-      return;
-    }
-
-    const product = { name, description, price: parsedPrice, image: image || null, recipeIds, packageId };
-    console.log('Sending product:', product);
-
-    await fetch('/api/products/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(product),
-    });
-    setName('');
-    setDescription('');
-    setPrice('');
-    setImage('');
-    setRecipeIds([]);
-    setPackageId('');
-    mutateProducts();
-  };
-
-  const addPackage = async (e) => {
-    e.preventDefault();
+  const handleSavePackage = async () => {
     await fetch('/api/products/packages', {
       method: 'POST',
       headers: {
@@ -135,15 +138,17 @@ const Products = () => {
     });
     setNewPackage('');
     mutatePackages();
+    setShowPackageModal(false);
   };
 
   if (!products || !recipes || !packages) return <div>{t('loading')}</div>;
 
   const recipeOptions = recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }));
   const packageOptions = packages.map((pkg) => ({ value: pkg.id, label: pkg.name }));
+  const productOptions = products.map((product) => ({ value: product.id, label: product.name }));
 
-  // Группировка продуктов по уникальным наборам рецептов
-  const groupedProducts = products.reduce((acc, product) => {
+  // Проверка на существование filteredProducts перед вызовом reduce
+  const groupedProducts = filteredProducts?.reduce((acc, product) => {
     const productRecipeIds = product.recipe_ids.split(',').map((id) => parseInt(id, 10)).sort((a, b) => a - b);
     const recipeNames = productRecipeIds.map((recipeId) => recipes.find((recipe) => recipe.id === recipeId)?.name || t('unknownRecipe')).join(', ');
 
@@ -158,59 +163,36 @@ const Products = () => {
     <Container>
       <h1>{t('products')}</h1>
 
-      <Form onSubmit={addProduct} className="row g-3">
-        <Form.Group as={Col} md="6" controlId="name">
-          <Form.Label>{t('productName')}</Form.Label>
-          <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-        </Form.Group>
-        <Form.Group as={Col} md="6" controlId="description">
-          <Form.Label>{t('description')}</Form.Label>
-          <Form.Control type="text" value={description} onChange={(e) => setDescription(e.target.value)} required />
-        </Form.Group>
-        <Form.Group as={Col} md="6" controlId="price">
-          <Form.Label>{t('price')}</Form.Label>
-          <Form.Control type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
-        </Form.Group>
-        <Form.Group as={Col} md="6" controlId="image">
-          <Form.Label>{t('image')}</Form.Label>
-          <Form.Control type="text" value={image} onChange={(e) => setImage(e.target.value)} />
-        </Form.Group>
-        <Form.Group as={Col} md="6" controlId="recipeIds">
-          <Form.Label>{t('recipe')}</Form.Label>
+      <Row className="mb-3">
+        <Col md="4">
           <Select
-            value={recipeOptions.filter(option => recipeIds.includes(option.value))}
-            onChange={(selectedOptions) => setRecipeIds(selectedOptions.map(option => option.value))}
             options={recipeOptions}
-            isMulti
-            placeholder={t('chooseRecipe')}
+            onChange={setSelectedRecipe}
+            placeholder={t('recipe')}
           />
-        </Form.Group>
-        <Form.Group as={Col} md="6" controlId="package">
-          <Form.Label>{t('package')}</Form.Label>
+        </Col>
+        <Col md="4">
           <Select
-            value={packageOptions.find(option => option.value === packageId)}
-            onChange={(selectedOption) => setPackageId(selectedOption ? selectedOption.value : '')}
             options={packageOptions}
-            isClearable
-            placeholder={t('choosePackage')}
+            onChange={setSelectedPackage}
+            placeholder={t('package')}
           />
-        </Form.Group>
-        <Col xs="12" className="d-flex justify-content-end">
-          <Button variant="primary" type="submit">{t('addProduct')}</Button>
         </Col>
-      </Form>
-
-      <Form onSubmit={addPackage} className="mt-4 row g-3">
-        <Form.Group as={Col} md="6" controlId="newPackage">
-          <Form.Label>{t('newPackage')}</Form.Label>
-          <Form.Control type="text" value={newPackage} onChange={(e) => setNewPackage(e.target.value)} required />
-        </Form.Group>
-        <Col xs="12" className="d-flex justify-content-end">
-          <Button variant="secondary" type="submit">{t('addPackage')}</Button>
+        <Col md="4">
+          <Select
+            options={productOptions}
+            onChange={setSelectedProduct}
+            placeholder={t('product')}
+          />
         </Col>
-      </Form>
+      </Row>
 
-      {Object.entries(groupedProducts).map(([recipeNames, products]) => (
+      <div className="d-flex justify-content-end mb-3">
+        <Button variant="primary" onClick={() => setShowProductModal(true)} className="me-2">{t('addProduct')}</Button>
+        <Button variant="secondary" onClick={() => setShowPackageModal(true)}>{t('addPackage')}</Button>
+      </div>
+
+      {groupedProducts && Object.entries(groupedProducts).map(([recipeNames, products]) => (
         <div key={recipeNames}>
           <h2>{recipeNames}</h2>
           <Row className="mt-4">
@@ -224,6 +206,7 @@ const Products = () => {
                       <Card.Title>{product.name}</Card.Title>
                       <Card.Text>{product.description}</Card.Text>
                       <Card.Text>{t('price')}: {product.price}</Card.Text>
+                      <Card.Text>{t('cost')}: {product.cost}</Card.Text>
                       <Card.Text>{t('recipes')}: {recipeNames}</Card.Text>
                       <Card.Text>{t('package')}: {packageName}</Card.Text>
                     </Card.Body>
@@ -235,9 +218,9 @@ const Products = () => {
         </div>
       ))}
 
-      <Modal show={showModal} onHide={handleCloseModal}>
+      <Modal show={showProductModal} onHide={handleCloseProductModal}>
         <Modal.Header closeButton>
-          <Modal.Title>{t('editProduct')}</Modal.Title>
+          <Modal.Title>{editingProduct ? t('editProduct') : t('addProduct')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form className="row g-3">
@@ -252,6 +235,10 @@ const Products = () => {
             <Form.Group as={Col} md="6" controlId="price">
               <Form.Label>{t('price')}</Form.Label>
               <Form.Control type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
+            </Form.Group>
+            <Form.Group as={Col} md="6" controlId="cost">
+              <Form.Label>{t('cost')}</Form.Label>
+              <Form.Control type="number" value={cost} onChange={(e) => setCost(e.target.value)} required />
             </Form.Group>
             <Form.Group as={Col} md="6" controlId="image">
               <Form.Label>{t('image')}</Form.Label>
@@ -280,8 +267,24 @@ const Products = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleSaveChanges}>{t('saveChanges')}</Button>
+          <Button variant="secondary" onClick={handleCloseProductModal}>{t('close')}</Button>
+          <Button variant="primary" onClick={handleSaveProductChanges}>{t('saveChanges')}</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showPackageModal} onHide={() => setShowPackageModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{t('addPackage')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group controlId="newPackage">
+            <Form.Label>{t('newPackage')}</Form.Label>
+            <Form.Control type="text" value={newPackage} onChange={(e) => setNewPackage(e.target.value)} required />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPackageModal(false)}>{t('close')}</Button>
+          <Button variant="primary" onClick={handleSavePackage}>{t('saveChanges')}</Button>
         </Modal.Footer>
       </Modal>
     </Container>

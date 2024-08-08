@@ -39,17 +39,18 @@ async function updateProduct(req: NextApiRequest, res: NextApiResponse, userId: 
     check('name').isString().withMessage('Name must be a string'),
     check('description').isString().withMessage('Description must be a string'),
     check('price').isFloat({ gt: 0 }).withMessage('Price must be a positive number'),
+    check('cost').isFloat({ gt: 0 }).withMessage('Cost must be a positive number'),
     check('recipeIds').isArray({ min: 1 }).withMessage('Recipe IDs must be an array with at least one recipe'),
     check('packageId').optional({ checkFalsy: true }).isInt({ gt: 0 }).withMessage('Package ID must be a positive integer'),
   ]);
 
   if (!isValid) return;
 
-  const { name, description, price, image, recipeIds, packageId } = req.body;
+  const { name, description, price, cost, image, recipeIds, packageId } = req.body;
   try {
     const [result] = await db.query(
-      'UPDATE products SET name = ?, description = ?, price = ?, image = ? WHERE id = ? AND user_id = ?',
-      [name, description, price, image || null, productId, userId]
+      'UPDATE products SET name = ?, description = ?, price = ?, cost = ?, image = ? WHERE id = ? AND user_id = ?',
+      [name, description, price, cost, image || null, productId, userId]
     );
 
     if (result.affectedRows === 0) {
