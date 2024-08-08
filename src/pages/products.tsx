@@ -30,13 +30,13 @@ const Products = () => {
     console.log("Packages:", packages);
   }, [products, recipes, packages]);
 
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (product) => {
     setEditingProduct(product);
     setName(product.name);
     setDescription(product.description);
     setPrice(product.price);
     setImage(product.image);
-    setRecipeIds(product.recipe_ids.split(',').map((id: string) => parseInt(id, 10)));
+    setRecipeIds(product.recipe_ids.split(',').map((id) => parseInt(id, 10)));
     setPackageId(product.package_id);
     setShowModal(true);
   };
@@ -86,7 +86,7 @@ const Products = () => {
     handleCloseModal();
   };
 
-  const addProduct = async (e: React.FormEvent) => {
+  const addProduct = async (e) => {
     e.preventDefault();
     const parsedPrice = parseFloat(price);
 
@@ -124,7 +124,7 @@ const Products = () => {
     mutateProducts();
   };
 
-  const addPackage = async (e: React.FormEvent) => {
+  const addPackage = async (e) => {
     e.preventDefault();
     await fetch('/api/products/packages', {
       method: 'POST',
@@ -139,8 +139,8 @@ const Products = () => {
 
   if (!products || !recipes || !packages) return <div>{t('loading')}</div>;
 
-  const recipeOptions = recipes.map((recipe: any) => ({ value: recipe.id, label: recipe.name }));
-  const packageOptions = packages.map((pkg: any) => ({ value: pkg.id, label: pkg.name }));
+  const recipeOptions = recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }));
+  const packageOptions = packages.map((pkg) => ({ value: pkg.id, label: pkg.name }));
 
   // Группировка продуктов по уникальным наборам рецептов
   const groupedProducts = products.reduce((acc, product) => {
@@ -158,24 +158,24 @@ const Products = () => {
     <Container>
       <h1>{t('products')}</h1>
 
-      <Form onSubmit={addProduct}>
-        <Form.Group controlId="name">
+      <Form onSubmit={addProduct} className="row g-3">
+        <Form.Group as={Col} md="6" controlId="name">
           <Form.Label>{t('productName')}</Form.Label>
           <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
         </Form.Group>
-        <Form.Group controlId="description">
+        <Form.Group as={Col} md="6" controlId="description">
           <Form.Label>{t('description')}</Form.Label>
           <Form.Control type="text" value={description} onChange={(e) => setDescription(e.target.value)} required />
         </Form.Group>
-        <Form.Group controlId="price">
+        <Form.Group as={Col} md="6" controlId="price">
           <Form.Label>{t('price')}</Form.Label>
           <Form.Control type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
         </Form.Group>
-        <Form.Group controlId="image">
+        <Form.Group as={Col} md="6" controlId="image">
           <Form.Label>{t('image')}</Form.Label>
           <Form.Control type="text" value={image} onChange={(e) => setImage(e.target.value)} />
         </Form.Group>
-        <Form.Group controlId="recipeIds">
+        <Form.Group as={Col} md="6" controlId="recipeIds">
           <Form.Label>{t('recipe')}</Form.Label>
           <Select
             value={recipeOptions.filter(option => recipeIds.includes(option.value))}
@@ -185,7 +185,7 @@ const Products = () => {
             placeholder={t('chooseRecipe')}
           />
         </Form.Group>
-        <Form.Group controlId="package">
+        <Form.Group as={Col} md="6" controlId="package">
           <Form.Label>{t('package')}</Form.Label>
           <Select
             value={packageOptions.find(option => option.value === packageId)}
@@ -195,22 +195,26 @@ const Products = () => {
             placeholder={t('choosePackage')}
           />
         </Form.Group>
-        <Button variant="primary" type="submit">{t('addProduct')}</Button>
+        <Col xs="12" className="d-flex justify-content-end">
+          <Button variant="primary" type="submit">{t('addProduct')}</Button>
+        </Col>
       </Form>
 
-      <Form onSubmit={addPackage} className="mt-4">
-        <Form.Group controlId="newPackage">
+      <Form onSubmit={addPackage} className="mt-4 row g-3">
+        <Form.Group as={Col} md="6" controlId="newPackage">
           <Form.Label>{t('newPackage')}</Form.Label>
           <Form.Control type="text" value={newPackage} onChange={(e) => setNewPackage(e.target.value)} required />
         </Form.Group>
-        <Button variant="secondary" type="submit">{t('addPackage')}</Button>
+        <Col xs="12" className="d-flex justify-content-end">
+          <Button variant="secondary" type="submit">{t('addPackage')}</Button>
+        </Col>
       </Form>
 
       {Object.entries(groupedProducts).map(([recipeNames, products]) => (
         <div key={recipeNames}>
           <h2>{recipeNames}</h2>
           <Row className="mt-4">
-            {products.map((product: any) => {
+            {products.map((product) => {
               const packageName = packages.find((pkg) => pkg.id === product.package_id)?.name || t('unknownPackage');
               return (
                 <Col key={product.id} sm={6} md={4} lg={3}>
@@ -236,24 +240,24 @@ const Products = () => {
           <Modal.Title>{t('editProduct')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group controlId="name">
+          <Form className="row g-3">
+            <Form.Group as={Col} md="6" controlId="name">
               <Form.Label>{t('productName')}</Form.Label>
               <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
             </Form.Group>
-            <Form.Group controlId="description">
+            <Form.Group as={Col} md="6" controlId="description">
               <Form.Label>{t('description')}</Form.Label>
               <Form.Control type="text" value={description} onChange={(e) => setDescription(e.target.value)} required />
             </Form.Group>
-            <Form.Group controlId="price">
+            <Form.Group as={Col} md="6" controlId="price">
               <Form.Label>{t('price')}</Form.Label>
               <Form.Control type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
             </Form.Group>
-            <Form.Group controlId="image">
+            <Form.Group as={Col} md="6" controlId="image">
               <Form.Label>{t('image')}</Form.Label>
               <Form.Control type="text" value={image} onChange={(e) => setImage(e.target.value)} />
             </Form.Group>
-            <Form.Group controlId="recipeIds">
+            <Form.Group as={Col} md="6" controlId="recipeIds">
               <Form.Label>{t('recipe')}</Form.Label>
               <Select
                 value={recipeOptions.filter(option => recipeIds.includes(option.value))}
@@ -263,7 +267,7 @@ const Products = () => {
                 placeholder={t('chooseRecipe')}
               />
             </Form.Group>
-            <Form.Group controlId="package">
+            <Form.Group as={Col} md="6" controlId="package">
               <Form.Label>{t('package')}</Form.Label>
               <Select
                 value={packageOptions.find(option => option.value === packageId)}

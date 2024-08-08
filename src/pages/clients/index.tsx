@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { getCsrfToken, useSession } from 'next-auth/react';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import 'bootstrap/dist/css/bootstrap.min.css'; // Импорт стилей Bootstrap
 
 const Clients = ({ csrfToken, mapboxToken }) => {
   const { t } = useTranslation('common');
@@ -75,42 +76,44 @@ const Clients = ({ csrfToken, mapboxToken }) => {
   return (
     <div className="container">
       <h1>{t('clients')}</h1>
-      <form onSubmit={addClient} className="client-form">
+      <form onSubmit={addClient} className="row g-3">
         <input type="hidden" name="csrfToken" value={csrfToken} />
-        <div className="form-group">
-          <label>{t('name')}</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="col-md-6">
+          <label className="form-label">{t('name')}</label>
+          <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
-        <div className="form-group">
-          <label>{t('surname')}</label>
-          <input type="text" value={surname} onChange={(e) => setSurname(e.target.value)} required />
+        <div className="col-md-6">
+          <label className="form-label">{t('surname')}</label>
+          <input type="text" className="form-control" value={surname} onChange={(e) => setSurname(e.target.value)} required />
         </div>
-        <div className="form-group">
-          <label>{t('telegram')}</label>
-          <input type="text" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
+        <div className="col-md-6">
+          <label className="form-label">{t('telegram')}</label>
+          <input type="text" className="form-control" value={telegram} onChange={(e) => setTelegram(e.target.value)} />
         </div>
-        <div className="form-group">
-          <label>{t('instagram')}</label>
-          <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+        <div className="col-md-6">
+          <label className="form-label">{t('instagram')}</label>
+          <input type="text" className="form-control" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
         </div>
-        <div className="form-group">
-          <label>{t('phone')}</label>
-          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <div className="col-md-6">
+          <label className="form-label">{t('phone')}</label>
+          <input type="text" className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-        <div className="form-group">
-          <label>{t('address')}</label>
+        <div className="col-md-6">
+          <label className="form-label">{t('address')}</label>
           <div ref={geocoderContainerRef} className="geocoder-container"></div>
           <input type="hidden" value={address} required />
         </div>
-        <div className="form-group">
-          <label>{t('source')}</label>
-          <input type="text" value={source} onChange={(e) => setSource(e.target.value)} />
+        <div className="col-md-6">
+          <label className="form-label">{t('source')}</label>
+          <input type="text" className="form-control" value={source} onChange={(e) => setSource(e.target.value)} />
         </div>
-        <button type="submit" className="submit-button">{t('addClient')}</button>
+        <div className="col-12 d-flex justify-content-end">
+          <button type="submit" className="btn btn-primary">{t('addClient')}</button>
+        </div>
       </form>
-      <ul>
+      <ul className="list-group mt-4">
         {clients.map((client) => (
-          <li key={client.id}>
+          <li key={client.id} className="list-group-item">
             <strong>{client.name} {client.surname}</strong>
             <p>
               {t('telegram')}: 
@@ -153,7 +156,7 @@ const Clients = ({ csrfToken, mapboxToken }) => {
               )}
             </p>
             <p>{t('source')}: {client.source}</p>
-            <button onClick={() => router.push(`/clients/${client.id}`)}>{t('edit')}</button>
+            <button className="btn btn-secondary" onClick={() => router.push(`/clients/${client.id}`)}>{t('edit')}</button>
           </li>
         ))}
       </ul>

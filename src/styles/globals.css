@@ -1,9 +1,9 @@
 :root {
-  --primary-color: #b71c1c; /* Темно-красный */
-  --secondary-color: #7f0000; /* Темно-коричневый */
-  --background-color: #fff5e1; /* Кремовый */
-  --text-color: #4e342e; /* Темно-коричневый */
-  --header-background-color: #8d6e63; /* Светло-коричневый */
+  --primary-color: #b71c1c;
+  --secondary-color: #7f0000;
+  --background-color: #fff5e1;
+  --text-color: #4e342e;
+  --header-background-color: #8d6e63;
   --header-text-color: #ffffff;
   --nav-link-color: #ffffff;
   --nav-link-background-color: var(--primary-color);
@@ -18,11 +18,11 @@
   --table-row-hover-background-color: #ddd;
   --footer-background-color: var(--primary-color);
   --footer-text-color: #ffffff;
-  --highlight-color: #ffccbc; /* Светло-оранжевый для выделений */
+  --highlight-color: #ffccbc;
 }
 
 body {
-  font-family: 'Georgia', serif; /* Шрифт с засечками для придания тепла */
+  font-family: 'Georgia', serif;
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
@@ -41,9 +41,9 @@ header {
 
 header h1 {
   margin: 0;
-  font-size: 32px; /* Увеличенный размер для большего акцента */
+  font-size: 32px;
   color: var(--header-text-color);
-  font-family: 'Brush Script MT', cursive; /* Рукописный шрифт для заголовка */
+  font-family: 'Brush Script MT', cursive;
 }
 
 nav {
@@ -73,7 +73,7 @@ nav ul li a {
   border-radius: 25px;
   transition: background-color 0.3s, transform 0.3s;
   font-family: 'Arial', sans-serif;
-  font-size: 18px; /* Чуть больше для удобства */
+  font-size: 18px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@ nav ul li a:hover {
 }
 
 .container {
-  max-width: 95%; /* Bootstrap стандартный контейнер */
+  max-width: 95%;
   margin: 20px auto;
   background-color: var(--container-background-color);
   padding: 20px;
@@ -103,63 +103,42 @@ nav ul li a:hover {
 
 h1, h2 {
   color: var(--primary-color);
-  font-family: 'Georgia', serif; /* Единый стиль с текстом */
+  font-family: 'Georgia', serif;
   text-align: left;
   margin: 10px 0;
 }
 
-form {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column; /* В столбик */
-  gap: 10px; /* Пространство между элементами */
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.form-group input, select, button {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-input:focus, select:focus, button:focus {
-  border-color: var(--form-focus-border-color);
-  box-shadow: var(--form-focus-shadow);
-}
-
-button {
+button, .btn {
   background: var(--primary-color);
   color: #fff;
   cursor: pointer;
   border: none;
   border-radius: 5px;
   padding: 10px 20px;
-  font-size: 16px; /* Увеличенный размер текста на кнопке */
+  font-size: 16px;
   transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
   text-transform: uppercase;
   font-weight: bold;
-  align-self: center;
 }
 
-button:hover {
+button:hover, .btn:hover {
   background: var(--secondary-color);
   transform: translateY(-2px);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
 
-button:active {
+button:active, .btn:active {
   transform: translateY(0);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.delete-button {
+  background: red;
+  margin-top: 10px;
+}
+
+.delete-button:hover {
+  background: darkred;
 }
 
 ul {
@@ -197,58 +176,35 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: 15px; /* Добавлено для отступа снизу */
+  margin-bottom: 15px;
 }
 
 .radio-group label {
   margin-bottom: 5px;
   display: flex;
   align-items: center;
-  cursor: pointer; /* Курсор в виде руки для меток */
+  cursor: pointer;
 }
 
-.radio-group input[type="radio"] {
+.radio-group input[type='radio'] {
   margin-right: 10px;
-  appearance: none; /* Убираем стандартное отображение радиокнопок */
+  appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 50%;
   border: 2px solid var(--primary-color);
   outline: none;
   transition: background 0.3s, border-color 0.3s;
-  cursor: pointer; /* Курсор в виде руки для кнопок */
+  cursor: pointer;
 }
 
-.radio-group input[type="radio"]:checked {
+.radio-group input[type='radio']:checked {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
 
-.radio-group input[type="radio"]:hover {
+.radio-group input[type='radio']:hover {
   border-color: var(--secondary-color);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  border: 1px solid var(--table-border-color);
-  padding: 8px;
-}
-
-th {
-  background-color: var(--table-header-background-color);
-  text-align: left;
-}
-
-tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-tr:hover {
-  background-color: var(--table-row-hover-background-color);
 }
 
 .popup {
@@ -260,7 +216,7 @@ tr:hover {
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .popup-content {
@@ -324,115 +280,100 @@ tr:hover {
   background: transparent;
 }
 
-.btn {
-  width: 100%;
-  background: #333;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #fff;
-  border-radius: 5px;
-  transition: 0.3s;
-}
-
-.btn:hover {
-  background: #555;
-}
-
-.container_login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
 /* Медиа-запросы для адаптивности */
 @media (max-width: 768px) {
   .container {
-      width: 90%;
-      padding: 10px;
+    width: 90%;
+    padding: 10px;
   }
 
   nav ul {
-      flex-direction: column;
+    flex-direction: column;
   }
 
   nav ul li {
-      margin-bottom: 10px;
+    margin-bottom: 10px;
   }
 
   nav ul li a {
-      padding: 10px;
-      font-size: 16px;
+    padding: 10px;
+    font-size: 16px;
   }
 
   .horizontal-form {
-      flex-direction: column;
+    flex-direction: column;
   }
 
-  .horizontal-form input[type="text"],
+  .horizontal-form input[type='text'],
   .horizontal-form select,
-  .horizontal-form input[type="number"],
-  .horizontal-form input[type="date"] {
-      width: 100%;
+  .horizontal-form input[type='number'],
+  .horizontal-form input[type='date'] {
+    width: 100%;
   }
 
   .button-container {
-      flex-direction: column;
+    flex-direction: column;
   }
 
   .popup-content {
-      width: 95%;
+    width: 95%;
   }
 }
 
 @media (max-width: 480px) {
   header {
-      flex-direction: column;
-      padding: 10px;
+    flex-direction: column;
+    padding: 10px;
   }
 
   header h1 {
-      font-size: 24px;
+    font-size: 24px;
   }
 
   nav ul {
-      flex-direction: column;
-      align-items: center;
+    flex-direction: column;
+    align-items: center;
   }
 
   nav ul li a {
-      padding: 8px;
-      font-size: 14px;
+    padding: 8px;
+    font-size: 14px;
   }
 
   .container {
-      width: 95%;
-      padding: 5px;
+    width: 95%;
+    padding: 5px;
   }
 
   form {
-      width: 100%;
+    width: 100%;
   }
 
   form label,
-  input, select, button {
-      width: 100%;
+  input,
+  select,
+  button {
+    width: 100%;
   }
 
   .login-box {
-      width: 90%;
-      padding: 20px;
+    width: 90%;
+    padding: 20px;
   }
 }
 
 .client-form {
-  max-width: 500px;
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.form-group {
+  flex: 1 1 200px; /* базовая ширина 200px, но может расти */
+  display: flex;
+  flex-direction: column;
 }
 
 .geocoder-container {
@@ -441,38 +382,4 @@ tr:hover {
 
 .form-group input.address-input {
   width: 100%;
-}
-
-.submit-button, .delete-button {
-  background: var(--primary-color);
-  color: #fff;
-  cursor: pointer;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  font-size: 16px;
-  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
-  text-transform: uppercase;
-  font-weight: bold;
-  align-self: center;
-}
-
-.submit-button:hover, .delete-button:hover {
-  background: var(--secondary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-}
-
-.submit-button:active, .delete-button:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.delete-button {
-  background: red;
-  margin-top: 10px;
-}
-
-.delete-button:hover {
-  background: darkred;
 }
