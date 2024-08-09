@@ -166,11 +166,12 @@ footer {
   padding: 10px;
   background-color: var(--footer-background-color);
   color: var(--footer-text-color);
-  position: fixed;
   width: 100%;
+  position: fixed; /* Или просто удалите строку */
   bottom: 0;
   left: 0;
 }
+
 
 .radio-group {
   display: flex;

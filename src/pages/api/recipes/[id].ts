@@ -98,15 +98,13 @@ async function deleteRecipe(req: NextApiRequest, res: NextApiResponse, userId: s
       return res.status(404).json({ error: 'Recipe not found' });
     }
 
-    await db.beginTransaction();
-
     await db.query("DELETE FROM recipe_ingredients WHERE recipe_id = ?", [id]);
     await db.query("DELETE FROM recipes WHERE id = ?", [id]);
 
-    await db.commit();
     res.status(200).json({ message: 'Recipe deleted successfully' });
   } catch (err) {
-    await db.rollback();
-    res.status(500).json({ error: 'Failed to delete recipe' });
+    console.error('Error details:', err);
+    res.status(500).json({ error: 'Failed to delete recipe', details: err.message });
   }
 }
+

@@ -112,7 +112,7 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
 
 async function getRecipeDetails(recipeIds: number[], userId: string) {
   const ingredientSql = `
-    SELECT ri.recipe_id, ri.quantity, ri.unit, i.type, i.name, p.price, p.quantity AS price_quantity, p.unit AS price_unit
+    SELECT ri.recipe_id, ri.quantity, ri.unit, i.type, i.name, p.price, p.quantity AS price_quantity, p.unit AS price_unit, i.id
     FROM recipe_ingredients ri
     JOIN ingredients i ON ri.ingredient_id = i.id
     LEFT JOIN (

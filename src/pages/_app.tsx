@@ -7,7 +7,7 @@ import { SessionProvider } from 'next-auth/react';
 import useTranslation from 'next-translate/useTranslation';
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
-  const { t } = useTranslation('common'); // Пример использования перевода из 'common' namespace
+  const { t } = useTranslation('common');
 
   return (
     <SessionProvider session={session}>

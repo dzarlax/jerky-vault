@@ -1,133 +1,122 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Container, Row, Col, Card, Table } from 'react-bootstrap';
 import useSWR from 'swr';
-import fetcher from '../utils/fetcher';
+import { useSession, getSession } from 'next-auth/react';
 import useTranslation from 'next-translate/useTranslation';
-import { useRouter } from 'next/router';
-import { Container, Row, Col, Button, ListGroup } from 'react-bootstrap';
-import Select from 'react-select';
+import { Pie } from 'react-chartjs-2';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 
-const Home: React.FC = () => {
-  const { t, lang } = useTranslation('common');
-  const { data: recipeNames, error: recipeNamesError } = useSWR('/api/recipes/names', fetcher);
-  const { data: ingredients, error: ingredientsError } = useSWR('/api/ingredients', fetcher);
-  const [recipes, setRecipes] = useState([]);
-  const [filterName, setFilterName] = useState('');
-  const [filterIngredient, setFilterIngredient] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+Chart.register(ArcElement, Tooltip, Legend);
 
-  const router = useRouter();
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  useEffect(() => {
-    console.log("Router Locale: ", router.locale);
-    console.log("Current Language in useEffect: ", lang);
-    if (recipeNames && ingredients) {
-      setIsLoading(false);
-    }
-  }, [recipeNames, ingredients, lang]);
+const Dashboard = () => {
+  const { data: session } = useSession();
+  const { t } = useTranslation('common');
 
-  useEffect(() => {
-    loadRecipes();
-  }, [filterName, filterIngredient]);
+  const { data: dashboardStats, error: dashboardError } = useSWR('/api/stats/dashboard', fetcher);
 
-  const loadRecipes = async () => {
-    const query = new URLSearchParams();
-    if (filterName) query.append('name', filterName);
-    if (filterIngredient) query.append('ingredient', filterIngredient);
+  if (!session) return <div>{t('pleaseSignIn')}</div>;
 
-    try {
-      const response = await fetch(`/api/recipes/list?${query.toString()}`);
-      const data = await response.json();
-      setRecipes(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Failed to load recipes', error);
-    }
-  };
+  if (!dashboardStats) return <div>{t('loading')}</div>;
 
-  const deleteRecipe = async (id: number) => {
-    try {
-      const response = await fetch(`/api/recipes/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        loadRecipes();
-      } else {
-        console.error('Failed to delete recipe');
-      }
-    } catch (error) {
-      console.error('Error deleting recipe:', error);
-    }
-  };
+  if (dashboardError) return <div>{t('failedToLoad')}</div>;
 
-  const handleNameChange = (selectedOption: any) => {
-    setFilterName(selectedOption ? selectedOption.value : '');
-  };
-
-  const handleIngredientChange = (selectedOption: any) => {
-    setFilterIngredient(selectedOption ? selectedOption.value : '');
-  };
-
-  if (isLoading || recipeNamesError || ingredientsError) return <div>{t('loading')}</div>;
-
-  const recipeOptions = Array.isArray(recipeNames) ? recipeNames.map((recipe: any) => ({ value: recipe.name, label: recipe.name })) : [];
-  const ingredientOptions = Array.isArray(ingredients) ? ingredients.map((ingredient: any) => ({ value: ingredient.name, label: ingredient.name })) : [];
+  const pieData = dashboardStats.typeDistribution ? {
+    labels: dashboardStats.typeDistribution.map((item) => item.type),
+    datasets: [
+      {
+        data: dashboardStats.typeDistribution.map((item) => item.count),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+        hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+      },
+    ],
+  } : null;
 
   return (
-    <Container>
-      <h1>{t('allRecipes')}</h1>
+    <Container fluid>
+      <h1>{t('dashboard')}</h1>
 
-      <Row className="filters mb-3">
-        <Col>
-          <Select
-            value={recipeOptions.find(option => option.value === filterName) || null}
-            onChange={handleNameChange}
-            options={recipeOptions}
-            isClearable
-            placeholder={t('filterByRecipe')}
-          />
+      {/* Старая статистика */}
+      <Row className="mb-4">
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>{t('totalRecipes')}</Card.Title>
+              <Card.Text>{dashboardStats.totalRecipes}</Card.Text>
+            </Card.Body>
+          </Card>
         </Col>
-        <Col>
-          <Select
-            value={ingredientOptions.find(option => option.value === filterIngredient) || null}
-            onChange={handleIngredientChange}
-            options={ingredientOptions}
-            isClearable
-            placeholder={t('filterByIngredient')}
-          />
-        </Col>
-        <Col>
-          <Button onClick={loadRecipes}>{t('applyFilters')}</Button>
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>{t('totalIngredients')}</Card.Title>
+              <Card.Text>{dashboardStats.totalIngredients}</Card.Text>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
-      <Row>
-        <Col>
-          {recipes.length === 0 ? (
-            <div>{t('noRecipesFound')}</div>
-          ) : (
-            <ListGroup>
-              {recipes.map((recipe: any) => (
-                <ListGroup.Item key={recipe.id}>
-                  <strong>{recipe.name}</strong>
-                  <Button variant="danger" className="ms-2" onClick={() => deleteRecipe(recipe.id)}>{t('delete')}</Button><br />
-                  {t('totalCost')}: {parseFloat(recipe.totalCost).toFixed(2)} {t('currency')}
-                  <ul>
-                    {recipe.ingredients.map((ingredient: any) => (
-                      <li key={`${ingredient.id}-${ingredient.name}`}>
-                        {ingredient.name} - {ingredient.quantity} {ingredient.unit} ({parseFloat(ingredient.price).toFixed(2)} {t('currency')})
-                      </li>
-                    ))}
-                  </ul>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          )}
+      {/* Новая статистика */}
+      <Row className="mb-4">
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>{t('totalProducts')}</Card.Title>
+              <Card.Text>{dashboardStats.totalProducts}</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>{t('totalOrders')}</Card.Title>
+              <Card.Text>{dashboardStats.totalOrders}</Card.Text>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
+
+      <h2>{t('pendingOrders')}</h2>
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th>{t('order')}</th>
+            <th>{t('client')}</th>
+            <th>{t('status')}</th>
+            <th>{t('date')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {dashboardStats.pendingOrders.map((order) => (
+            <tr key={order.id}>
+              <td>{order.id}</td>
+              <td>{`${order.client_name} ${order.client_surname}`}</td>
+              <td>{order.status}</td>
+              <td>{new Date(order.date).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </Container>
   );
 };
 
-export default Home;
+export async function getServerSideProps(context: any) {
+  const session = await getSession(context);
+
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/auth/signin',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { session },
+  };
+}
+
+export default Dashboard;

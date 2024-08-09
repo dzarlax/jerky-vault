@@ -33,9 +33,9 @@ const Header: React.FC = () => {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            <Nav.Link as={Link} href="/addRecipe" locale={lang}>{t('addRecipe')}</Nav.Link>
+            <Nav.Link as={Link} href="/recipes" locale={lang}>{t('recipes')}</Nav.Link>
             <Nav.Link as={Link} href="/ingredients" locale={lang}>{t('ingredients')}</Nav.Link>
-            <Nav.Link as={Link} href="/prices" locale={lang}>{t('addPrices')}</Nav.Link>
+            <Nav.Link as={Link} href="/prices" locale={lang}>{t('prices')}</Nav.Link>
             <Nav.Link as={Link} href="/clients" locale={lang}>{t('clients')}</Nav.Link>
             <Nav.Link as={Link} href="/products" locale={lang}>{t('products')}</Nav.Link>
             <Nav.Link as={Link} href="/orders" locale={lang}>{t('orders')}</Nav.Link>
@@ -71,6 +71,10 @@ const Header: React.FC = () => {
                 <Dropdown.Item onClick={() => changeLanguage('ru')}>
                   <img src="/flags/ru.png" alt="Русский" width={20} height={15} className="me-2" />
                   Русский
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => changeLanguage('rs')}>
+                  <img src="/flags/rs.png" alt="Srbski" width={20} height={15} className="me-2" />
+                  Srbski
                 </Dropdown.Item>
                 {/* Добавьте другие языки по мере необходимости */}
               </Dropdown.Menu>
