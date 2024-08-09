@@ -353,9 +353,9 @@ const Recipes: React.FC = () => {
           ) : (
             <ListGroup>
               {recipes.map((recipe: any) => (
-                <ListGroup.Item key={recipe.id}>
+                <ListGroup.Item key={recipe.id} className="recipe-item">
+                <div className="recipe-content">
                   <strong>{recipe.name}</strong>
-                  <Button variant="primary" className="ms-2" onClick={() => openEditModal(recipe)}>{t('edit')}</Button>
                   <br />
                   {t('totalCost')}: {parseFloat(recipe.totalCost).toFixed(2)} {t('currency')}
                   <ul>
@@ -365,7 +365,16 @@ const Recipes: React.FC = () => {
                       </li>
                     ))}
                   </ul>
-                </ListGroup.Item>
+                </div>
+                <Button
+                  variant="primary"
+                  className="edit-button"
+                  onClick={() => openEditModal(recipe)}
+                >
+                  {t('edit')}
+                </Button>
+              </ListGroup.Item>
+              
               ))}
             </ListGroup>
           )}

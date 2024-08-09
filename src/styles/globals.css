@@ -384,3 +384,19 @@ footer {
 .form-group input.address-input {
   width: 100%;
 }
+
+/* Добавьте этот код в ваш CSS файл, например, в styles/globals.css или в отдельный CSS модуль */
+.recipe-item {
+  position: relative;
+  padding-bottom: 3rem; /* Добавляем отступ снизу, чтобы не перекрывать контент кнопкой */
+}
+
+.recipe-content {
+  padding-right: 5rem; /* Добавляем отступ справа для кнопки */
+}
+
+.edit-button {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+}
