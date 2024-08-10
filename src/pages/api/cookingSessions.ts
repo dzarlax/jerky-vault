@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../server/db';
 import { calculateIngredientCost } from '../../utils/calculateIngredientCost';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импортируем типы для работы с базой данных
 
 const checkAuth = (req: NextApiRequest, res: NextApiResponse, next: Function) => {
   if (req.cookies.userId) {
@@ -31,22 +32,23 @@ async function createCookingSession(req: NextApiRequest, res: NextApiResponse) {
   const formattedDate = new Date();
 
   try {
-    const [results] = await db.query("INSERT INTO cooking_sessions (recipe_id, date, yield, user_id) VALUES (?, ?, ?, ?)", [recipe_id, formattedDate, yieldAmount, userId]);
+    const [results] = await db.query<OkPacket>("INSERT INTO cooking_sessions (recipe_id, date, yield, user_id) VALUES (?, ?, ?, ?)", [recipe_id, formattedDate, yieldAmount, userId]);
     const sessionId = results.insertId;
 
     const insertIngredientsPromises = ingredients.map(async (ingredient: any) => {
-      const [results] = await db.query("SELECT price, quantity, unit FROM prices WHERE ingredient_id = ? AND user_id = ? ORDER BY date DESC LIMIT 1", [ingredient.ingredient_id, userId]);
-      if (results.length === 0) throw new Error(`No price found for ingredient_id ${ingredient.ingredient_id}`);
+      const [rows] = await db.query<RowDataPacket[]>("SELECT price, quantity, unit FROM prices WHERE ingredient_id = ? AND user_id = ? ORDER BY date DESC LIMIT 1", [ingredient.ingredient_id, userId]);
+      if (rows.length === 0) throw new Error(`No price found for ingredient_id ${ingredient.ingredient_id}`);
       
-      const row = results[0];
+      const row = rows[0];
       const ingredientCost = calculateIngredientCost(row.price, row.quantity, row.unit, ingredient.quantity, ingredient.unit);
 
-      await db.query("INSERT INTO cooking_session_ingredients (cooking_session_id, ingredient_id, quantity, price, unit) VALUES (?, ?, ?, ?, ?)", [sessionId, ingredient.ingredient_id, ingredient.quantity, ingredientCost, ingredient.unit]);
+      await db.query<OkPacket>("INSERT INTO cooking_session_ingredients (cooking_session_id, ingredient_id, quantity, price, unit) VALUES (?, ?, ?, ?, ?)", [sessionId, ingredient.ingredient_id, ingredient.quantity, ingredientCost, ingredient.unit]);
     });
 
     await Promise.all(insertIngredientsPromises);
     res.status(201).json({ id: sessionId });
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to create cooking session:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -66,21 +68,21 @@ async function getCookingSessions(req: NextApiRequest, res: NextApiResponse) {
 
   if (recipe_id) {
     query += ' AND cs.recipe_id = ?';
-    queryParams.push(recipe_id);
+    queryParams.push(Array.isArray(recipe_id) ? recipe_id[0] : recipe_id);
   }
 
   if (date) {
     query += ' AND DATE(cs.date) = DATE(?)';
-    queryParams.push(date);
+    queryParams.push(date as string);
   }
 
   query += ' ORDER BY cs.date DESC';
 
   try {
-    const [sessions] = await db.query(query, queryParams);
+    const [sessions] = await db.query<RowDataPacket[]>(query, queryParams);
 
     const sessionDetailsPromises = sessions.map(async (session: any) => {
-      const [ingredients] = await db.query(`
+      const [ingredients] = await db.query<RowDataPacket[]>(`
         SELECT 
           csi.quantity, 
           csi.price, 
@@ -103,6 +105,7 @@ async function getCookingSessions(req: NextApiRequest, res: NextApiResponse) {
     const detailedSessions = await Promise.all(sessionDetailsPromises);
     res.json(detailedSessions);
   } catch (err) {
+    console.error('Failed to fetch cooking sessions:', err);
     res.status(500).json({ error: 'Failed to fetch cooking sessions' });
   }
 }

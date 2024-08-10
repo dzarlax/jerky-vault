@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../server/db';
 import { check, validationResult } from 'express-validator';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импортируем типы для работы с базой данных
 
 // Вспомогательная функция для проверки ошибок в запросе
 const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
@@ -35,54 +36,18 @@ async function createIngredient(req: NextApiRequest, res: NextApiResponse) {
   const { type, name } = req.body;
 
   try {
-    const [results] = await db.query("INSERT INTO ingredients (type, name) VALUES (?, ?)", [type, name]);
+    const [results] = await db.query<OkPacket>("INSERT INTO ingredients (type, name) VALUES (?, ?)", [type, name]);
     res.status(201).json({ id: results.insertId });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 }
 
 async function getIngredients(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const [rows] = await db.query("SELECT * FROM ingredients");
+    const [rows] = await db.query<RowDataPacket[]>("SELECT * FROM ingredients");
     res.json(rows);
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 }
-
-
-// Для обновления и удаления ингредиентов, если потребуется
-
-// async function updateIngredient(req: NextApiRequest, res: NextApiResponse) {
-//   await validateRequest(req, res, [
-//     check('id').isInt().withMessage('ID must be an integer'),
-//     check('type').isString().withMessage('Type must be a string'),
-//     check('name').isString().withMessage('Name must be a string')
-//   ]);
-
-//   const { id } = req.params;
-//   const { type, name } = req.body;
-
-//   try {
-//     await db.query("UPDATE ingredients SET type = ?, name = ? WHERE id = ?", [type, name, id]);
-//     res.status(200).json({ message: 'Ingredient updated successfully' });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// }
-
-// async function deleteIngredient(req: NextApiRequest, res: NextApiResponse) {
-//   await validateRequest(req, res, [
-//     check('id').isInt().withMessage('ID must be an integer')
-//   ]);
-
-//   const { id } = req.params;
-
-//   try {
-//     await db.query("DELETE FROM ingredients WHERE id = ?", [id]);
-//     res.status(200).json({ message: 'Ingredient deleted successfully' });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// }

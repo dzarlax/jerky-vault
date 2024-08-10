@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../../server/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импортируем типы для работы с базой данных
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -28,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 async function getClient(req: NextApiRequest, res: NextApiResponse, userId: string) {
   const { id } = req.query;
   try {
-    const [rows] = await db.query("SELECT * FROM clients WHERE id = ? AND user_id = ?", [id, userId]);
+    const [rows] = await db.query<RowDataPacket[]>("SELECT * FROM clients WHERE id = ? AND user_id = ?", [id, userId]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Client not found' });
     }
@@ -42,7 +43,7 @@ async function updateClient(req: NextApiRequest, res: NextApiResponse, userId: s
   const { id } = req.query;
   const { name, surname, telegram, instagram, phone, address, source } = req.body;
   try {
-    const [results] = await db.query(
+    const [results] = await db.query<OkPacket>(
       "UPDATE clients SET name = ?, surname = ?, telegram = ?, instagram = ?, phone = ?, address = ?, source = ? WHERE id = ? AND user_id = ?",
       [name, surname, telegram, instagram, phone, address, source, id, userId]
     );
@@ -58,7 +59,7 @@ async function updateClient(req: NextApiRequest, res: NextApiResponse, userId: s
 async function deleteClient(req: NextApiRequest, res: NextApiResponse, userId: string) {
   const { id } = req.query;
   try {
-    const [results] = await db.query("DELETE FROM clients WHERE id = ? AND user_id = ?", [id, userId]);
+    const [results] = await db.query<OkPacket>("DELETE FROM clients WHERE id = ? AND user_id = ?", [id, userId]);
     if (results.affectedRows === 0) {
       return res.status(404).json({ error: 'Client not found' });
     }

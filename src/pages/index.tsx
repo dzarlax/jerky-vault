@@ -88,14 +88,20 @@ const Dashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {dashboardStats.pendingOrders.map((order) => (
-            <tr key={order.id}>
-              <td>{order.id}</td>
-              <td>{`${order.client_name} ${order.client_surname}`}</td>
-              <td>{order.status}</td>
-              <td>{new Date(order.date).toLocaleString()}</td>
+          {dashboardStats.pendingOrders && dashboardStats.pendingOrders.length > 0 ? (
+            dashboardStats.pendingOrders.map((order) => (
+              <tr key={order.id}>
+                <td>{order.id}</td>
+                <td>{`${order.client_name} ${order.client_surname}`}</td>
+                <td>{order.status}</td>
+                <td>{new Date(order.date).toLocaleString()}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4}>{t('noPendingOrders')}</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </Table>
     </Container>

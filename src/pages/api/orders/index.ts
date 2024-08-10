@@ -4,6 +4,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../../server/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импорт типов для работы с базой данных
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -25,18 +26,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function getOrders(req: NextApiRequest, res: NextApiResponse, userId: string) {
-    try {
-      const [orders] = await db.query("SELECT * FROM orders WHERE user_id = ?", [userId]);
-      for (const order of orders) {
-        const [items] = await db.query("SELECT * FROM order_items WHERE order_id = ?", [order.id]);
-        order.items = items || [];
-      }
-      res.status(200).json(orders);
-    } catch (err) {
-      console.error('Failed to fetch orders:', err);
-      res.status(500).json({ error: 'Failed to fetch orders' });
+  try {
+    const [orders] = await db.query<RowDataPacket[]>("SELECT * FROM orders WHERE user_id = ?", [userId]);
+
+    for (const order of orders) {
+      const [items] = await db.query<RowDataPacket[]>("SELECT * FROM order_items WHERE order_id = ?", [order.id]);
+      order.items = items || [];
     }
+
+    res.status(200).json(orders);
+  } catch (err: any) {
+    console.error('Failed to fetch orders:', err);
+    res.status(500).json({ error: 'Failed to fetch orders' });
   }
+}
 
 async function addOrder(req: NextApiRequest, res: NextApiResponse, userId: string) {
   const { clientId, items, status } = req.body;
@@ -45,21 +48,21 @@ async function addOrder(req: NextApiRequest, res: NextApiResponse, userId: strin
   }
 
   try {
-    const [orderResult] = await db.query(
+    const [orderResult] = await db.query<OkPacket>(
       "INSERT INTO orders (client_id, status, user_id) VALUES (?, ?, ?)",
       [clientId, status, userId]
     );
     const orderId = orderResult.insertId;
 
     for (const item of items) {
-      await db.query(
+      await db.query<OkPacket>(
         "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-        [orderId, item.productId, item.quantity, item.price]
+        [orderId, item.product_id, item.quantity, item.price]
       );
     }
 
     res.status(201).json({ id: orderId });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to add order:', err);
     res.status(500).json({ error: 'Failed to add order' });
   }

@@ -4,37 +4,59 @@ import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col, Card, Button, Form, Modal } from 'react-bootstrap';
 import Select from 'react-select';
-import { getServerSession } from 'next-auth';
-import { authOptions } from './api/auth/[...nextauth]';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+  image: string;
+  recipe_ids: string;
+  package_id: string;
+}
+
+interface Recipe {
+  id: string;
+  name: string;
+}
+
+interface Package {
+  id: string;
+  name: string;
+}
 
 const Products = () => {
   const { t } = useTranslation('common');
-  const { data: products, mutate: mutateProducts } = useSWR('/api/products/', fetcher);
-  const { data: recipes, mutate: mutateRecipes } = useSWR('/api/recipes/names', fetcher);
-  const { data: packages, mutate: mutatePackages } = useSWR('/api/products/packages', fetcher);
+  const { data: products, mutate: mutateProducts } = useSWR<Product[]>('/api/products/', fetcher);
+  const { data: recipes, mutate: mutateRecipes } = useSWR<Recipe[]>('/api/recipes/names', fetcher);
+  const { data: packages, mutate: mutatePackages } = useSWR<Package[]>('/api/products/packages', fetcher);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [cost, setCost] = useState('');
   const [image, setImage] = useState('');
-  const [recipeIds, setRecipeIds] = useState([]);
+  const [recipeIds, setRecipeIds] = useState<string[]>([]);
   const [packageId, setPackageId] = useState('');
 
   const [newPackage, setNewPackage] = useState('');
   const [showProductModal, setShowProductModal] = useState(false);
   const [showPackageModal, setShowPackageModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   useEffect(() => {
+    console.log('Products:', products);
+    console.log('Recipes:', recipes);
+    console.log('Packages:', packages);
     setFilteredProducts(products || []);
-  }, [products]);
+  }, [products, recipes, packages]);
 
   useEffect(() => {
     applyFilters();
@@ -44,8 +66,8 @@ const Products = () => {
     let filtered = products || [];
 
     if (selectedRecipe) {
-      filtered = filtered.filter(product => 
-        product.recipe_ids.split(',').map(id => parseInt(id, 10)).includes(selectedRecipe.value)
+      filtered = filtered.filter(product =>
+        product.recipe_ids.split(',').map(id => id.trim()).includes(selectedRecipe.value)
       );
     }
 
@@ -60,14 +82,14 @@ const Products = () => {
     setFilteredProducts(filtered);
   };
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setName(product.name);
     setDescription(product.description);
-    setPrice(product.price);
-    setCost(product.cost);
+    setPrice(product.price.toString());
+    setCost(product.cost.toString());
     setImage(product.image);
-    setRecipeIds(product.recipe_ids.split(',').map((id) => parseInt(id, 10)));
+    setRecipeIds(product.recipe_ids.split(',').map((id) => id.trim()));
     setPackageId(product.package_id);
     setShowProductModal(true);
   };
@@ -88,7 +110,7 @@ const Products = () => {
     const parsedPrice = parseFloat(price);
     const parsedCost = parseFloat(cost);
 
-    const isValidUrl = (url) => {
+    const isValidUrl = (url: string) => {
       if (!url) return true;
       try {
         new URL(url);
@@ -147,10 +169,25 @@ const Products = () => {
   const packageOptions = packages.map((pkg) => ({ value: pkg.id, label: pkg.name }));
   const productOptions = products.map((product) => ({ value: product.id, label: product.name }));
 
-  // Проверка на существование filteredProducts перед вызовом reduce
-  const groupedProducts = filteredProducts?.reduce((acc, product) => {
-    const productRecipeIds = product.recipe_ids.split(',').map((id) => parseInt(id, 10)).sort((a, b) => a - b);
-    const recipeNames = productRecipeIds.map((recipeId) => recipes.find((recipe) => recipe.id === recipeId)?.name || t('unknownRecipe')).join(', ');
+  // Добавляем отладочный вывод для рецептов и продуктов
+  console.log('Filtered Products:', filteredProducts);
+  console.log('Recipe Options:', recipeOptions);
+  console.log('Package Options:', packageOptions);
+  console.log('Product Options:', productOptions);
+
+  const groupedProducts = filteredProducts.reduce<{ [key: string]: Product[] }>((acc, product) => {
+    const productRecipeIds = product.recipe_ids.split(',').map((id) => id.trim());
+
+    // Выводим идентификаторы рецептов и их названия
+    console.log('Product Recipe IDs:', productRecipeIds);
+
+    const recipeNames = productRecipeIds
+      .map((recipeId) => {
+        const recipe = recipes.find((recipe) => recipe.id == recipeId);
+        console.log('Found Recipe:', recipe);
+        return recipe ? recipe.name : t('unknownRecipe');
+      })
+      .join(', ');
 
     if (!acc[recipeNames]) {
       acc[recipeNames] = [];
@@ -196,19 +233,20 @@ const Products = () => {
         <div key={recipeNames}>
           <h2>{recipeNames}</h2>
           <Row className="mt-4">
-            {products.map((product) => {
+            {Array.isArray(products) && products.map((product: Product) => {
               const packageName = packages.find((pkg) => pkg.id === product.package_id)?.name || t('unknownPackage');
               return (
                 <Col key={product.id} sm={6} md={4} lg={3}>
-                  <Card className="mb-4" onClick={() => handleEditProduct(product)} style={{ cursor: 'pointer' }}>
-                    <Card.Img variant="top" src={product.image} />
+                  <Card>
                     <Card.Body>
                       <Card.Title>{product.name}</Card.Title>
-                      <Card.Text>{product.description}</Card.Text>
-                      <Card.Text>{t('price')}: {product.price}</Card.Text>
-                      <Card.Text>{t('cost')}: {product.cost}</Card.Text>
-                      <Card.Text>{t('recipes')}: {recipeNames}</Card.Text>
-                      <Card.Text>{t('package')}: {packageName}</Card.Text>
+                      <Card.Text>
+                        {t('price')}: {product.price}
+                      </Card.Text>
+                      <Card.Text>
+                        {t('package')}: {packageName}
+                      </Card.Text>
+                      <Button variant="primary" onClick={() => handleEditProduct(product)}>{t('edit')}</Button>
                     </Card.Body>
                   </Card>
                 </Col>
@@ -223,12 +261,12 @@ const Products = () => {
           <Modal.Title>{editingProduct ? t('editProduct') : t('addProduct')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form className="row g-3">
-            <Form.Group as={Col} md="6" controlId="name">
-              <Form.Label>{t('productName')}</Form.Label>
+          <Form>
+            <Form.Group controlId="name">
+              <Form.Label>{t('name')}</Form.Label>
               <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
             </Form.Group>
-            <Form.Group as={Col} md="6" controlId="description">
+            <Form.Group controlId="description">
               <Form.Label>{t('description')}</Form.Label>
               <Form.Control type="text" value={description} onChange={(e) => setDescription(e.target.value)} required />
             </Form.Group>
@@ -241,34 +279,35 @@ const Products = () => {
               <Form.Control type="number" value={cost} onChange={(e) => setCost(e.target.value)} required />
             </Form.Group>
             <Form.Group as={Col} md="6" controlId="image">
-              <Form.Label>{t('image')}</Form.Label>
+              <Form.Label>{t('imageUrl')}</Form.Label>
               <Form.Control type="text" value={image} onChange={(e) => setImage(e.target.value)} />
             </Form.Group>
             <Form.Group as={Col} md="6" controlId="recipeIds">
-              <Form.Label>{t('recipe')}</Form.Label>
+              <Form.Label>{t('recipes')}</Form.Label>
               <Select
-                value={recipeOptions.filter(option => recipeIds.includes(option.value))}
-                onChange={(selectedOptions) => setRecipeIds(selectedOptions.map(option => option.value))}
-                options={recipeOptions}
                 isMulti
-                placeholder={t('chooseRecipe')}
+                options={recipeOptions}
+                value={recipeOptions.filter(option => recipeIds.includes(option.value))}
+                onChange={(selectedOptions) => setRecipeIds((selectedOptions || []).map(option => option.value))}
               />
             </Form.Group>
-            <Form.Group as={Col} md="6" controlId="package">
+            <Form.Group as={Col} md="6" controlId="packageId">
               <Form.Label>{t('package')}</Form.Label>
               <Select
-                value={packageOptions.find(option => option.value === packageId)}
-                onChange={(selectedOption) => setPackageId(selectedOption ? selectedOption.value : '')}
                 options={packageOptions}
-                isClearable
-                placeholder={t('choosePackage')}
+                value={packageOptions.find(option => option.value === packageId)}
+                onChange={(selectedOption) => setPackageId(selectedOption?.value || '')}
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseProductModal}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleSaveProductChanges}>{t('saveChanges')}</Button>
+          <Button variant="secondary" onClick={handleCloseProductModal}>
+            {t('close')}
+          </Button>
+          <Button variant="primary" onClick={handleSaveProductChanges}>
+            {t('saveChanges')}
+          </Button>
         </Modal.Footer>
       </Modal>
 
@@ -278,33 +317,26 @@ const Products = () => {
         </Modal.Header>
         <Modal.Body>
           <Form.Group controlId="newPackage">
-            <Form.Label>{t('newPackage')}</Form.Label>
-            <Form.Control type="text" value={newPackage} onChange={(e) => setNewPackage(e.target.value)} required />
+            <Form.Label>{t('packageName')}</Form.Label>
+            <Form.Control
+              type="text"
+              value={newPackage}
+              onChange={(e) => setNewPackage(e.target.value)}
+              required
+            />
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowPackageModal(false)}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleSavePackage}>{t('saveChanges')}</Button>
+          <Button variant="secondary" onClick={() => setShowPackageModal(false)}>
+            {t('close')}
+          </Button>
+          <Button variant="primary" onClick={handleSavePackage}>
+            {t('save')}
+          </Button>
         </Modal.Footer>
       </Modal>
     </Container>
   );
 };
-
-export async function getServerSideProps(context) {
-  const session = await getServerSession(context.req, context.res, authOptions);
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/auth/signin',
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-}
 
 export default Products;

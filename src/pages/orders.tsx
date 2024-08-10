@@ -4,25 +4,57 @@ import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Table, Button, Form, Modal, InputGroup, FormControl } from 'react-bootstrap';
 import Select from 'react-select';
+import { FaTimes } from 'react-icons/fa';
+
+interface OrderItem {
+  product_id: string;
+  quantity: number;
+  price: number;
+}
+
+interface Order {
+  id: string;
+  client_id: string;
+  status: string;
+  date: string;
+  items: OrderItem[];
+}
+
+interface Client {
+  id: string;
+  name: string;
+  surname: string;
+  telegram?: string;
+  instagram?: string;
+  phone?: string;
+  address?: string;
+  source: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
 
 const Orders = () => {
-  const { t, lang } = useTranslation('common');
+  const { t } = useTranslation('common');
   const { data: orders = [], mutate: mutateOrders } = useSWR('/api/orders', fetcher);
   const { data: clients = [], mutate: mutateClients } = useSWR('/api/clients', fetcher);
   const { data: products = [], mutate: mutateProducts } = useSWR('/api/products', fetcher);
-  const [clientId, setClientId] = useState('');
-  const [items, setItems] = useState([]);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [showClientModal, setShowClientModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [statusOrderId, setStatusOrderId] = useState(null);
-  const [deleteOrderId, setDeleteOrderId] = useState(null);
-  const [filteredOrders, setFilteredOrders] = useState([]);
-  const [status, setStatus] = useState('');
+  const [clientId, setClientId] = useState<string>('');
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [showOrderModal, setShowOrderModal] = useState<boolean>(false);
+  const [showClientModal, setShowClientModal] = useState<boolean>(false);
+  const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [showCreateOrderModal, setShowCreateOrderModal] = useState<boolean>(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [statusOrderId, setStatusOrderId] = useState<string | null>(null);
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [status, setStatus] = useState<string>('');
 
   const statusOptions = [
     { value: 'New', label: t('new') },
@@ -32,20 +64,14 @@ const Orders = () => {
   ];
 
   useEffect(() => {
-    console.log("Orders:", orders);
-    console.log("Clients:", clients);
-    console.log("Products:", products);
-  }, [orders, clients, products]);
-
-  useEffect(() => {
     setFilteredOrders(orders);
   }, [orders]);
 
-  const handleEditOrder = (order) => {
+  const handleEditOrder = (order: Order) => {
     setEditingOrder(order);
     setClientId(order.client_id);
     setStatus(order.status);
-    setItems(order.items ? order.items.map(item => ({ productId: item.product_id, quantity: item.quantity, price: item.price })) : []);
+    setItems(order.items ? order.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, price: item.price })) : []);
     setShowOrderModal(true);
   };
 
@@ -99,30 +125,36 @@ const Orders = () => {
     setShowCreateOrderModal(false);
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
     const updatedItems = [...items];
-    updatedItems[index][field] = value;
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
     setItems(updatedItems);
   };
 
   const handleAddItem = () => {
-    setItems([...items, { productId: '', quantity: 1, price: 0 }]);
+    setItems([...items, { product_id: '', quantity: 1, price: 0 }]);
   };
 
-  const handleProductChange = (index, productId) => {
+  const handleProductChange = (index: number, product_id: string) => {
     const updatedItems = [...items];
-    const product = products.find(p => p.id === productId);
-    updatedItems[index] = { productId, quantity: 1, price: product.price };
+    const product = products.find(p => p.id == product_id);
+    updatedItems[index] = { product_id, quantity: 1, price: product?.price ?? 0 };
     setItems(updatedItems);
   };
 
-  const handleQuantityChange = (index, quantity) => {
+  const handleQuantityChange = (index: number, quantity: number) => {
     const updatedItems = [...items];
-    updatedItems[index].quantity = quantity;
+    updatedItems[index] = { ...updatedItems[index], quantity };
     setItems(updatedItems);
   };
 
-  const handleClientClick = (client) => {
+  const handleRemoveItem = (index: number) => {
+    const updatedItems = [...items];
+    updatedItems.splice(index, 1); // Удаляем элемент по индексу
+    setItems(updatedItems);
+  };
+
+  const handleClientClick = (client: Client) => {
     setSelectedClient(client);
     setShowClientModal(true);
   };
@@ -132,7 +164,7 @@ const Orders = () => {
     setShowClientModal(false);
   };
 
-  const handleChangeStatus = (orderId) => {
+  const handleChangeStatus = (orderId: string) => {
     setStatusOrderId(orderId);
     setShowStatusModal(true);
   };
@@ -145,14 +177,14 @@ const Orders = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status }), // Отправляем только статус
     });
     mutateOrders();
     setStatusOrderId(null);
     setShowStatusModal(false);
   };
 
-  const handleDeleteOrder = (orderId) => {
+  const handleDeleteOrder = (orderId: string) => {
     setDeleteOrderId(orderId);
     setShowDeleteModal(true);
   };
@@ -171,7 +203,7 @@ const Orders = () => {
     setShowDeleteModal(false);
   };
 
-  const filterOrders = (status, client) => {
+  const filterOrders = (status: any, client: any) => {
     let filtered = orders;
 
     if (status) {
@@ -188,10 +220,10 @@ const Orders = () => {
   const clientOptions = clients.map(client => ({ value: client.id, label: `${client.name} ${client.surname}` }));
   const productOptions = products.map(product => ({ value: product.id, label: product.name }));
 
-  const calculateTotalPrice = (items) => items.reduce((total, item) => total + item.quantity * item.price, 0);
+  const calculateTotalPrice = (items: OrderItem[]) => items.reduce((total, item) => total + item.quantity * item.price, 0);
 
-  const groupedItems = (items) => {
-    const itemMap = {};
+  const groupedItems = (items: OrderItem[]) => {
+    const itemMap: { [key: string]: OrderItem } = {};
     items.forEach(item => {
       if (!itemMap[item.product_id]) {
         itemMap[item.product_id] = { ...item, quantity: 0 };
@@ -199,6 +231,22 @@ const Orders = () => {
       itemMap[item.product_id].quantity += item.quantity;
     });
     return Object.values(itemMap);
+  };
+
+  const getTelegramLink = (username: string) => {
+    return `https://t.me/${username.replace('@', '')}`;
+  };
+
+  const getInstagramLink = (username: string) => {
+    return `https://instagram.com/${username.replace('@', '')}`;
+  };
+
+  const getPhoneLink = (phone: string) => {
+    return `tel:${phone}`;
+  };
+
+  const getMapLink = (address: string) => {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   };
 
   return (
@@ -220,7 +268,6 @@ const Orders = () => {
         />
         <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>{t('createOrder')}</Button>
       </InputGroup>
-
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -237,160 +284,96 @@ const Orders = () => {
           {filteredOrders.map(order => (
             <tr key={order.id}>
               <td>{order.id}</td>
-              <td onClick={() => handleClientClick(clients.find(client => client.id === order.client_id))} style={{ cursor: 'pointer' }}>
-                {clients.find(client => client.id === order.client_id)?.name || t('unknownClient')}
+              <td
+                onClick={() => handleClientClick(clients.find(client => client.id == order.client_id) || {} as Client)}
+                style={{ cursor: 'pointer' }}
+              >
+                {clients.find(client => client.id == order.client_id)?.name || t('unknownClient')}
               </td>
-              <td>{statusOptions.find(option => option.value === order.status)?.label || order.status}</td>
-              <td>{new Date(order.date).toLocaleString()}</td>
+              <td>{t(order.status.toLowerCase())}</td>
+              <td>{new Date(order.date).toLocaleDateString()}</td>
               <td>
-                {groupedItems(order.items).map(item => (
-                  <div key={item.product_id}>
-                    {products.find(product => product.id === item.product_id)?.name || t('unknownProduct')} - {item.quantity}
-                  </div>
-                ))}
+                {groupedItems(order.items).map(item => {
+                  const product = products.find(p => p.id == item.product_id);
+                  return (
+                    <div key={item.product_id}>
+                      {product ? product.name : t('unknownProduct')} ({item.quantity})
+                    </div>
+                  );
+                })}
               </td>
-              <td>{calculateTotalPrice(order.items).toFixed(2)}</td>
-              <td>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span
-                    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-                    onClick={() => handleChangeStatus(order.id)}
-                  >
-                    {t('changeStatus')}
-                  </span>
-                  <span
-                    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-                    onClick={() => handleEditOrder(order)}
-                  >
-                    {t('edit')}
-                  </span>
-                  <span
-                    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-                    onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}
-                  >
-                    {t('delete')}
-                  </span>
-                </div>
+              <td>{calculateTotalPrice(order.items).toFixed(2)} {t('currency')}</td>
+              <td className="d-flex justify-content-between">
+                <span
+                  onClick={() => handleChangeStatus(order.id)}
+                  style={{ cursor: 'pointer', color: 'blue', textAlign: 'left' }}
+                >
+                  {t('changeStatus')}
+                </span>
+                <span
+                  onClick={() => handleEditOrder(order)}
+                  style={{ cursor: 'pointer', color: 'blue', textAlign: 'center' }}
+                >
+                  {t('edit')}
+                </span>
+                <span
+                  onClick={() => handleDeleteOrder(order.id)}
+                  style={{ cursor: 'pointer', color: 'red', textAlign: 'right' }}
+                >
+                  {t('delete')}
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      <Modal show={showCreateOrderModal} onHide={() => setShowCreateOrderModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('createOrder')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form className="row g-3">
-            <Form.Group controlId="clientId" className="col-md-6">
-              <Form.Label>{t('client')}</Form.Label>
-              <Select
-                value={clientOptions.find(option => option.value === clientId)}
-                onChange={(selectedOption) => setClientId(selectedOption ? selectedOption.value : '')}
-                options={clientOptions}
-                placeholder={t('chooseClient')}
-              />
-            </Form.Group>
-            <Form.Group controlId="items" className="col-md-12">
-              <Form.Label>{t('products')}</Form.Label>
-              {items.map((item, index) => (
-                <div key={index} className="mb-2 p-2 border rounded">
-                  <Select
-                    value={productOptions.find(option => option.value === item.productId)}
-                    onChange={(selectedOption) => handleProductChange(index, selectedOption.value)}
-                    options={productOptions}
-                    placeholder={t('chooseProduct')}
-                    className="mb-1"
-                  />
-                  <Form.Label>{t('quantity')}</Form.Label>
-                  <InputGroup className="mb-1">
-                    <InputGroup.Text onClick={() => handleQuantityChange(index, Math.max(1, items[index].quantity - 1))}>-</InputGroup.Text>
-                    <Form.Control
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(index, parseInt(e.target.value, 10))}
-                      placeholder={t('quantity')}
-                      className="text-center"
-                    />
-                    <InputGroup.Text onClick={() => handleQuantityChange(index, items[index].quantity + 1)}>+</InputGroup.Text>
-                  </InputGroup>
-                  <Form.Label>{t('price')}</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={item.price}
-                    readOnly
-                    placeholder={t('price')}
-                    className="mb-1"
-                  />
-                </div>
-              ))}
-              <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCreateOrderModal(false)}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleCreateOrder}>{t('saveChanges')}</Button>
-        </Modal.Footer>
-      </Modal>
-
       <Modal show={showOrderModal} onHide={handleCloseOrderModal}>
         <Modal.Header closeButton>
-          <Modal.Title>{t('editOrder')}</Modal.Title>
+          <Modal.Title>{t('orderDetails')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form className="row g-3">
-            <Form.Group controlId="clientId" className="col-md-6">
+          <Form>
+            <Form.Group controlId="clientSelect">
               <Form.Label>{t('client')}</Form.Label>
               <Select
-                value={clientOptions.find(option => option.value === clientId)}
-                onChange={(selectedOption) => setClientId(selectedOption ? selectedOption.value : '')}
                 options={clientOptions}
-                placeholder={t('chooseClient')}
+                value={clientOptions.find(option => option.value === clientId)}
+                onChange={option => setClientId(option?.value || '')}
               />
             </Form.Group>
-            <Form.Group controlId="status" className="col-md-6">
+            <Form.Group controlId="statusSelect">
               <Form.Label>{t('status')}</Form.Label>
               <Select
-                value={statusOptions.find(option => option.value === status)}
-                onChange={(selectedOption) => setStatus(selectedOption ? selectedOption.value : '')}
                 options={statusOptions}
-                placeholder={t('chooseStatus')}
+                value={statusOptions.find(option => option.value === status)}
+                onChange={option => setStatus(option?.value || '')}
               />
             </Form.Group>
-            <Form.Group controlId="items" className="col-md-12">
+            <Form.Group controlId="items">
               <Form.Label>{t('products')}</Form.Label>
               {items.map((item, index) => (
-                <div key={index} className="mb-2 p-2 border rounded">
+                <InputGroup className="mb-3" key={index}>
                   <Select
-                    value={productOptions.find(option => option.value === item.productId)}
-                    onChange={(selectedOption) => handleProductChange(index, selectedOption.value)}
                     options={productOptions}
-                    placeholder={t('chooseProduct')}
-                    className="mb-1"
+                    value={productOptions.find(option => option.value === item.product_id)}
+                    onChange={option => handleProductChange(index, option?.value || '')}
                   />
-                  <Form.Label>{t('quantity')}</Form.Label>
-                  <InputGroup className="mb-1">
-                    <InputGroup.Text onClick={() => handleQuantityChange(index, Math.max(1, items[index].quantity - 1))}>-</InputGroup.Text>
-                    <Form.Control
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(index, parseInt(e.target.value, 10))}
-                      placeholder={t('quantity')}
-                      className="text-center"
-                    />
-                    <InputGroup.Text onClick={() => handleQuantityChange(index, items[index].quantity + 1)}>+</InputGroup.Text>
-                  </InputGroup>
-                  <Form.Label>{t('price')}</Form.Label>
-                  <Form.Control
+                  <FormControl
                     type="number"
-                    value={item.price}
-                    readOnly
-                    placeholder={t('price')}
-                    className="mb-1"
+                    min="1"
+                    value={item.quantity}
+                    onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
                   />
-                </div>
+                  <FormControl
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.price}
+                    onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
+                  />
+                  <Button variant="danger" onClick={() => handleRemoveItem(index)}><FaTimes /></Button>
+                </InputGroup>
               ))}
               <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
             </Form.Group>
@@ -402,19 +385,96 @@ const Orders = () => {
         </Modal.Footer>
       </Modal>
 
+      <Modal show={showCreateOrderModal} onHide={() => setShowCreateOrderModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{t('createOrder')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="clientSelect">
+              <Form.Label>{t('client')}</Form.Label>
+              <Select
+                options={clientOptions}
+                value={clientOptions.find(option => option.value === clientId)}
+                onChange={option => setClientId(option?.value || '')}
+              />
+            </Form.Group>
+            <Form.Group controlId="items">
+              <Form.Label>{t('products')}</Form.Label>
+              {items.map((item, index) => (
+                <InputGroup className="mb-3" key={index}>
+                  <Select
+                    options={productOptions}
+                    value={productOptions.find(option => option.value === item.product_id)}
+                    onChange={option => handleProductChange(index, option?.value || '')}
+                  />
+                  <FormControl
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
+                  />
+                  <FormControl
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.price}
+                    onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
+                  />
+                  <Button variant="danger" onClick={() => handleRemoveItem(index)}><FaTimes /></Button>
+                </InputGroup>
+              ))}
+              <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCreateOrderModal(false)}>{t('close')}</Button>
+          <Button variant="primary" onClick={handleCreateOrder}>{t('create')}</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showClientModal} onHide={handleCloseClientModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{t('clientDetails')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedClient && (
+            <div>
+              <h4>{selectedClient.name} {selectedClient.surname}</h4>
+              {selectedClient.telegram && (
+                <p><strong>{t('telegram')}:</strong> <a href={getTelegramLink(selectedClient.telegram)} target="_blank" rel="noopener noreferrer">{selectedClient.telegram}</a></p>
+              )}
+              {selectedClient.instagram && (
+                <p><strong>{t('instagram')}:</strong> <a href={getInstagramLink(selectedClient.instagram)} target="_blank" rel="noopener noreferrer">{selectedClient.instagram}</a></p>
+              )}
+              {selectedClient.phone && (
+                <p><strong>{t('phone')}:</strong> <a href={getPhoneLink(selectedClient.phone)}>{selectedClient.phone}</a></p>
+              )}
+              {selectedClient.address && (
+                <p><strong>{t('address')}:</strong> <a href={getMapLink(selectedClient.address)} target="_blank" rel="noopener noreferrer">{selectedClient.address}</a></p>
+              )}
+              <p><strong>{t('source')}:</strong> {selectedClient.source}</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseClientModal}>{t('close')}</Button>
+        </Modal.Footer>
+      </Modal>
+
       <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>{t('changeStatus')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group controlId="status">
+            <Form.Group controlId="statusSelect">
               <Form.Label>{t('status')}</Form.Label>
               <Select
-                value={statusOptions.find(option => option.value === status)}
-                onChange={(selectedOption) => setStatus(selectedOption ? selectedOption.value : '')}
                 options={statusOptions}
-                placeholder={t('chooseStatus')}
+                value={statusOptions.find(option => option.value === status)}
+                onChange={option => setStatus(option?.value || '')}
               />
             </Form.Group>
           </Form>
@@ -429,66 +489,10 @@ const Orders = () => {
         <Modal.Header closeButton>
           <Modal.Title>{t('confirmDelete')}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p>{t('deleteConfirmationMessage')}</p>
-        </Modal.Body>
+        <Modal.Body>{t('deleteConfirmationMessage')}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>{t('cancel')}</Button>
           <Button variant="danger" onClick={handleConfirmDelete}>{t('delete')}</Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showClientModal} onHide={handleCloseClientModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('clientDetails')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedClient && (
-            <div>
-              <p><strong>{t('name')}: </strong>{selectedClient.name}</p>
-              <p><strong>{t('surname')}: </strong>{selectedClient.surname}</p>
-              <p><strong>{t('telegram')}: </strong>
-                {selectedClient.telegram ? (
-                  <a href={`https://t.me/${selectedClient.telegram}`} target="_blank" rel="noopener noreferrer">
-                    {selectedClient.telegram}
-                  </a>
-                ) : (
-                  'N/A'
-                )}
-              </p>
-              <p><strong>{t('instagram')}: </strong>
-                {selectedClient.instagram ? (
-                  <a href={`https://instagram.com/${selectedClient.instagram}`} target="_blank" rel="noopener noreferrer">
-                    {selectedClient.instagram}
-                  </a>
-                ) : (
-                  'N/A'
-                )}
-              </p>
-              <p><strong>{t('phone')}: </strong>
-                {selectedClient.phone ? (
-                  <a href={`tel:${selectedClient.phone}`}>
-                    {selectedClient.phone}
-                  </a>
-                ) : (
-                  'N/A'
-                )}
-              </p>
-              <p><strong>{t('address')}: </strong>
-                {selectedClient.address ? (
-                  <a href={`https://maps.google.com/?q=${selectedClient.address}`} target="_blank" rel="noopener noreferrer">
-                    {selectedClient.address}
-                  </a>
-                ) : (
-                  'N/A'
-                )}
-              </p>
-              <p><strong>{t('source')}: </strong>{selectedClient.source}</p>
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseClientModal}>{t('close')}</Button>
         </Modal.Footer>
       </Modal>
     </Container>

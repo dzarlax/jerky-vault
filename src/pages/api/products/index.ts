@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import db from '../../../server/db';
 import { check, validationResult } from 'express-validator';
+import { OkPacket, RowDataPacket } from 'mysql2'; // Импортируем типы для работы с базой данных
 
-const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
+const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]): Promise<boolean> => {
   await Promise.all(validations.map(validation => validation.run(req)));
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -43,9 +44,9 @@ async function getProducts(req: NextApiRequest, res: NextApiResponse, userId: st
       WHERE p.user_id = ?
       GROUP BY p.id, po.package_id
     `;
-    const [rows] = await db.query(query, [userId]);
+    const [rows] = await db.query<RowDataPacket[]>(query, [userId]);
     res.status(200).json(rows);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to fetch products:', err);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
@@ -66,30 +67,26 @@ async function addProduct(req: NextApiRequest, res: NextApiResponse, userId: str
 
   const { name, description, price, cost, image, recipeIds, packageId } = req.body;
   try {
-    const [results] = await db.query(
+    const [results] = await db.query<OkPacket>(
       'INSERT INTO products (name, description, price, cost, image, user_id) VALUES (?, ?, ?, ?, ?, ?)',
       [name, description, price, cost, image || null, userId]
     );
     const productId = results.insertId;
 
-    if (packageId) {
-      for (const recipeId of recipeIds) {
-        await db.query(
-          'INSERT INTO product_options (product_id, recipe_id, package_id, user_id) VALUES (?, ?, ?, ?)',
-          [productId, recipeId, packageId, userId]
-        );
-      }
-    } else {
-      for (const recipeId of recipeIds) {
-        await db.query(
-          'INSERT INTO product_options (product_id, recipe_id, user_id) VALUES (?, ?, ?)',
-          [productId, recipeId, userId]
-        );
-      }
-    }
+    const insertQuery = packageId
+      ? 'INSERT INTO product_options (product_id, recipe_id, package_id, user_id) VALUES (?, ?, ?, ?)'
+      : 'INSERT INTO product_options (product_id, recipe_id, user_id) VALUES (?, ?, ?)';
+
+    const insertPromises = recipeIds.map((recipeId: number) =>
+      packageId
+        ? db.query<OkPacket>(insertQuery, [productId, recipeId, packageId, userId])
+        : db.query<OkPacket>(insertQuery, [productId, recipeId, userId])
+    );
+
+    await Promise.all(insertPromises);
 
     res.status(201).json({ id: productId });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to add product:', err);
     res.status(500).json({ error: 'Failed to add product' });
   }

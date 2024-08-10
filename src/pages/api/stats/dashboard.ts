@@ -1,27 +1,40 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../../server/db';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import { RowDataPacket } from 'mysql2';
+
+// Определяем типы для session.user
+interface CustomSession {
+  user: {
+    id: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions) as CustomSession;
 
-  if (!session) {
+  if (!session || !session.user?.id) {
+    console.error('Unauthorized access attempt', session);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
     // Старая статистика
     const totalRecipesQuery = 'SELECT COUNT(*) AS totalRecipes FROM recipes WHERE user_id = ?';
-    const topRecipesQuery = 'SELECT id, name FROM recipes WHERE user_id = ?  LIMIT 5';
+    const topRecipesQuery = 'SELECT id, name FROM recipes WHERE user_id = ? LIMIT 5';
     const recipesOverTimeQuery = `
       SELECT COUNT(*) as count
       FROM recipes
       WHERE user_id = ?
     `;
 
-    const [totalRecipesResult] = await db.query(totalRecipesQuery, [session.user.id]);
-    const [topRecipesResult] = await db.query(topRecipesQuery, [session.user.id]);
-    const [recipesOverTimeResult] = await db.query(recipesOverTimeQuery, [session.user.id]);
+    const [totalRecipesResult] = await db.query<RowDataPacket[]>(totalRecipesQuery, [session.user.id]);
+    const [topRecipesResult] = await db.query<RowDataPacket[]>(topRecipesQuery, [session.user.id]);
+    const [recipesOverTimeResult] = await db.query<RowDataPacket[]>(recipesOverTimeQuery, [session.user.id]);
 
     const totalIngredientsQuery = 'SELECT COUNT(*) AS totalIngredients FROM ingredients';
     const typeDistributionQuery = `
@@ -30,8 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       GROUP BY type
     `;
 
-    const [totalIngredientsResult] = await db.query(totalIngredientsQuery);
-    const [typeDistributionResult] = await db.query(typeDistributionQuery);
+    const [totalIngredientsResult] = await db.query<RowDataPacket[]>(totalIngredientsQuery);
+    const [typeDistributionResult] = await db.query<RowDataPacket[]>(typeDistributionQuery);
 
     // Новая статистика
     const totalProductsQuery = 'SELECT COUNT(*) AS totalProducts FROM products';
@@ -43,20 +56,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       WHERE orders.status != 'Finished'
     `;
 
-    const [totalProductsResult] = await db.query(totalProductsQuery);
-    const [totalOrdersResult] = await db.query(totalOrdersQuery);
-    const [pendingOrdersResult] = await db.query(pendingOrdersQuery);
+    const [totalProductsResult] = await db.query<RowDataPacket[]>(totalProductsQuery);
+    const [totalOrdersResult] = await db.query<RowDataPacket[]>(totalOrdersQuery);
+    const [pendingOrdersResult] = await db.query<RowDataPacket[]>(pendingOrdersQuery);
 
     res.status(200).json({
       // Старая статистика
       totalRecipes: totalRecipesResult[0].totalRecipes,
       topRecipes: topRecipesResult,
-      recipesOverTime: recipesOverTimeResult.map((row: any) => ({
+      recipesOverTime: recipesOverTimeResult.map((row) => ({
         date: row.date,
         count: row.count,
       })),
       totalIngredients: totalIngredientsResult[0].totalIngredients,
-      typeDistribution: typeDistributionResult.map((row: any) => ({
+      typeDistribution: typeDistributionResult.map((row) => ({
         type: row.type,
         count: row.count,
       })),
@@ -66,7 +79,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       totalOrders: totalOrdersResult[0].totalOrders,
       pendingOrders: pendingOrdersResult,
     });
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to fetch statistics:', err);
     res.status(500).json({ error: err.message });
   }
 }

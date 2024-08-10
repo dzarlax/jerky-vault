@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import db from '../../../server/db';
 import { calculateIngredientCost } from '../../../utils/calculateIngredientCost';
+import { RowDataPacket } from 'mysql2'; // Импорт типов для работы с базой данных
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -32,7 +33,7 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
   }
 
   try {
-    const [rows] = await db.query(sql, params);
+    const [rows] = await db.query<RowDataPacket[]>(sql, params);
 
     if (rows.length === 0) {
       return res.json([]);
@@ -48,7 +49,7 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
         JOIN ingredients i ON ri.ingredient_id = i.id
         WHERE i.name = ? AND ri.recipe_id IN (?)
       `;
-      const [ingredientRows] = await db.query(ingredientSql, [ingredient, recipeIds]);
+      const [ingredientRows] = await db.query<RowDataPacket[]>(ingredientSql, [ingredient, recipeIds]);
 
       filteredRecipeIds = ingredientRows.map((row: any) => row.recipe_id);
 
@@ -59,7 +60,8 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
 
     const detailedRecipes = await getRecipeDetails(filteredRecipeIds, rows);
     res.json(detailedRecipes);
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to fetch recipes:', err);
     res.status(500).json({ error: 'Failed to fetch recipes' });
   }
 }
@@ -79,15 +81,18 @@ async function getRecipeDetails(recipeIds: number[], recipes: any[]) {
     WHERE ri.recipe_id IN (?)
   `;
 
-  const [ingredients] = await db.query(ingredientSql, [recipeIds]);
+  const [ingredients] = await db.query<RowDataPacket[]>(ingredientSql, [recipeIds]);
 
-  const recipesMap = new Map(recipes.map((recipe: any) => [recipe.id, { ...recipe, ingredients: [], totalCost: 0 }]));
+  const recipesMap = new Map(
+    recipes.map((recipe: any) => [
+      recipe.id,
+      { ...recipe, ingredients: [], totalCost: 0 },
+    ])
+  );
 
   ingredients.forEach((ingredient: any) => {
     const recipe = recipesMap.get(ingredient.recipe_id);
     if (recipe) {
-      recipe.ingredients.push(ingredient);
-
       const ingredientCost = calculateIngredientCost(
         ingredient.price,
         ingredient.price_quantity,
@@ -95,10 +100,14 @@ async function getRecipeDetails(recipeIds: number[], recipes: any[]) {
         ingredient.quantity,
         ingredient.unit
       );
-
+      recipe.ingredients.push({
+        ...ingredient,
+        ingredientCost, // Добавляем стоимость ингредиента
+      });
       recipe.totalCost += ingredientCost;
     }
   });
 
   return Array.from(recipesMap.values());
 }
+

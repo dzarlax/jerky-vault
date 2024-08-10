@@ -6,13 +6,19 @@ import useTranslation from 'next-translate/useTranslation';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+interface Ingredient {
+  id: number;
+  name: string;
+  type: string; // Добавляем тип
+}
+
 const Ingredients: React.FC = () => {
-  const { data: ingredients, error, mutate } = useSWR('/api/ingredients', fetcher);
+  const { data: ingredients, error, mutate } = useSWR<Ingredient[]>('/api/ingredients', fetcher);
   const { t } = useTranslation('common');
   const [ingredientType, setIngredientType] = useState('');
   const [ingredientName, setIngredientName] = useState('');
   const [filter, setFilter] = useState('');
-  
+
   const ingredientTypeOptions = [
     { value: 'base', label: t('base') },
     { value: 'spice', label: t('spice') },
@@ -24,7 +30,7 @@ const Ingredients: React.FC = () => {
     e.preventDefault();
 
     // Проверка на уникальность имени
-    if (ingredients.find((ingredient: any) => ingredient.name.toLowerCase() === ingredientName.toLowerCase())) {
+    if (ingredients?.find((ingredient) => ingredient.name.toLowerCase() === ingredientName.toLowerCase())) {
       alert(t('ingredientExists'));
       return;
     }
@@ -45,7 +51,7 @@ const Ingredients: React.FC = () => {
   if (error) return <div>{t('failedToLoad')}</div>;
   if (!ingredients) return <div>{t('loading')}</div>;
 
-  const filteredIngredients = ingredients.filter((ingredient: any) =>
+  const filteredIngredients = ingredients.filter((ingredient) =>
     ingredient.name.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -93,7 +99,7 @@ const Ingredients: React.FC = () => {
       </Form.Group>
 
       <ListGroup className="mt-4">
-        {filteredIngredients.map((ingredient: { id: number; name: string }) => (
+        {filteredIngredients.map((ingredient) => (
           <ListGroup.Item key={ingredient.id}>
             {ingredient.name} ({t(ingredient.type)})
           </ListGroup.Item>

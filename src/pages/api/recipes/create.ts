@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import { check, validationResult } from 'express-validator';
 import db from '../../../server/db';
+import { OkPacket } from 'mysql2'; // Импорт типа для работы с результатом запроса INSERT
 
-const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
+const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]): Promise<boolean> => {
   await Promise.all(validations.map(validation => validation.run(req)));
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -42,10 +43,11 @@ async function createRecipe(req: NextApiRequest, res: NextApiResponse, userId: s
   const { name } = req.body;
 
   try {
-    const [results] = await db.query("INSERT INTO recipes (name, user_id) VALUES (?, ?)", [name, userId]);
+    const [results] = await db.query<OkPacket>("INSERT INTO recipes (name, user_id) VALUES (?, ?)", [name, userId]);
     console.log('Insert results:', results);
     res.status(201).json({ id: results.insertId });
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to create recipe:', err);
     res.status(500).json({ error: err.message });
   }
 }

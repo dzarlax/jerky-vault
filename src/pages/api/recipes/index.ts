@@ -4,9 +4,9 @@ import { authOptions } from '../auth/[...nextauth]';
 import { check, validationResult } from 'express-validator';
 import db from '../../../server/db';
 import { calculateIngredientCost } from '../../../utils/calculateIngredientCost';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импорт типов для работы с базой данных
 
-// Вспомогательная функция для проверки ошибок в запросе
-const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
+const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]): Promise<boolean> => {
   await Promise.all(validations.map(validation => validation.run(req)));
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -16,14 +16,13 @@ const validateRequest = async (req: NextApiRequest, res: NextApiResponse, valida
   return true;
 };
 
-// Функция для проверки авторизации
-const checkAuth = async (req: NextApiRequest, res: NextApiResponse) => {
+const checkAuth = async (req: NextApiRequest, res: NextApiResponse): Promise<string | false> => {
   const session = await getServerSession(req, res, authOptions);
   if (!session) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }
-  return session.user.id; // возвращаем userId, если авторизован
+  return session.user.id;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -56,12 +55,13 @@ async function createRecipe(req: NextApiRequest, res: NextApiResponse, userId: s
   const { name } = req.body;
 
   try {
-    const [results] = await db.query(
+    const [results] = await db.query<OkPacket>(
       "INSERT INTO recipes (name, user_id) VALUES (?, ?)",
       [name, userId]
     );
     res.status(201).json({ id: results.insertId });
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to create recipe:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -70,7 +70,7 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
   const { name, ingredient } = req.query;
 
   let sql = "SELECT * FROM recipes WHERE user_id = ?";
-  let params = [userId];
+  let params: (string | number)[] = [userId];
 
   if (name) {
     sql += " AND name = ?";
@@ -78,13 +78,13 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
   }
 
   try {
-    const [rows] = await db.query(sql, params);
+    const [rows] = await db.query<RowDataPacket[]>(sql, params);
 
     if (rows.length === 0) {
       return res.json([]);
     }
 
-    const recipeIds = rows.map((row: any) => row.id);
+    const recipeIds = rows.map(row => row.id);
     let filteredRecipeIds = recipeIds;
 
     if (ingredient) {
@@ -94,9 +94,9 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
         JOIN ingredients i ON ri.ingredient_id = i.id
         WHERE i.name = ? AND ri.recipe_id IN (?)
       `;
-      const [ingredientRows] = await db.query(ingredientSql, [ingredient, recipeIds]);
+      const [ingredientRows] = await db.query<RowDataPacket[]>(ingredientSql, [ingredient, recipeIds]);
 
-      filteredRecipeIds = ingredientRows.map((row: any) => row.recipe_id);
+      filteredRecipeIds = ingredientRows.map(row => row.recipe_id);
 
       if (filteredRecipeIds.length === 0) {
         return res.json([]);
@@ -105,7 +105,8 @@ async function getRecipes(req: NextApiRequest, res: NextApiResponse, userId: str
 
     const detailedRecipes = await getRecipeDetails(filteredRecipeIds, userId);
     res.json(detailedRecipes);
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to fetch recipes:', err);
     res.status(500).json({ error: 'Failed to fetch recipes' });
   }
 }
@@ -125,27 +126,32 @@ async function getRecipeDetails(recipeIds: number[], userId: string) {
     WHERE ri.recipe_id IN (?)
   `;
 
-  const [ingredients] = await db.query(ingredientSql, [userId, recipeIds]);
+  const [ingredients] = await db.query<RowDataPacket[]>(ingredientSql, [userId, recipeIds]);
 
-  const recipesMap = new Map();
+  const recipesMap = new Map<number, { ingredients: any[]; totalCost: number }>();
 
-  ingredients.forEach((ingredient: any) => {
+  ingredients.forEach(ingredient => {
     if (!recipesMap.has(ingredient.recipe_id)) {
       recipesMap.set(ingredient.recipe_id, { ingredients: [], totalCost: 0 });
     }
 
     const recipe = recipesMap.get(ingredient.recipe_id);
-    recipe.ingredients.push(ingredient);
+    if (recipe) {
+      const ingredientCost = calculateIngredientCost(
+        ingredient.price,
+        ingredient.price_quantity,
+        ingredient.price_unit,
+        ingredient.quantity,
+        ingredient.unit
+      );
+      
+      recipe.ingredients.push({
+        ...ingredient,
+        ingredientCost, // Добавляем стоимость ингредиента
+      });
 
-    const ingredientCost = calculateIngredientCost(
-      ingredient.price,
-      ingredient.price_quantity,
-      ingredient.price_unit,
-      ingredient.quantity,
-      ingredient.unit
-    );
-
-    recipe.totalCost += ingredientCost;
+      recipe.totalCost += ingredientCost;
+    }
   });
 
   return Array.from(recipesMap.entries()).map(([id, details]) => ({
@@ -153,6 +159,7 @@ async function getRecipeDetails(recipeIds: number[], userId: string) {
     ...details
   }));
 }
+
 
 async function deleteRecipe(req: NextApiRequest, res: NextApiResponse, userId: string) {
   const isValid = await validateRequest(req, res, [
@@ -164,8 +171,7 @@ async function deleteRecipe(req: NextApiRequest, res: NextApiResponse, userId: s
   const { id } = req.query;
 
   try {
-    // Проверяем, существует ли рецепт и принадлежит ли он текущему пользователю
-    const [results] = await db.query(
+    const [results] = await db.query<RowDataPacket[]>(
       "SELECT * FROM recipes WHERE id = ? AND user_id = ?",
       [id, userId]
     );
@@ -176,13 +182,14 @@ async function deleteRecipe(req: NextApiRequest, res: NextApiResponse, userId: s
 
     await db.beginTransaction();
 
-    await db.query("DELETE FROM recipe_ingredients WHERE recipe_id = ?", [id]);
-    await db.query("DELETE FROM recipes WHERE id = ? AND user_id = ?", [id, userId]);
+    await db.query<OkPacket>("DELETE FROM recipe_ingredients WHERE recipe_id = ?", [id]);
+    await db.query<OkPacket>("DELETE FROM recipes WHERE id = ? AND user_id = ?", [id, userId]);
 
     await db.commit();
     res.status(200).json({ message: 'Recipe deleted successfully' });
-  } catch (err) {
+  } catch (err: any) {
     await db.rollback();
-    res.status(500).json({ error: 'Failed to delete recipe' });
+    console.error('Failed to delete recipe:', err);
+    res.status(500).json({ error: 'Failed to delete recipe', details: err.message });
   }
 }

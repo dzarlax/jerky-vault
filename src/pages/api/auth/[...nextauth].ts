@@ -1,13 +1,22 @@
-import NextAuth from 'next-auth';
+import NextAuth, { Session } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import db from '../../../server/db';
 import bcrypt from 'bcrypt';
 import { RowDataPacket } from 'mysql2';
 
-// Определяем типы для параметров авторизации
 interface Credentials {
   username: string;
   password: string;
+}
+
+interface CustomUser {
+  id: string;
+  name?: string;
+  email?: string;
+}
+
+interface CustomSession extends Session {
+  user: CustomUser;
 }
 
 export const authOptions = {
@@ -34,7 +43,7 @@ export const authOptions = {
         const isValid = await bcrypt.compare(credentials.password, user.password);
 
         if (isValid) {
-          return { id: user.id, name: user.username, email: user.email };
+          return { id: user.id, name: user.username, email: user.email } as CustomUser;
         } else {
           return null;
         }
@@ -47,20 +56,22 @@ export const authOptions = {
     error: '/auth/error',
   },
   session: {
-    strategy: 'jwt' as const, // Явное указание типа
+    strategy: 'jwt' as const,
   },
   jwt: {
     secret: process.env.JWT_SECRET,
   },
   callbacks: {
     async session({ session, token }) {
-      session.user = { ...session.user, id: token.id, email: token.email };
+      if (token.id) {
+        session.user = { ...session.user, id: token.id, email: token.email } as CustomUser;
+      }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = (user as any).id;
-        token.email = (user as any).email;
+        token.id = user.id;
+        token.email = user.email;
       }
       return token;
     },

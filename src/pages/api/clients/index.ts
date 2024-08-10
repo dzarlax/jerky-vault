@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import db from '../../../server/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
+import { RowDataPacket, OkPacket } from 'mysql2';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function getClients(req: NextApiRequest, res: NextApiResponse, userId: string) {
   try {
-    const [rows] = await db.query("SELECT * FROM clients WHERE user_id = ?", [userId]);
+    const [rows] = await db.query<RowDataPacket[]>("SELECT * FROM clients WHERE user_id = ?", [userId]);
     res.status(200).json(rows);
   } catch (err) {
     console.error('Failed to fetch clients:', err);
@@ -37,7 +38,7 @@ async function getClients(req: NextApiRequest, res: NextApiResponse, userId: str
 async function addClient(req: NextApiRequest, res: NextApiResponse, userId: string) {
   const { name, surname, telegram, instagram, phone, address, source } = req.body;
   try {
-    const [results] = await db.query(
+    const [results] = await db.query<OkPacket>(
       "INSERT INTO clients (name, surname, telegram, instagram, phone, address, source, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [name, surname, telegram, instagram, phone, address, source, userId]
     );

@@ -2,9 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]';
 import db from '../../../server/db';
-import { check, validationResult } from 'express-validator';
+import { check, validationResult } from 'express-validator'; // Добавьте сюда `validationResult`
+import { OkPacket } from 'mysql2';
 
-const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]) => {
+const validateRequest = async (req: NextApiRequest, res: NextApiResponse, validations: any[]): Promise<boolean> => {
   await Promise.all(validations.map(validation => validation.run(req)));
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -14,6 +15,7 @@ const validateRequest = async (req: NextApiRequest, res: NextApiResponse, valida
   }
   return true;
 };
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -48,7 +50,7 @@ async function updateProduct(req: NextApiRequest, res: NextApiResponse, userId: 
 
   const { name, description, price, cost, image, recipeIds, packageId } = req.body;
   try {
-    const [result] = await db.query(
+    const [result] = await db.query<OkPacket>(
       'UPDATE products SET name = ?, description = ?, price = ?, cost = ?, image = ? WHERE id = ? AND user_id = ?',
       [name, description, price, cost, image || null, productId, userId]
     );
@@ -58,26 +60,22 @@ async function updateProduct(req: NextApiRequest, res: NextApiResponse, userId: 
       return;
     }
 
-    await db.query('DELETE FROM product_options WHERE product_id = ?', [productId]);
+    await db.query<OkPacket>('DELETE FROM product_options WHERE product_id = ?', [productId]);
 
-    if (packageId) {
-      for (const recipeId of recipeIds) {
-        await db.query(
-          'INSERT INTO product_options (product_id, recipe_id, package_id, user_id) VALUES (?, ?, ?, ?)',
-          [productId, recipeId, packageId, userId]
-        );
-      }
-    } else {
-      for (const recipeId of recipeIds) {
-        await db.query(
-          'INSERT INTO product_options (product_id, recipe_id, user_id) VALUES (?, ?, ?)',
-          [productId, recipeId, userId]
-        );
-      }
-    }
+    const insertQuery = packageId
+      ? 'INSERT INTO product_options (product_id, recipe_id, package_id, user_id) VALUES (?, ?, ?, ?)'
+      : 'INSERT INTO product_options (product_id, recipe_id, user_id) VALUES (?, ?, ?)';
+
+    const insertPromises = recipeIds.map((recipeId: number) =>
+      packageId
+        ? db.query<OkPacket>(insertQuery, [productId, recipeId, packageId, userId])
+        : db.query<OkPacket>(insertQuery, [productId, recipeId, userId])
+    );
+
+    await Promise.all(insertPromises);
 
     res.status(200).json({ id: productId });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to update product:', err);
     res.status(500).json({ error: 'Failed to update product' });
   }

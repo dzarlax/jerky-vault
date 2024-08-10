@@ -2,8 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import db from '../../server/db';
-import { check, validationResult } from 'express-validator';
+import { check } from 'express-validator';
 import { validateRequest } from '../../utils/validateRequest';
+import { RowDataPacket, OkPacket } from 'mysql2'; // Импортируем типы для работы с базой данных
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -38,31 +39,29 @@ async function addPrice(req: NextApiRequest, res: NextApiResponse, userId: strin
   const formattedDate = new Date();
 
   try {
-    await db.query(
+    const [result] = await db.query<OkPacket>(
       "INSERT INTO prices (ingredient_id, price, quantity, unit, date, user_id) VALUES (?, ?, ?, ?, ?, ?)",
       [ingredient_id, price, quantity, unit, formattedDate, userId]
     );
-    res.status(201).json({ message: 'Price added successfully' });
-  } catch (err) {
+    res.status(201).json({ message: 'Price added successfully', id: result.insertId });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 }
+
 
 async function getPrices(req: NextApiRequest, res: NextApiResponse, userId: string) {
   console.log('Request query:', req.query);
   const { ingredient_id, date, sort_column, sort_direction } = req.query;
 
-  // Список допустимых колонок для сортировки
   const validSortColumns = ['price', 'quantity', 'date', 'ingredient_name', 'ingredient_type', 'unit'];
   const validSortDirections = ['ASC', 'DESC'];
 
-  // Проверка колонок для сортировки
   if (sort_column && !validSortColumns.includes(sort_column as string)) {
     return res.status(400).json({ error: 'Invalid sort column' });
   }
 
-  // Проверка направления сортировки
-  if (sort_direction && !validSortDirections.includes((sort_direction as string).toUpperCase())) {
+  if (sort_direction && !validSortDirections.includes((Array.isArray(sort_direction) ? sort_direction[0] : sort_direction).toUpperCase())) {
     return res.status(400).json({ error: 'Invalid sort direction' });
   }
 
@@ -86,16 +85,17 @@ async function getPrices(req: NextApiRequest, res: NextApiResponse, userId: stri
   }
 
   if (sort_column && sort_direction) {
-    // Динамически добавляем сортировку по колонке
-    query += ` ORDER BY ${sort_column} ${sort_direction.toUpperCase()}`;
+    const sortDir = Array.isArray(sort_direction) ? sort_direction[0] : sort_direction;
+    query += ` ORDER BY ${sort_column} ${sortDir.toUpperCase()}`;
   } else {
     query += ' ORDER BY p.date DESC';
   }
 
   try {
-    const [rows] = await db.query(query, queryParams);
+    const [rows] = await db.query<RowDataPacket[]>(query, queryParams);
     res.json(rows);
-  } catch (err) {
+  } catch (err: any) {
+    console.error('Failed to fetch prices:', err);
     res.status(500).json({ error: 'Failed to fetch prices' });
   }
 }
