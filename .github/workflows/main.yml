@@ -33,5 +33,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/nextjs-app:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/jerky_vault:latest
           file: Dockerfile
