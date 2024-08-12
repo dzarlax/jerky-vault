@@ -1,20 +1,23 @@
-# Use Node.js 20 as a parent image
+# Используем Node.js 20
 FROM node:20-alpine
 
-# Set the working directory in the container
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Copy package.json and package-lock.json into the container
+# Копируем package.json и package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Устанавливаем зависимости
 RUN npm install
 
-# Copy the rest of the application code into the container
+# Копируем остальные файлы проекта
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Строим приложение
+RUN npm run build
 
-# Define the command to run your app using the desired npm script
-CMD ["npm", "start", "dev"]
+# Указываем команду по умолчанию
+CMD ["npm", "start"]
+
+# Указываем порт, который будет использоваться контейнером
+EXPOSE 3000
