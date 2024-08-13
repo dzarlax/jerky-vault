@@ -122,7 +122,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   return (
     <Modal show={show} onHide={onHide}>
       <Modal.Header closeButton>
-        <Button variant="danger" onClick={onDeleteRecipe} style={{ position: 'absolute', left: '10px', top: '10px' }}>
+        <Button variant="danger" onClick={onDeleteRecipe} style={{ position: 'relative',background: 'transparent', color:'darkred' }}>
           <FaTrash />
         </Button>
         <Modal.Title>{t('editRecipe')}</Modal.Title>

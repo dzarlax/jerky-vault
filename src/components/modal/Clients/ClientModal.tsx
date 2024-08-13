@@ -52,7 +52,7 @@ const ClientModal = ({
   return (
     <Modal show={show} onHide={onHide}>
       <Modal.Header closeButton>
-        <Button variant="danger" onClick={onDelete} className="me-auto">
+        <Button variant="danger" onClick={onDelete} style={{ position: 'relative',background: 'transparent', color:'darkred' }}>
           <FaTrash />
         </Button>
         <Modal.Title>{client ? t('editClient') : t('addClient')}</Modal.Title>

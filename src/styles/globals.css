@@ -402,5 +402,5 @@ footer {
 }
 
 .modal-title{
-  position: static;
+  position: absolute;
 }

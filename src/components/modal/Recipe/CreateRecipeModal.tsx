@@ -77,7 +77,7 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
   return (
     <Modal show={show} onHide={onHide}>
       <Modal.Header closeButton>
-        <Modal.Title>{t('addRecipe')}</Modal.Title>
+        <Modal.Title className="h4 text-center">{t('addRecipe')}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleCreateRecipe}>
