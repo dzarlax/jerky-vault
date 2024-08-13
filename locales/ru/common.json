@@ -36,7 +36,7 @@
   "confirmDeleteClient": "Вы уверены, что хотите удалить этого клиента?",
   "confirmPassword": "Подтвердите пароль",
   "cookingSessions": "Сессии приготовления",
-  "cost": "Стоимость",
+  "cost": "Себестоимость",
   "create": "Создать",
   "createOrder": "Создать заказ",
   "currency": "RSD",
@@ -86,10 +86,12 @@
   "orders": "Заказы",
   "packing": "Упаковка",
   "package": "Упаковка",
+  "packageName": "Название упаковки",
   "passwordChangedSuccessfully": "Пароль успешно изменен",
   "passwordsDoNotMatch": "Пароли не совпадают",
   "per": "за",
   "phone": "Телефон",
+  "piece": "Штука",
   "pieces": "Штуки",
   "price": "Цена",
   "prices": "Цены",
@@ -148,5 +150,9 @@
   "dashboard": "Панель управления",
   "new": "Новый заказ",
   "in_progress": "В процессе",
-  "orderDetails": "Детали заказа"
+  "orderDetails": "Детали заказа",
+  "imageUrl": "Сылка на изображение",
+  "totalCostPrice": "Общая себестоимость",
+  "search": "Поиск",
+  "costPrice":"Себестоимость"
 }

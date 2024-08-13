@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import useSWR from 'swr';
-import fetcher from '../utils/fetcher';
-import useTranslation from 'next-translate/useTranslation';
-import { Container, Table, Button, Form, Modal, InputGroup, FormControl } from 'react-bootstrap';
-import Select from 'react-select';
-import { FaTimes } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import useSWR from "swr";
+import fetcher from "../utils/fetcher";
+import useTranslation from "next-translate/useTranslation";
+import { Container, Table, Button, InputGroup } from "react-bootstrap";
+import Select from "react-select";
+import OrderModal from "../components/modal/Orders/OrderModal";
+import ClientModal from "../components/modal/Orders/ClientModal";
+import StatusModal from "../components/modal/Orders/StatusModal";
+import DeleteModal from "../components/modal/Orders/DeleteModal";
 
 interface OrderItem {
   product_id: string;
   quantity: number;
   price: number;
+  cost_price: number; // Новое поле для себестоимости
 }
 
 interface Order {
@@ -31,56 +35,74 @@ interface Client {
   source: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-}
-
 const Orders = () => {
-  const { t } = useTranslation('common');
-  const { data: orders = [], mutate: mutateOrders } = useSWR('/api/orders', fetcher);
-  const { data: clients = [], mutate: mutateClients } = useSWR('/api/clients', fetcher);
-  const { data: products = [], mutate: mutateProducts } = useSWR('/api/products', fetcher);
-  const [clientId, setClientId] = useState<string>('');
+  const { t } = useTranslation("common");
+  const { data: orders = [], mutate: mutateOrders } = useSWR(
+    "/api/orders",
+    fetcher
+  );
+  const { data: clients = [], mutate: mutateClients } = useSWR(
+    "/api/clients",
+    fetcher
+  );
+  const { data: products = [], mutate: mutateProducts } = useSWR(
+    "/api/products",
+    fetcher
+  );
+
+  const [clientId, setClientId] = useState<string>("");
   const [items, setItems] = useState<OrderItem[]>([]);
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false);
   const [showClientModal, setShowClientModal] = useState<boolean>(false);
   const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [showCreateOrderModal, setShowCreateOrderModal] = useState<boolean>(false);
+  const [showCreateOrderModal, setShowCreateOrderModal] =
+    useState<boolean>(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [statusOrderId, setStatusOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [selectedClientFilter, setSelectedClientFilter] = useState(null);
 
   const statusOptions = [
-    { value: 'New', label: t('new') },
-    { value: 'In Progress', label: t('inProgress') },
-    { value: 'Delivery', label: t('delivery') },
-    { value: 'Finished', label: t('finished') },
+    { value: "new", label: t("new") },
+    { value: "in_progress", label: t("in_progress") },
+    { value: "delivery", label: t("delivery") },
+    { value: "finished", label: t("finished") },
   ];
 
   useEffect(() => {
-    setFilteredOrders(orders);
-  }, [orders]);
+    filterOrders(selectedStatus, selectedClientFilter);
+  }, [selectedStatus, selectedClientFilter, orders]);
+
 
   const handleEditOrder = (order: Order) => {
     setEditingOrder(order);
     setClientId(order.client_id);
     setStatus(order.status);
-    setItems(order.items ? order.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, price: item.price })) : []);
+    setItems(
+      order.items
+        ? order.items.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            cost_price: item.cost_price,
+          }))
+        : []
+    );
     setShowOrderModal(true);
   };
 
   const handleCloseOrderModal = () => {
     setEditingOrder(null);
-    setClientId('');
-    setStatus('');
+    setClientId("");
+    setStatus("");
     setItems([]);
     setShowOrderModal(false);
+    setShowCreateOrderModal(false);
   };
 
   const handleSaveOrderChanges = async () => {
@@ -88,18 +110,18 @@ const Orders = () => {
 
     if (editingOrder) {
       await fetch(`/api/orders/${editingOrder.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(order),
       });
       mutateOrders();
     } else {
-      await fetch('/api/orders', {
-        method: 'POST',
+      await fetch("/api/orders", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(order),
       });
@@ -110,35 +132,47 @@ const Orders = () => {
   };
 
   const handleCreateOrder = async () => {
-    const order = { clientId, status: 'New', items };
+    const order = { clientId, status: "new", items };
 
-    await fetch('/api/orders', {
-      method: 'POST',
+    await fetch("/api/orders", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(order),
     });
-    setClientId('');
+    setClientId("");
     setItems([]);
     mutateOrders();
     setShowCreateOrderModal(false);
   };
 
-  const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof OrderItem,
+    value: any
+  ) => {
     const updatedItems = [...items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setItems(updatedItems);
   };
 
   const handleAddItem = () => {
-    setItems([...items, { product_id: '', quantity: 1, price: 0 }]);
+    setItems([
+      ...items,
+      { product_id: "", quantity: 1, price: 0, cost_price: 0 },
+    ]);
   };
 
   const handleProductChange = (index: number, product_id: string) => {
     const updatedItems = [...items];
-    const product = products.find(p => p.id == product_id);
-    updatedItems[index] = { product_id, quantity: 1, price: product?.price ?? 0 };
+    const product = products.find((p) => p.id == product_id);
+    updatedItems[index] = {
+      product_id,
+      quantity: 1,
+      price: product?.price ?? 0,
+      cost_price: product?.cost ?? 0,
+    };
     setItems(updatedItems);
   };
 
@@ -165,6 +199,10 @@ const Orders = () => {
   };
 
   const handleChangeStatus = (orderId: string) => {
+    const order = orders.find((order) => order.id === orderId);
+    if (order) {
+      setStatus(order.status); // Устанавливаем текущий статус заказа
+    }
     setStatusOrderId(orderId);
     setShowStatusModal(true);
   };
@@ -173,9 +211,9 @@ const Orders = () => {
     if (!statusOrderId || !status) return;
 
     await fetch(`/api/orders/${statusOrderId}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ status }), // Отправляем только статус
     });
@@ -193,9 +231,9 @@ const Orders = () => {
     if (!deleteOrderId) return;
 
     await fetch(`/api/orders/${deleteOrderId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     mutateOrders();
@@ -207,24 +245,35 @@ const Orders = () => {
     let filtered = orders;
 
     if (status) {
-      filtered = filtered.filter(order => order.status === status.value);
+      filtered = filtered.filter((order) => order.status === status.value);
     }
 
     if (client) {
-      filtered = filtered.filter(order => order.client_id === client.value);
+      filtered = filtered.filter((order) => order.client_id === client.value);
     }
 
-    setFilteredOrders(filtered);
+    if (JSON.stringify(filteredOrders) !== JSON.stringify(filtered)) {
+      setFilteredOrders(filtered);
+    }
   };
 
-  const clientOptions = clients.map(client => ({ value: client.id, label: `${client.name} ${client.surname}` }));
-  const productOptions = products.map(product => ({ value: product.id, label: product.name }));
+  const clientOptions = clients.map((client) => ({
+    value: client.id,
+    label: `${client.name} ${client.surname}`,
+  }));
+  const productOptions = products.map((product) => ({
+    value: product.id,
+    label: product.name,
+  }));
 
-  const calculateTotalPrice = (items: OrderItem[]) => items.reduce((total, item) => total + item.quantity * item.price, 0);
+  const calculateTotalPrice = (items: OrderItem[]) =>
+    items.reduce((total, item) => total + item.quantity * item.price, 0);
+  const calculateTotalCostPrice = (items: OrderItem[]) =>
+    items.reduce((total, item) => total + item.quantity * item.cost_price, 0);
 
   const groupedItems = (items: OrderItem[]) => {
     const itemMap: { [key: string]: OrderItem } = {};
-    items.forEach(item => {
+    items.forEach((item) => {
       if (!itemMap[item.product_id]) {
         itemMap[item.product_id] = { ...item, quantity: 0 };
       }
@@ -234,11 +283,11 @@ const Orders = () => {
   };
 
   const getTelegramLink = (username: string) => {
-    return `https://t.me/${username.replace('@', '')}`;
+    return `https://t.me/${username.replace("@", "")}`;
   };
 
   const getInstagramLink = (username: string) => {
-    return `https://instagram.com/${username.replace('@', '')}`;
+    return `https://instagram.com/${username.replace("@", "")}`;
   };
 
   const getPhoneLink = (phone: string) => {
@@ -246,81 +295,107 @@ const Orders = () => {
   };
 
   const getMapLink = (address: string) => {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      address
+    )}`;
   };
 
   return (
     <Container>
-      <h1>{t('orders')}</h1>
-
+      <h1>{t("orders")}</h1>
       <InputGroup className="mb-3">
         <Select
           className="me-2"
           options={statusOptions}
-          onChange={(selectedStatus) => filterOrders(selectedStatus, null)}
-          placeholder={t('filterByStatus')}
+          onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
+          placeholder={t("filterByStatus")}
         />
         <Select
           className="me-2"
           options={clientOptions}
-          onChange={(selectedClient) => filterOrders(null, selectedClient)}
-          placeholder={t('filterByClient')}
+          onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
+          placeholder={t("filterByClient")}
         />
-        <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>{t('createOrder')}</Button>
+        <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>
+          {t("createOrder")}
+        </Button>
       </InputGroup>
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>{t('order')}</th>
-            <th>{t('client')}</th>
-            <th>{t('status')}</th>
-            <th>{t('date')}</th>
-            <th>{t('products')}</th>
-            <th>{t('totalCost')}</th>
-            <th>{t('actions')}</th>
+            <th>{t("order")}</th>
+            <th>{t("client")}</th>
+            <th>{t("status")}</th>
+            <th>{t("date")}</th>
+            <th>{t("products")}</th>
+            <th>{t("totalCost")}</th>
+            <th>{t("totalCostPrice")}</th>
+            {/* Новая колонка для себестоимости */}
+            <th>{t("actions")}</th>
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.map(order => (
+          {filteredOrders.map((order) => (
             <tr key={order.id}>
               <td>{order.id}</td>
               <td
-                onClick={() => handleClientClick(clients.find(client => client.id == order.client_id) || {} as Client)}
-                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  handleClientClick(
+                    clients.find((client) => client.id == order.client_id) ||
+                      ({} as Client)
+                  )
+                }
+                style={{ cursor: "pointer" }}
               >
-                {clients.find(client => client.id == order.client_id)?.name || t('unknownClient')}
+                {clients.find((client) => client.id == order.client_id)?.name ||
+                  t("unknownClient")}
               </td>
               <td>{t(order.status.toLowerCase())}</td>
               <td>{new Date(order.date).toLocaleDateString()}</td>
-              <td>
-                {groupedItems(order.items).map(item => {
-                  const product = products.find(p => p.id == item.product_id);
+              <td>{groupedItems(order.items).map((item) => {
+                  const product = products.find((p) => p.id == item.product_id);
                   return (
                     <div key={item.product_id}>
-                      {product ? product.name : t('unknownProduct')} ({item.quantity})
+                      {product ? product.name : t("unknownProduct")} (
+                      {item.quantity})
                     </div>
                   );
                 })}
               </td>
-              <td>{calculateTotalPrice(order.items).toFixed(2)} {t('currency')}</td>
+              <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
+              <td>
+                {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
+              </td>
               <td className="d-flex justify-content-between">
                 <span
                   onClick={() => handleChangeStatus(order.id)}
-                  style={{ cursor: 'pointer', color: 'blue', textAlign: 'left' }}
+                  style={{
+                    cursor: "pointer",
+                    color: "blue",
+                    textAlign: "left",
+                  }}
                 >
-                  {t('changeStatus')}
+                  {t("changeStatus")}
                 </span>
                 <span
                   onClick={() => handleEditOrder(order)}
-                  style={{ cursor: 'pointer', color: 'blue', textAlign: 'center' }}
+                  style={{
+                    cursor: "pointer",
+                    color: "blue",
+                    textAlign: "center",
+                  }}
                 >
-                  {t('edit')}
+                  {t("edit")}
                 </span>
                 <span
                   onClick={() => handleDeleteOrder(order.id)}
-                  style={{ cursor: 'pointer', color: 'red', textAlign: 'right' }}
+                  style={{
+                    cursor: "pointer",
+                    color: "red",
+                    textAlign: "right",
+                  }}
                 >
-                  {t('delete')}
+                  {t("delete")}
                 </span>
               </td>
             </tr>
@@ -328,173 +403,49 @@ const Orders = () => {
         </tbody>
       </Table>
 
-      <Modal show={showOrderModal} onHide={handleCloseOrderModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('orderDetails')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="clientSelect">
-              <Form.Label>{t('client')}</Form.Label>
-              <Select
-                options={clientOptions}
-                value={clientOptions.find(option => option.value === clientId)}
-                onChange={option => setClientId(option?.value || '')}
-              />
-            </Form.Group>
-            <Form.Group controlId="statusSelect">
-              <Form.Label>{t('status')}</Form.Label>
-              <Select
-                options={statusOptions}
-                value={statusOptions.find(option => option.value === status)}
-                onChange={option => setStatus(option?.value || '')}
-              />
-            </Form.Group>
-            <Form.Group controlId="items">
-              <Form.Label>{t('products')}</Form.Label>
-              {items.map((item, index) => (
-                <InputGroup className="mb-3" key={index}>
-                  <Select
-                    options={productOptions}
-                    value={productOptions.find(option => option.value === item.product_id)}
-                    onChange={option => handleProductChange(index, option?.value || '')}
-                  />
-                  <FormControl
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
-                  />
-                  <FormControl
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.price}
-                    onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
-                  />
-                  <Button variant="danger" onClick={() => handleRemoveItem(index)}><FaTimes /></Button>
-                </InputGroup>
-              ))}
-              <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseOrderModal}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleSaveOrderChanges}>{t('saveChanges')}</Button>
-        </Modal.Footer>
-      </Modal>
+      <OrderModal
+        show={showOrderModal || showCreateOrderModal}
+        onClose={handleCloseOrderModal}
+        onSave={editingOrder ? handleSaveOrderChanges : handleCreateOrder}
+        clientOptions={clientOptions}
+        productOptions={productOptions}
+        statusOptions={statusOptions}
+        clientId={clientId}
+        status={status}
+        items={items}
+        setClientId={setClientId}
+        setStatus={setStatus}
+        handleProductChange={handleProductChange}
+        handleQuantityChange={handleQuantityChange}
+        handleItemChange={handleItemChange}
+        handleRemoveItem={handleRemoveItem}
+        handleAddItem={handleAddItem}
+      />
 
-      <Modal show={showCreateOrderModal} onHide={() => setShowCreateOrderModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('createOrder')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="clientSelect">
-              <Form.Label>{t('client')}</Form.Label>
-              <Select
-                options={clientOptions}
-                value={clientOptions.find(option => option.value === clientId)}
-                onChange={option => setClientId(option?.value || '')}
-              />
-            </Form.Group>
-            <Form.Group controlId="items">
-              <Form.Label>{t('products')}</Form.Label>
-              {items.map((item, index) => (
-                <InputGroup className="mb-3" key={index}>
-                  <Select
-                    options={productOptions}
-                    value={productOptions.find(option => option.value === item.product_id)}
-                    onChange={option => handleProductChange(index, option?.value || '')}
-                  />
-                  <FormControl
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
-                  />
-                  <FormControl
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.price}
-                    onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
-                  />
-                  <Button variant="danger" onClick={() => handleRemoveItem(index)}><FaTimes /></Button>
-                </InputGroup>
-              ))}
-              <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCreateOrderModal(false)}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleCreateOrder}>{t('create')}</Button>
-        </Modal.Footer>
-      </Modal>
+      <ClientModal
+        show={showClientModal}
+        onClose={handleCloseClientModal}
+        client={selectedClient}
+        getTelegramLink={getTelegramLink}
+        getInstagramLink={getInstagramLink}
+        getPhoneLink={getPhoneLink}
+        getMapLink={getMapLink}
+      />
 
-      <Modal show={showClientModal} onHide={handleCloseClientModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('clientDetails')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedClient && (
-            <div>
-              <h4>{selectedClient.name} {selectedClient.surname}</h4>
-              {selectedClient.telegram && (
-                <p><strong>{t('telegram')}:</strong> <a href={getTelegramLink(selectedClient.telegram)} target="_blank" rel="noopener noreferrer">{selectedClient.telegram}</a></p>
-              )}
-              {selectedClient.instagram && (
-                <p><strong>{t('instagram')}:</strong> <a href={getInstagramLink(selectedClient.instagram)} target="_blank" rel="noopener noreferrer">{selectedClient.instagram}</a></p>
-              )}
-              {selectedClient.phone && (
-                <p><strong>{t('phone')}:</strong> <a href={getPhoneLink(selectedClient.phone)}>{selectedClient.phone}</a></p>
-              )}
-              {selectedClient.address && (
-                <p><strong>{t('address')}:</strong> <a href={getMapLink(selectedClient.address)} target="_blank" rel="noopener noreferrer">{selectedClient.address}</a></p>
-              )}
-              <p><strong>{t('source')}:</strong> {selectedClient.source}</p>
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseClientModal}>{t('close')}</Button>
-        </Modal.Footer>
-      </Modal>
+      <StatusModal
+        show={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        onSave={handleSaveStatusChange}
+        statusOptions={statusOptions}
+        status={status}
+        setStatus={setStatus}
+      />
 
-      <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('changeStatus')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="statusSelect">
-              <Form.Label>{t('status')}</Form.Label>
-              <Select
-                options={statusOptions}
-                value={statusOptions.find(option => option.value === status)}
-                onChange={option => setStatus(option?.value || '')}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowStatusModal(false)}>{t('close')}</Button>
-          <Button variant="primary" onClick={handleSaveStatusChange}>{t('saveChanges')}</Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('confirmDelete')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>{t('deleteConfirmationMessage')}</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>{t('cancel')}</Button>
-          <Button variant="danger" onClick={handleConfirmDelete}>{t('delete')}</Button>
-        </Modal.Footer>
-      </Modal>
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={handleConfirmDelete}
+      />
     </Container>
   );
 };

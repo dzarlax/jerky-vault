@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col, Card, Button, Form, Modal } from 'react-bootstrap';
-import Select from 'react-select';
+import Select, { MultiValue, SingleValue } from 'react-select';
 
 interface Product {
   id: string;
@@ -38,6 +38,7 @@ const Products = () => {
   const [cost, setCost] = useState('');
   const [image, setImage] = useState('');
   const [recipeIds, setRecipeIds] = useState<string[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<{ value: string; label: string }[]>([]);
   const [packageId, setPackageId] = useState('');
 
   const [newPackage, setNewPackage] = useState('');
@@ -47,14 +48,11 @@ const Products = () => {
 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
-  const [selectedPackage, setSelectedPackage] = useState<any>(null);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: string; label: string }> | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: string; label: string }> | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<SingleValue<{ value: string; label: string }> | null>(null);
 
   useEffect(() => {
-    console.log('Products:', products);
-    console.log('Recipes:', recipes);
-    console.log('Packages:', packages);
     setFilteredProducts(products || []);
   }, [products, recipes, packages]);
 
@@ -64,11 +62,13 @@ const Products = () => {
 
   const applyFilters = () => {
     let filtered = products || [];
-
     if (selectedRecipe) {
-      filtered = filtered.filter(product =>
-        product.recipe_ids.split(',').map(id => id.trim()).includes(selectedRecipe.value)
-      );
+      const selectedRecipeId = selectedRecipe.value.toString(); // Приведение к строке
+      if (selectedRecipeId) {
+        filtered = filtered.filter(product =>
+          product.recipe_ids.split(',').map(id => id.trim()).includes(selectedRecipeId)
+        );
+      }
     }
 
     if (selectedPackage) {
@@ -81,6 +81,7 @@ const Products = () => {
 
     setFilteredProducts(filtered);
   };
+  
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
@@ -89,7 +90,14 @@ const Products = () => {
     setPrice(product.price.toString());
     setCost(product.cost.toString());
     setImage(product.image);
-    setRecipeIds(product.recipe_ids.split(',').map((id) => id.trim()));
+
+    // Преобразуем recipeIds в формат для Select и сохраняем также id в recipeIds
+    const selected = product.recipe_ids.split(',').map(id => {
+      const recipe = recipes?.find(recipe => recipe.id == id.trim());
+      return recipe ? { value: recipe.id, label: recipe.name } : null;
+    }).filter(option => option !== null) as { value: string; label: string }[];
+    setSelectedRecipes(selected);
+    setRecipeIds(selected.map(recipe => recipe.value)); // сохраняем только id в recipeIds
     setPackageId(product.package_id);
     setShowProductModal(true);
   };
@@ -102,6 +110,7 @@ const Products = () => {
     setCost('');
     setImage('');
     setRecipeIds([]);
+    setSelectedRecipes([]);
     setPackageId('');
     setShowProductModal(false);
   };
@@ -169,22 +178,12 @@ const Products = () => {
   const packageOptions = packages.map((pkg) => ({ value: pkg.id, label: pkg.name }));
   const productOptions = products.map((product) => ({ value: product.id, label: product.name }));
 
-  // Добавляем отладочный вывод для рецептов и продуктов
-  console.log('Filtered Products:', filteredProducts);
-  console.log('Recipe Options:', recipeOptions);
-  console.log('Package Options:', packageOptions);
-  console.log('Product Options:', productOptions);
-
   const groupedProducts = filteredProducts.reduce<{ [key: string]: Product[] }>((acc, product) => {
     const productRecipeIds = product.recipe_ids.split(',').map((id) => id.trim());
-
-    // Выводим идентификаторы рецептов и их названия
-    console.log('Product Recipe IDs:', productRecipeIds);
 
     const recipeNames = productRecipeIds
       .map((recipeId) => {
         const recipe = recipes.find((recipe) => recipe.id == recipeId);
-        console.log('Found Recipe:', recipe);
         return recipe ? recipe.name : t('unknownRecipe');
       })
       .join(', ');
@@ -206,6 +205,7 @@ const Products = () => {
             options={recipeOptions}
             onChange={setSelectedRecipe}
             placeholder={t('recipe')}
+            isClearable
           />
         </Col>
         <Col md="4">
@@ -213,6 +213,7 @@ const Products = () => {
             options={packageOptions}
             onChange={setSelectedPackage}
             placeholder={t('package')}
+            isClearable
           />
         </Col>
         <Col md="4">
@@ -220,6 +221,7 @@ const Products = () => {
             options={productOptions}
             onChange={setSelectedProduct}
             placeholder={t('product')}
+            isClearable
           />
         </Col>
       </Row>
@@ -244,7 +246,13 @@ const Products = () => {
                         {t('price')}: {product.price}
                       </Card.Text>
                       <Card.Text>
+                        {t('cost')}: {product.cost}
+                      </Card.Text>
+                      <Card.Text>
                         {t('package')}: {packageName}
+                      </Card.Text>
+                      <Card.Text>
+                        {t('recipes')}: {recipeNames}
                       </Card.Text>
                       <Button variant="primary" onClick={() => handleEditProduct(product)}>{t('edit')}</Button>
                     </Card.Body>
@@ -287,8 +295,11 @@ const Products = () => {
               <Select
                 isMulti
                 options={recipeOptions}
-                value={recipeOptions.filter(option => recipeIds.includes(option.value))}
-                onChange={(selectedOptions) => setRecipeIds((selectedOptions || []).map(option => option.value))}
+                value={selectedRecipes}
+                onChange={(selectedOptions) => {
+                  setSelectedRecipes(selectedOptions as { value: string; label: string }[]);
+                  setRecipeIds((selectedOptions || []).map(option => option.value));
+                }}
               />
             </Form.Group>
             <Form.Group as={Col} md="6" controlId="packageId">

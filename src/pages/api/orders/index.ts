@@ -56,8 +56,8 @@ async function addOrder(req: NextApiRequest, res: NextApiResponse, userId: strin
 
     for (const item of items) {
       await db.query<OkPacket>(
-        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-        [orderId, item.product_id, item.quantity, item.price]
+        "INSERT INTO order_items (order_id, product_id, quantity, price, cost_price) VALUES (?, ?, ?, ?, ?)",
+        [orderId, item.product_id, item.quantity, item.price, item.cost_price]
       );
     }
 
@@ -67,3 +67,4 @@ async function addOrder(req: NextApiRequest, res: NextApiResponse, userId: strin
     res.status(500).json({ error: 'Failed to add order' });
   }
 }
+

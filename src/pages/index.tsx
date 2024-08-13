@@ -93,7 +93,7 @@ const Dashboard = () => {
               <tr key={order.id}>
                 <td>{order.id}</td>
                 <td>{`${order.client_name} ${order.client_surname}`}</td>
-                <td>{order.status}</td>
+                <td>{t(order.status.toLowerCase())}</td>
                 <td>{new Date(order.date).toLocaleString()}</td>
               </tr>
             ))

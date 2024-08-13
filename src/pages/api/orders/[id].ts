@@ -65,12 +65,12 @@ async function updateOrder(req: NextApiRequest, res: NextApiResponse, userId: st
     // Удаляем старые записи в order_items для этого заказа
     await connection.query<OkPacket>("DELETE FROM order_items WHERE order_id = ?", [orderId]);
 
-    // Добавляем новые записи в order_items
+    // Добавляем новые записи в order_items с учетом поля cost_price
     const insertItemsQuery = `
-      INSERT INTO order_items (order_id, product_id, quantity, price)
+      INSERT INTO order_items (order_id, product_id, quantity, price, cost_price)
       VALUES ?
     `;
-    const insertItemsData = items.map((item: any) => [orderId, item.product_id, item.quantity, item.price]);
+    const insertItemsData = items.map((item: any) => [orderId, item.product_id, item.quantity, item.price, item.cost_price]);
     await connection.query<OkPacket>(insertItemsQuery, [insertItemsData]);
 
     await connection.commit();
@@ -84,6 +84,7 @@ async function updateOrder(req: NextApiRequest, res: NextApiResponse, userId: st
     connection.release();
   }
 }
+
 
 async function updateOrderStatus(req: NextApiRequest, res: NextApiResponse, userId: string, orderId: string) {
   const { status } = req.body;

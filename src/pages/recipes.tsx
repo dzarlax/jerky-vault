@@ -4,8 +4,8 @@ import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col, Button, ListGroup, Form } from 'react-bootstrap';
 import Select from 'react-select';
-import EditRecipeModal from '../components/EditRecipeModal';
-import CreateRecipeModal from '../components/CreateRecipeModal';
+import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
+import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
 
 const Recipes: React.FC = () => {
   const { t, lang } = useTranslation('common');
@@ -168,46 +168,52 @@ const Recipes: React.FC = () => {
               {t("addRecipe")}
             </Button>
           </div>
-          <Form.Group>
-            <Form.Label>{t("filterByRecipe")}</Form.Label>
-            <Select
-              value={
-                filterName ? { value: filterName, label: filterName } : null
-              }
-              onChange={(selectedOption: any) => setFilterName(selectedOption ? selectedOption.label : '')}
-              options={
-                recipeNames
-                  ? recipeNames.map((recipeName: any) => ({
-                    value: recipeName.id,
-                    label: recipeName.name,
-                  }))
-                : []
-            }
-              isClearable
-              placeholder={t("recipeName")}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>{t("filterByIngredient")}</Form.Label>
-            <Select
-              value={
-                filterIngredient
-                  ? { value: filterIngredient, label: filterIngredient }
-                  : null
-              }
-              onChange={(selectedOption: any) => setFilterIngredient(selectedOption ? selectedOption.value : '')}
-              options={
-                ingredients
-                  ? ingredients.map((ingredient: any) => ({
-                      value: ingredient.id,
-                      label: ingredient.name,
-                    }))
-                  : []
-              }
-              isClearable
-              placeholder={t("ingredientName")}
-            />
-          </Form.Group>
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>{t("filterByRecipe")}</Form.Label>
+                <Select
+                  value={
+                    filterName ? { value: filterName, label: filterName } : null
+                  }
+                  onChange={(selectedOption: any) => setFilterName(selectedOption ? selectedOption.label : '')}
+                  options={
+                    recipeNames
+                      ? recipeNames.map((recipeName: any) => ({
+                        value: recipeName.id,
+                        label: recipeName.name,
+                      }))
+                    : []
+                }
+                  isClearable
+                  placeholder={t("recipeName")}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>{t("filterByIngredient")}</Form.Label>
+                <Select
+                  value={
+                    filterIngredient
+                      ? { value: filterIngredient, label: filterIngredient }
+                      : null
+                  }
+                  onChange={(selectedOption: any) => setFilterIngredient(selectedOption ? selectedOption.value : '')}
+                  options={
+                    ingredients
+                      ? ingredients.map((ingredient: any) => ({
+                          value: ingredient.id,
+                          label: ingredient.name,
+                        }))
+                      : []
+                  }
+                  isClearable
+                  placeholder={t("ingredientName")}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
           {isLoading ? (
             <p>{t("loading")}</p>
           ) : (
@@ -223,7 +229,7 @@ const Recipes: React.FC = () => {
                     {recipe.ingredients.map((ingredient: any) => (
                       <li key={`${ingredient.id}-${ingredient.name}`}>
                         {ingredient.name} - {ingredient.quantity}{" "}
-                        {ingredient.unit} (
+                        {t(ingredient.unit)} (
                         {parseFloat(ingredient.ingredientCost).toFixed(2)}{" "}
                         {t("currency")})
                       </li>
