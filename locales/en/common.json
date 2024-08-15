@@ -154,5 +154,11 @@
   "imageUrl": "Image URL",
   "totalCostPrice": "Total Cost Price",
   "search": "Search",
-  "costPrice": "Cost Price"
+  "costPrice": "Cost Price",
+  "password": "Password",
+  "enterYourUsername": "Enter your username",
+  "enterYourPassword": "Enter your password",
+  "userRegisteredSuccessfully": "User registered successfully",
+  "failedToRegisterUser": "Failed to register user",
+  "confirmYourPassword": "Confirm your password"
 }

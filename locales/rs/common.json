@@ -154,5 +154,10 @@
   "imageUrl": "Линк на слику",
   "totalCostPrice": "Укупна цена коштања",
   "search": "Претрага",
-  "costPrice": "Цена коштања"
-}
+  "costPrice": "Цена коштања",
+  "password": "Лозинка",
+  "enterYourUsername": "Унесите своје корисничко име",
+  "enterYourPassword": "Унесите своју лозинку",
+  "userRegisteredSuccessfully": "Корисник је успешно регистрован",
+  "failedToRegisterUser": "Неуспешна регистрација корисника",
+  "confirmYourPassword": "Потврдите своју лозинку"}

@@ -154,5 +154,11 @@
   "imageUrl": "Сылка на изображение",
   "totalCostPrice": "Общая себестоимость",
   "search": "Поиск",
-  "costPrice":"Себестоимость"
+  "costPrice":"Себестоимость",
+  "password": "Пароль",
+  "enterYourUsername": "Введите ваше имя пользователя",
+  "enterYourPassword": "Введите ваш пароль",
+  "userRegisteredSuccessfully": "Пользователь успешно зарегистрирован",
+  "failedToRegisterUser": "Не удалось зарегистрировать пользователя",
+  "confirmYourPassword": "Подтвердите ваш пароль"
 }
