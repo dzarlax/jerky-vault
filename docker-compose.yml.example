@@ -5,19 +5,15 @@ services:
     image: dzarlax/jerky_vault:latest
     ports:
       - "3000:3000"
+    network_mode: "host"
     environment:
-      DATABASE_HOST: 
-      DATABASE_USER: 
-      DATABASE_PASSWORD: 
-      DATABASE_NAME: 
-      SECRET: 
-      TURNSTILE_SECRET: 
-      TURNSTILE_SITE_KEY:  
-      NEXTAUTH_URL: 
-      NEXTAUTH_SECRET: 
-      JWT_SECRET: 
-      MAPBOX_ACCESS_TOKEN: 
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm start
+      DATABASE_HOST: ''
+      DATABASE_USER: ''
+      DATABASE_PASSWORD: ''
+      DATABASE_NAME: ''
+      SECRET: ''
+      NEXTAUTH_URL: ''
+      NEXTAUTH_SECRET: ''
+      JWT_SECRET: ''
+      MAPBOX_ACCESS_TOKEN: ''
+    command: /bin/sh -c "npm install && npm start"
