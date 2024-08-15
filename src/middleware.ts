@@ -12,6 +12,12 @@ export async function middleware(req: NextRequest) {
     '/ingredients',
     '/prices',
     '/index',
+    '/recipes',
+    '/cookingSessions',
+    '/profile',
+    '/products',
+    '/clients',
+    '/orders'
     // Добавьте другие маршруты здесь
   ];
 
@@ -20,7 +26,11 @@ export async function middleware(req: NextRequest) {
     '/api/ingredients',
     '/api/prices',
     '/api/recipes',
-    '/cookingSessions',
+    '/api/cookingSessions',
+    '/api/profile',
+    '/api/products',
+    '/api/clients',
+    '/api/orders'
     // Добавьте другие API маршруты здесь
   ];
 
