@@ -112,8 +112,7 @@ JerkyVault is a web application designed for managing recipes and orders for the
 
 ### 7. **User Profile**
 
-- **View Profile**: A section where users can view and edit their personal information, such as name, email, and other details.
-- **Order History**: A section showing the history of all completed orders by the user.
+- **View Profile**: A section where users can view and edit their password.
 
 ## Technology Stack
 
