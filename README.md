@@ -47,7 +47,6 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **Charts**: The dashboard also features charts that show the distribution of product types (e.g., different types of jerky).
 - **Order Tables**: The application allows viewing of pending orders, sorting them by various parameters, and tracking the status of orders.
 
-
 ### 3. **Multilingual Support**
 
 - **Multiple Language Support**: The application supports English, Russian, and Serbian languages. Multilingual functionality is implemented using `next-translate`, making it easy to add and manage new translations.
@@ -110,7 +109,6 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **Edit and Delete Products**: The ability to edit information about existing products or delete them.
 ![alt text](screenshots/products.png "Products")
 ![alt text](screenshots/editproduct.png "Edit product")
-
 
 ### 7. **User Profile**
 
