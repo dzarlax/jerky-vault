@@ -47,6 +47,7 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **Charts**: The dashboard also features charts that show the distribution of product types (e.g., different types of jerky).
 - **Order Tables**: The application allows viewing of pending orders, sorting them by various parameters, and tracking the status of orders.
 
+
 ### 3. **Multilingual Support**
 
 - **Multiple Language Support**: The application supports English, Russian, and Serbian languages. Multilingual functionality is implemented using `next-translate`, making it easy to add and manage new translations.
@@ -69,6 +70,7 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **General Statistics**: A section with a summary of the number of recipes, ingredients, products, and orders.
 - **Charts and Graphs**: A section displaying charts and graphs with data on product distribution, order statuses, and other important information.
 - **Order Tables**: A section with tables showing all orders, with the ability to filter and sort by status, date, client, and other parameters.
+![alt text](screenshots/dashboard.png "Dashboard")
 
 ### 2. **Registration and Sign-In**
 
@@ -80,6 +82,8 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **View Recipes**: A list of all available recipes with sorting and filtering options by categories.
 - **Add Recipe**: A form for adding new recipes, specifying ingredients, instructions, and other details.
 - **Edit Recipes**: The ability to edit existing recipes, changing ingredients and other parameters.
+![alt text](screenshots/recipes.png "Recipes")
+![alt text](screenshots/editrecipe.png "Edit recipe")
 
 ### 4. **Orders**
 
@@ -87,17 +91,26 @@ JerkyVault is a web application designed for managing recipes and orders for the
 - **Order Details**: View detailed information about each order, including products, quantities, status, and other details.
 - **Manage Orders**: A section for changing order statuses and managing them.
 
+![alt text](screenshots/orders.png "Orders")
+![alt text](screenshots/orderedit.png "Edit order")
+
 ### 5. **Clients**
 
 - **View Clients**: A section displaying information about clients, including name, contact details, and order history.
 - **Add and Edit Clients**: A form for adding new clients or editing information about existing clients.
 - **Filtering and Sorting**: The ability to filter the list of clients by name, registration date, and other parameters.
 
+![alt text](screenshots/clients.png "Clients")
+![alt text](screenshots/addclient.png "Add client")
+
 ### 6. **Products**
 
 - **View Products**: A section where all available products are displayed, including types of jerky and other items.
 - **Add Product**: A form for adding new products, specifying name, description, price, and other parameters.
 - **Edit and Delete Products**: The ability to edit information about existing products or delete them.
+![alt text](screenshots/products.png "Products")
+![alt text](screenshots/editproduct.png "Edit product")
+
 
 ### 7. **User Profile**
 
