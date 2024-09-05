@@ -3,29 +3,30 @@ import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
 import { Container, Table, Button, InputGroup } from "react-bootstrap";
-import Select from "react-select";
+import Select, { SingleValue } from 'react-select';
 import OrderModal from "../components/modal/Orders/OrderModal";
 import ClientModal from "../components/modal/Orders/ClientModal";
 import StatusModal from "../components/modal/Orders/StatusModal";
 import DeleteModal from "../components/modal/Orders/DeleteModal";
+import { useRouter } from 'next/router';
 
 interface OrderItem {
-  product_id: string;
+  product_id: number;
   quantity: number;
   price: number;
-  cost_price: number; // Новое поле для себестоимости
+  cost_price: number; 
 }
 
 interface Order {
-  id: string;
-  client_id: string;
+  id: number;
+  client_id: number;
   status: string;
-  date: string;
+  created_at: string;
   items: OrderItem[];
 }
 
 interface Client {
-  id: string;
+  id: number;
   name: string;
   surname: string;
   telegram?: string;
@@ -37,35 +38,25 @@ interface Client {
 
 const Orders = () => {
   const { t } = useTranslation("common");
-  const { data: orders = [], mutate: mutateOrders } = useSWR(
-    "/api/orders",
-    fetcher
-  );
-  const { data: clients = [], mutate: mutateClients } = useSWR(
-    "/api/clients",
-    fetcher
-  );
-  const { data: products = [], mutate: mutateProducts } = useSWR(
-    "/api/products",
-    fetcher
-  );
-
-  const [clientId, setClientId] = useState<string>("");
+  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>("/api/orders", fetcher);
+  const { data: clients = [], mutate: mutateClients } = useSWR<Client[]>("/api/clients", fetcher);
+  const { data: products = [], mutate: mutateProducts } = useSWR<any[]>("/api/products", fetcher);
+  const router = useRouter();
+  const [clientId, setClientId] = useState<number | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false);
   const [showClientModal, setShowClientModal] = useState<boolean>(false);
   const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [showCreateOrderModal, setShowCreateOrderModal] =
-    useState<boolean>(false);
+  const [showCreateOrderModal, setShowCreateOrderModal] = useState<boolean>(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [statusOrderId, setStatusOrderId] = useState<string | null>(null);
-  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+  const [statusOrderId, setStatusOrderId] = useState<number | null>(null);
+  const [deleteOrderId, setDeleteOrderId] = useState<number | null>(null);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState(null);
-  const [selectedClientFilter, setSelectedClientFilter] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState<SingleValue<{ value: string; label: string }> | null>(null);
+  const [selectedClientFilter, setSelectedClientFilter] = useState<SingleValue<{ value: number; label: string }> | null>(null);
 
   const statusOptions = [
     { value: "new", label: t("new") },
@@ -77,7 +68,6 @@ const Orders = () => {
   useEffect(() => {
     filterOrders(selectedStatus, selectedClientFilter);
   }, [selectedStatus, selectedClientFilter, orders]);
-
 
   const handleEditOrder = (order: Order) => {
     setEditingOrder(order);
@@ -98,7 +88,7 @@ const Orders = () => {
 
   const handleCloseOrderModal = () => {
     setEditingOrder(null);
-    setClientId("");
+    setClientId(null);
     setStatus("");
     setItems([]);
     setShowOrderModal(false);
@@ -106,45 +96,66 @@ const Orders = () => {
   };
 
   const handleSaveOrderChanges = async () => {
-    const order = { clientId, status, items };
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      const order = { client_id: clientId, status, items };
 
-    if (editingOrder) {
-      await fetch(`/api/orders/${editingOrder.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(order),
-      });
-      mutateOrders();
-    } else {
-      await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(order),
-      });
-      mutateOrders();
+      if (editingOrder) {
+        await fetcher(`/api/orders/${editingOrder.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(order),
+        });
+        mutateOrders();
+      } else {
+        await fetcher("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(order),
+        });
+        mutateOrders();
+      }
+
+      handleCloseOrderModal();
+    } catch (error) {
+      console.error('Failed to save order changes', error);
     }
-
-    handleCloseOrderModal();
   };
 
   const handleCreateOrder = async () => {
-    const order = { clientId, status: "new", items };
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      const order = { client_id: clientId, status: "new", items };
 
-    await fetch("/api/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(order),
-    });
-    setClientId("");
-    setItems([]);
-    mutateOrders();
-    setShowCreateOrderModal(false);
+      await fetcher("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(order),
+      });
+      setClientId(null);
+      setItems([]);
+      mutateOrders();
+      setShowCreateOrderModal(false);
+    } catch (error) {
+      console.error('Failed to create order', error);
+    }
   };
 
   const handleItemChange = (
@@ -160,13 +171,13 @@ const Orders = () => {
   const handleAddItem = () => {
     setItems([
       ...items,
-      { product_id: "", quantity: 1, price: 0, cost_price: 0 },
+      { product_id: 0, quantity: 1, price: 0, cost_price: 0 },
     ]);
   };
 
-  const handleProductChange = (index: number, product_id: string) => {
+  const handleProductChange = (index: number, product_id: number) => {
     const updatedItems = [...items];
-    const product = products.find((p) => p.id == product_id);
+    const product = products.find((p) => p.id === product_id);
     updatedItems[index] = {
       product_id,
       quantity: 1,
@@ -184,7 +195,7 @@ const Orders = () => {
 
   const handleRemoveItem = (index: number) => {
     const updatedItems = [...items];
-    updatedItems.splice(index, 1); // Удаляем элемент по индексу
+    updatedItems.splice(index, 1);
     setItems(updatedItems);
   };
 
@@ -198,50 +209,70 @@ const Orders = () => {
     setShowClientModal(false);
   };
 
-  const handleChangeStatus = (orderId: string) => {
+  const handleChangeStatus = (orderId: number) => {
     const order = orders.find((order) => order.id === orderId);
     if (order) {
-      setStatus(order.status); // Устанавливаем текущий статус заказа
+      setStatus(order.status);
     }
     setStatusOrderId(orderId);
     setShowStatusModal(true);
   };
 
   const handleSaveStatusChange = async () => {
-    if (!statusOrderId || !status) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      if (!statusOrderId || !status) return;
 
-    await fetch(`/api/orders/${statusOrderId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }), // Отправляем только статус
-    });
-    mutateOrders();
-    setStatusOrderId(null);
-    setShowStatusModal(false);
+      await fetcher(`/api/orders/${statusOrderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      mutateOrders();
+      setStatusOrderId(null);
+      setShowStatusModal(false);
+    } catch (error) {
+      console.error('Failed to update order status', error);
+    }
   };
 
-  const handleDeleteOrder = (orderId: string) => {
+  const handleDeleteOrder = (orderId: number) => {
     setDeleteOrderId(orderId);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteOrderId) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      if (!deleteOrderId) return;
 
-    await fetch(`/api/orders/${deleteOrderId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    mutateOrders();
-    setDeleteOrderId(null);
-    setShowDeleteModal(false);
+      await fetcher(`/api/orders/${deleteOrderId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      mutateOrders();
+      setDeleteOrderId(null);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete order', error);
+    }
   };
 
-  const filterOrders = (status: any, client: any) => {
+  const filterOrders = (status: SingleValue<{ value: string; label: string }> | null, client: SingleValue<{ value: number; label: string }> | null) => {
     let filtered = orders;
 
     if (status) {
@@ -252,9 +283,7 @@ const Orders = () => {
       filtered = filtered.filter((order) => order.client_id === client.value);
     }
 
-    if (JSON.stringify(filteredOrders) !== JSON.stringify(filtered)) {
-      setFilteredOrders(filtered);
-    }
+    setFilteredOrders(filtered);
   };
 
   const clientOptions = clients.map((client) => ({
@@ -272,7 +301,7 @@ const Orders = () => {
     items.reduce((total, item) => total + item.quantity * item.cost_price, 0);
 
   const groupedItems = (items: OrderItem[]) => {
-    const itemMap: { [key: string]: OrderItem } = {};
+    const itemMap: { [key: number]: OrderItem } = {};
     items.forEach((item) => {
       if (!itemMap[item.product_id]) {
         itemMap[item.product_id] = { ...item, quantity: 0 };
@@ -330,7 +359,6 @@ const Orders = () => {
             <th>{t("products")}</th>
             <th>{t("totalCost")}</th>
             <th>{t("totalCostPrice")}</th>
-            {/* Новая колонка для себестоимости */}
             <th>{t("actions")}</th>
           </tr>
         </thead>
@@ -341,19 +369,19 @@ const Orders = () => {
               <td
                 onClick={() =>
                   handleClientClick(
-                    clients.find((client) => client.id == order.client_id) ||
+                    clients.find((client) => client.id === order.client_id) ||
                       ({} as Client)
                   )
                 }
                 style={{ cursor: "pointer" }}
               >
-                {clients.find((client) => client.id == order.client_id)?.name ||
+                {clients.find((client) => client.id === order.client_id)?.name ||
                   t("unknownClient")}
               </td>
               <td>{t(order.status.toLowerCase())}</td>
-              <td>{new Date(order.date).toLocaleDateString()}</td>
+              <td>{new Date(order.created_at).toLocaleDateString()}</td>
               <td>{groupedItems(order.items).map((item) => {
-                  const product = products.find((p) => p.id == item.product_id);
+                  const product = products.find((p) => p.id === item.product_id);
                   return (
                     <div key={item.product_id}>
                       {product ? product.name : t("unknownProduct")} (

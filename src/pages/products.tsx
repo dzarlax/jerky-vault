@@ -1,78 +1,114 @@
 import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
+import { useRouter } from 'next/router';
 import useTranslation from 'next-translate/useTranslation';
-import { Container, Row, Col, Card, Button, Form, Modal } from 'react-bootstrap';
-import Select, { MultiValue, SingleValue } from 'react-select';
+import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import Select, { SingleValue } from 'react-select';
+import ProductModal from '../components/modal/Products/ProductModal'; // Импортируем модалку
+import { FaEdit, FaTag, FaBoxOpen, FaListUl, FaDollarSign } from 'react-icons/fa'; // Импортируем иконки
+
 
 interface Product {
-  id: string;
+  id: number;
   name: string;
   description: string;
   price: number;
   cost: number;
   image: string;
-  recipe_ids: string;
-  package_id: string;
+  user_id: number;
+  user: User;
+  package_id: number;
+  options: Option[];
+}
+
+interface User {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  username: string;
+  password: string;
+  recipes: null;
+  prices: null;
+  clients: null;
+  products: null;
+  packages: null;
+  orders: null;
+}
+
+interface Option {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  product_id: number;
+  recipe_id: number;
+  user_id: number;
+  product: Partial<Product>;
+  recipe: Recipe;
+  user: User;
 }
 
 interface Recipe {
-  id: string;
+  id: number;
   name: string;
 }
 
 interface Package {
-  id: string;
+  id: number;
   name: string;
 }
 
 const Products = () => {
   const { t } = useTranslation('common');
-  const { data: products, mutate: mutateProducts } = useSWR<Product[]>('/api/products/', fetcher);
-  const { data: recipes, mutate: mutateRecipes } = useSWR<Recipe[]>('/api/recipes/names', fetcher);
-  const { data: packages, mutate: mutatePackages } = useSWR<Package[]>('/api/products/packages', fetcher);
+  const { data: products, mutate: mutateProducts } = useSWR<Product[]>('/api/products', fetcher);
+  const { data: recipes } = useSWR<Recipe[]>('/api/recipes', fetcher);
+  const { data: packages } = useSWR<Package[]>('/api/packages', fetcher);
+  const router = useRouter();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [cost, setCost] = useState('');
   const [image, setImage] = useState('');
-  const [recipeIds, setRecipeIds] = useState<string[]>([]);
-  const [selectedRecipes, setSelectedRecipes] = useState<{ value: string; label: string }[]>([]);
-  const [packageId, setPackageId] = useState('');
-
-  const [newPackage, setNewPackage] = useState('');
+  const [recipeIds, setRecipeIds] = useState<number[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<{ value: number; label: string }[]>([]);
+  const [packageId, setPackageId] = useState<number | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [showPackageModal, setShowPackageModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-
-  const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: string; label: string }> | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: string; label: string }> | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<SingleValue<{ value: string; label: string }> | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: number; label: string }> | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: number; label: string }> | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<SingleValue<{ value: number; label: string }> | null>(null);
 
   useEffect(() => {
     setFilteredProducts(products || []);
-  }, [products, recipes, packages]);
+  }, [products]);
 
   useEffect(() => {
     applyFilters();
   }, [selectedRecipe, selectedPackage, selectedProduct]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/signin');
+    }
+  }, [router]);
+
   const applyFilters = () => {
     let filtered = products || [];
     if (selectedRecipe) {
-      const selectedRecipeId = selectedRecipe.value.toString(); // Приведение к строке
-      if (selectedRecipeId) {
-        filtered = filtered.filter(product =>
-          product.recipe_ids.split(',').map(id => id.trim()).includes(selectedRecipeId)
-        );
-      }
+      filtered = filtered.filter(product =>
+        product.options.some(option => option.recipe_id === selectedRecipe.value)
+      );
     }
 
     if (selectedPackage) {
-      filtered = filtered.filter(product => product.package_id === selectedPackage.value);
+      filtered = filtered.filter(product =>
+        product.package_id === selectedPackage.value
+      );
     }
 
     if (selectedProduct) {
@@ -81,9 +117,13 @@ const Products = () => {
 
     setFilteredProducts(filtered);
   };
-  
 
   const handleEditProduct = (product: Product) => {
+    if (!recipes || !packages) {
+      console.warn('Recipes or packages data not loaded yet');
+      return;
+    }
+
     setEditingProduct(product);
     setName(product.name);
     setDescription(product.description);
@@ -91,13 +131,13 @@ const Products = () => {
     setCost(product.cost.toString());
     setImage(product.image);
 
-    // Преобразуем recipeIds в формат для Select и сохраняем также id в recipeIds
-    const selected = product.recipe_ids.split(',').map(id => {
-      const recipe = recipes?.find(recipe => recipe.id == id.trim());
+    const selected = product.options.map(option => {
+      const recipe = recipes?.find(recipe => recipe.id === option.recipe_id);
       return recipe ? { value: recipe.id, label: recipe.name } : null;
-    }).filter(option => option !== null) as { value: string; label: string }[];
+    }).filter(option => option !== null) as { value: number; label: string }[];
+
     setSelectedRecipes(selected);
-    setRecipeIds(selected.map(recipe => recipe.value)); // сохраняем только id в recipeIds
+    setRecipeIds(selected.map(r => r.value));
     setPackageId(product.package_id);
     setShowProductModal(true);
   };
@@ -111,79 +151,123 @@ const Products = () => {
     setImage('');
     setRecipeIds([]);
     setSelectedRecipes([]);
-    setPackageId('');
+    setPackageId(null);
     setShowProductModal(false);
   };
 
   const handleSaveProductChanges = async () => {
-    const parsedPrice = parseFloat(price);
-    const parsedCost = parseFloat(cost);
-
-    const isValidUrl = (url: string) => {
-      if (!url) return true;
-      try {
-        new URL(url);
-        return true;
-      } catch (_) {
-        return false;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/signin');
+        return;
       }
-    };
-
-    if (!isValidUrl(image)) {
-      alert('Invalid image URL');
-      return;
+  
+      if (!name || !description || !price || !cost || !packageId || selectedRecipes.length === 0) {
+        alert(t('fillRequiredFields'));
+        return;
+      }
+  
+      const parsedPrice = parseFloat(price);
+      const parsedCost = parseFloat(cost);
+  
+      const isValidUrl = (url: string) => {
+        if (!url) return true;
+        try {
+          new URL(url);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      };
+  
+      if (!isValidUrl(image)) {
+        alert(t('invalidImageUrl'));
+        return;
+      }
+  
+      // Формируем массив recipeIds на основе selectedRecipes
+      const recipeIds = selectedRecipes.map(recipe => recipe.value);
+  
+      const product = {
+        name,
+        description,
+        price: parsedPrice,
+        cost: parsedCost,
+        image: image || null,
+        recipe_ids: recipeIds, // Убедитесь, что recipeIds правильно передается
+        package_id: packageId,
+      };
+  
+      console.log('Product to save:', product); // Debug: Проверьте, что передается правильный объект
+  
+      if (editingProduct) {
+        await fetcher(`/api/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(product),
+        });
+        mutateProducts();
+      } else {
+        await fetcher('/api/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(product),
+        });
+        mutateProducts();
+      }
+  
+      handleCloseProductModal();
+    } catch (error) {
+      console.error('Failed to save product changes', error);
+      alert(t('failedToSaveChanges'));
     }
+  };
+  
 
-    const product = { name, description, price: parsedPrice, cost: parsedCost, image: image || null, recipeIds, packageId };
+  const handleDeleteProduct = async () => {
+    if (!editingProduct) return;
 
-    if (editingProduct) {
-      await fetch(`/api/products/${editingProduct.id}`, {
-        method: 'PUT',
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/signin');
+        return;
+      }
+
+      const confirmed = window.confirm(t('confirmDeleteProduct'));
+      if (!confirmed) return;
+
+      await fetcher(`/api/products/${editingProduct.id}`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(product),
       });
+
       mutateProducts();
-    } else {
-      await fetch('/api/products/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(product),
-      });
-      mutateProducts();
+      handleCloseProductModal();
+    } catch (error) {
+      console.error('Failed to delete product', error);
+      alert(t('failedToDeleteProduct'));
     }
-
-    handleCloseProductModal();
   };
 
-  const handleSavePackage = async () => {
-    await fetch('/api/products/packages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: newPackage }),
-    });
-    setNewPackage('');
-    mutatePackages();
-    setShowPackageModal(false);
-  };
-
-  if (!products || !recipes || !packages) return <div>{t('loading')}</div>;
-
-  const recipeOptions = recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }));
-  const packageOptions = packages.map((pkg) => ({ value: pkg.id, label: pkg.name }));
-  const productOptions = products.map((product) => ({ value: product.id, label: product.name }));
+  const recipeOptions = recipes?.map(recipe => ({ value: recipe.id, label: recipe.name })) || [];
+  const packageOptions = packages?.map(pkg => ({ value: pkg.id, label: pkg.name })) || [];
+  const productOptions = products?.map(product => ({ value: product.id, label: product.name })) || [];
 
   const groupedProducts = filteredProducts.reduce<{ [key: string]: Product[] }>((acc, product) => {
-    const productRecipeIds = product.recipe_ids.split(',').map((id) => id.trim());
-
-    const recipeNames = productRecipeIds
-      .map((recipeId) => {
-        const recipe = recipes.find((recipe) => recipe.id == recipeId);
+    const recipeNames = product.options
+      .map(option => {
+        const recipe = recipes?.find(r => r.id === option.recipe_id);
         return recipe ? recipe.name : t('unknownRecipe');
       })
       .join(', ');
@@ -194,6 +278,8 @@ const Products = () => {
     acc[recipeNames].push(product);
     return acc;
   }, {});
+
+  if (!products || !recipes || !packages) return <div>{t('loading')}</div>;
 
   return (
     <Container>
@@ -227,125 +313,85 @@ const Products = () => {
       </Row>
 
       <div className="d-flex justify-content-end mb-3">
-        <Button variant="primary" onClick={() => setShowProductModal(true)} className="me-2">{t('addProduct')}</Button>
-        <Button variant="secondary" onClick={() => setShowPackageModal(true)}>{t('addPackage')}</Button>
+        <Button variant="primary" onClick={() => setShowProductModal(true)} className="me-2">
+          {t('addProduct')}
+        </Button>
       </div>
 
       {groupedProducts && Object.entries(groupedProducts).map(([recipeNames, products]) => (
-        <div key={recipeNames}>
-          <h2>{recipeNames}</h2>
-          <Row className="mt-4">
-            {Array.isArray(products) && products.map((product: Product) => {
-              const packageName = packages.find((pkg) => pkg.id === product.package_id)?.name || t('unknownPackage');
-              return (
-                <Col key={product.id} sm={6} md={4} lg={3}>
-                  <Card>
-                    <Card.Body>
-                      <Card.Title>{product.name}</Card.Title>
-                      <Card.Text>
-                        {t('price')}: {product.price}
-                      </Card.Text>
-                      <Card.Text>
-                        {t('cost')}: {product.cost}
-                      </Card.Text>
-                      <Card.Text>
-                        {t('package')}: {packageName}
-                      </Card.Text>
-                      <Card.Text>
-                        {t('recipes')}: {recipeNames}
-                      </Card.Text>
-                      <Button variant="primary" onClick={() => handleEditProduct(product)}>{t('edit')}</Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
-        </div>
-      ))}
+  <div key={recipeNames}>
+    <h2>{recipeNames}</h2>
+    <Row className="mt-4">
+      {Array.isArray(products) && products.map((product: Product) => {
+        const packageName = packages?.find(pkg => pkg.id === product.package_id)?.name || t('unknownPackage');
 
-      <Modal show={showProductModal} onHide={handleCloseProductModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingProduct ? t('editProduct') : t('addProduct')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="name">
-              <Form.Label>{t('name')}</Form.Label>
-              <Form.Control type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-            </Form.Group>
-            <Form.Group controlId="description">
-              <Form.Label>{t('description')}</Form.Label>
-              <Form.Control type="text" value={description} onChange={(e) => setDescription(e.target.value)} required />
-            </Form.Group>
-            <Form.Group as={Col} md="6" controlId="price">
-              <Form.Label>{t('price')}</Form.Label>
-              <Form.Control type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
-            </Form.Group>
-            <Form.Group as={Col} md="6" controlId="cost">
-              <Form.Label>{t('cost')}</Form.Label>
-              <Form.Control type="number" value={cost} onChange={(e) => setCost(e.target.value)} required />
-            </Form.Group>
-            <Form.Group as={Col} md="6" controlId="image">
-              <Form.Label>{t('imageUrl')}</Form.Label>
-              <Form.Control type="text" value={image} onChange={(e) => setImage(e.target.value)} />
-            </Form.Group>
-            <Form.Group as={Col} md="6" controlId="recipeIds">
-              <Form.Label>{t('recipes')}</Form.Label>
-              <Select
-                isMulti
-                options={recipeOptions}
-                value={selectedRecipes}
-                onChange={(selectedOptions) => {
-                  setSelectedRecipes(selectedOptions as { value: string; label: string }[]);
-                  setRecipeIds((selectedOptions || []).map(option => option.value));
-                }}
-              />
-            </Form.Group>
-            <Form.Group as={Col} md="6" controlId="packageId">
-              <Form.Label>{t('package')}</Form.Label>
-              <Select
-                options={packageOptions}
-                value={packageOptions.find(option => option.value === packageId)}
-                onChange={(selectedOption) => setPackageId(selectedOption?.value || '')}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseProductModal}>
-            {t('close')}
-          </Button>
-          <Button variant="primary" onClick={handleSaveProductChanges}>
-            {t('saveChanges')}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      <Modal show={showPackageModal} onHide={() => setShowPackageModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('addPackage')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group controlId="newPackage">
-            <Form.Label>{t('packageName')}</Form.Label>
-            <Form.Control
-              type="text"
-              value={newPackage}
-              onChange={(e) => setNewPackage(e.target.value)}
-              required
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowPackageModal(false)}>
-            {t('close')}
-          </Button>
-          <Button variant="primary" onClick={handleSavePackage}>
-            {t('save')}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        return (
+          <Col key={product.id} sm={6} md={4} lg={3}>
+            <Card className="h-100 shadow-sm">
+              {product.image && (
+                <Card.Img variant="top" src={product.image} alt={product.name} style={{ height: '150px', objectFit: 'cover' }} />
+              )}
+              <Card.Body className="d-flex flex-column">
+                <Card.Title className="text-truncate" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                  {product.name}
+                </Card.Title>
+                <div className="mt-2">
+                  <Card.Text className="d-flex align-items-center">
+                    <FaDollarSign className="me-2 text-secondary" />
+                    <span className="text-muted">{t('price')}: </span> {product.price}
+                  </Card.Text>
+                  <Card.Text className="d-flex align-items-center">
+                    <FaTag className="me-2 text-secondary" />
+                    <span className="text-muted">{t('cost')}: </span> {product.cost}
+                  </Card.Text>
+                  <Card.Text className="d-flex align-items-center">
+                    <FaBoxOpen className="me-2 text-secondary" />
+                    <span className="text-muted">{t('package')}: </span> {packageName}
+                  </Card.Text>
+                  <Card.Text className="d-flex align-items-center">
+                    <FaListUl className="me-2 text-secondary" />
+                    <span className="text-muted">{t('recipes')}: </span> {recipeNames}
+                  </Card.Text>
+                </div>
+                <Button
+                  variant="outline-primary"
+                  className="mt-auto align-self-end"
+                  onClick={() => handleEditProduct(product)}
+                >
+                  <FaEdit className="me-1" />
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        );
+      })}
+    </Row>
+  </div>
+))}
+      {/* Модалка для продукта */}
+      <ProductModal
+        show={showProductModal}
+        onClose={handleCloseProductModal}
+        onSave={handleSaveProductChanges}
+        onDelete={handleDeleteProduct}
+        product={editingProduct}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        price={price}
+        setPrice={setPrice}
+        cost={cost}
+        setCost={setCost}
+        image={image}
+        setImage={setImage}
+        selectedRecipes={selectedRecipes}
+        setSelectedRecipes={setSelectedRecipes}
+        recipeOptions={recipeOptions}
+        packageId={packageId}
+        setPackageId={setPackageId}
+        packageOptions={packageOptions}
+      />
     </Container>
   );
 };

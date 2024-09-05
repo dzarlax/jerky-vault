@@ -1,52 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.SECRET });
   const { pathname } = req.nextUrl;
 
+  // Извлекаем токен из заголовка Authorization
+  const authHeader = req.headers.get('Authorization');
+  const token = authHeader ? authHeader.split(' ')[1] : null;
 
-  // Список защищённых маршрутов
+  // Список защищённых маршрутов страниц
   const protectedRoutes = [
-    '/addRecipe',
-    '/ingredients',
-    '/prices',
     '/index',
-    '/recipes',
     '/cookingSessions',
-    '/profile',
-    '/products',
-    '/clients',
-    '/orders'
-    // Добавьте другие маршруты здесь
-  ];
-
-  const protectedApiRoutes = [
-    '/api/addRecipe',
-    '/api/ingredients',
-    '/api/prices',
-    '/api/recipes',
-    '/api/cookingSessions',
-    '/api/profile',
-    '/api/products',
-    '/api/clients',
-    '/api/orders'
-    // Добавьте другие API маршруты здесь
   ];
 
   // Проверка защищённых маршрутов страниц
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+  if (isProtectedRoute) {
     if (!token) {
+      console.log('Middleware: No token found, redirecting to login');
       const url = req.nextUrl.clone();
       url.pathname = '/auth/signin';
       return NextResponse.redirect(url);
     }
-  }
 
-  // Проверка защищённых API маршрутов
-  if (protectedApiRoutes.some(route => pathname.startsWith(route))) {
-    if (!token) {
-      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    try {
+      // Проверка валидности токена
+      jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/auth/signin';
+      return NextResponse.redirect(url);
     }
   }
 

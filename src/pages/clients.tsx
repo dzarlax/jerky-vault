@@ -3,14 +3,12 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { getCsrfToken, useSession } from 'next-auth/react';
 import { Button, InputGroup, FormControl } from 'react-bootstrap';
 import ClientModal from '../components/modal/Clients/ClientModal';
 
-const Clients = ({ csrfToken, mapboxToken }) => {
+const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
   const { data: clients, mutate } = useSWR('/api/clients', fetcher);
-  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -25,10 +23,11 @@ const Clients = ({ csrfToken, mapboxToken }) => {
   const [editingClient, setEditingClient] = useState(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    const token = localStorage.getItem('token');
+    if (!token) {
       router.push('/auth/signin');
     }
-  }, [status, router]);
+  }, [router]);
 
   const openClientModal = (client = null) => {
     if (client) {
@@ -55,22 +54,29 @@ const Clients = ({ csrfToken, mapboxToken }) => {
 
   const handleSaveClient = async (e) => {
     e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/signin');
+        return;
+      }
     const clientData = { name, surname, telegram, instagram, phone, address, source };
 
     if (editingClient) {
-      await fetch(`/api/clients/${editingClient.id}`, {
+      await fetcher(`/api/clients/${editingClient.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(clientData),
       });
     } else {
-      await fetch('/api/clients', {
+      await fetcher('/api/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'csrf-token': csrfToken,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(clientData),
       });
@@ -78,19 +84,32 @@ const Clients = ({ csrfToken, mapboxToken }) => {
 
     mutate();
     setShowClientModal(false);
+  } catch (error) {
+    console.error('Failed to load recipes', error);
+  }
   };
 
   const deleteClient = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/signin');
+        return;
+      }
     if (confirm(t('confirmDeleteClient'))) {
-      await fetch(`/api/clients/${editingClient.id}`, {
+      await fetcher(`/api/clients/${editingClient.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
       mutate();
       setShowClientModal(false);
     }
+  } catch (error) {
+    console.error('Failed to load recipes', error);
+  }
   };
 
   const filteredClients = clients?.filter(client =>
@@ -200,10 +219,9 @@ const Clients = ({ csrfToken, mapboxToken }) => {
 };
 
 export async function getServerSideProps(context) {
-  const csrfToken = await getCsrfToken(context);
   const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
   return {
-    props: { csrfToken, mapboxToken },
+    props: {mapboxToken },
   };
 }
 

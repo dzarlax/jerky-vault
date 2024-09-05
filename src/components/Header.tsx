@@ -1,25 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
 import { Navbar, Nav, Dropdown, Container } from 'react-bootstrap';
 
 const Header: React.FC = () => {
   const { t, lang } = useTranslation('common');
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    // Проверка наличия токена в localStorage
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
   }, []);
 
   if (!isClient) {
-    return null; // or a loading spinner
+    return null; // или можно вернуть индикатор загрузки
   }
 
-  const loading = status === 'loading';
+  const handleSignOut = () => {
+    // Удаление токена из localStorage или cookies
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    router.push('/auth/signin'); // Перенаправление на страницу логина
+  };
 
   const changeLanguage = (lng) => {
     const { pathname, asPath, query } = router;
@@ -39,24 +46,18 @@ const Header: React.FC = () => {
             <Nav.Link as={Link} href="/clients" locale={lang}>{t('clients')}</Nav.Link>
             <Nav.Link as={Link} href="/products" locale={lang}>{t('products')}</Nav.Link>
             <Nav.Link as={Link} href="/orders" locale={lang}>{t('orders')}</Nav.Link>
-            {loading && (
-              <Nav.Link>{t('loading')}</Nav.Link>
-            )}
           </Nav>
           <Nav className="ms-auto">
-            {!loading && !session && (
+            {!isAuthenticated && (
               <>
                 <Nav.Link as={Link} href="/auth/signin" locale={lang}>{t('signIn')}</Nav.Link>
                 <Nav.Link as={Link} href="/auth/signup" locale={lang}>{t('signUp')}</Nav.Link>
               </>
             )}
-            {!loading && session && (
+            {isAuthenticated && (
               <>
                 <Nav.Link as={Link} href="/profile" locale={lang}>{t('profile')}</Nav.Link>
-                <Nav.Link href="/api/auth/signout" onClick={(e) => {
-                  e.preventDefault();
-                  signOut();
-                }}>{t('signOut')}</Nav.Link>
+                <Nav.Link href="#" onClick={handleSignOut}>{t('signOut')}</Nav.Link>
               </>
             )}
             <Dropdown align="end">

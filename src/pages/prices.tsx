@@ -25,12 +25,10 @@ const Prices = () => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log("Router Locale: ", router.locale);
-    console.log("Current Language in useEffect: ", lang);
     if (ingredients && prices) {
       setIsLoading(false);
     }
-  }, [ingredients, prices, lang]);
+  }, [ingredients, prices]);
 
   useEffect(() => {
     if (router.locale !== lang) {
@@ -41,23 +39,49 @@ const Prices = () => {
 
   const addPrice = async (e: React.FormEvent) => {
     e.preventDefault();
-    const currentDate = new Date().toISOString();
-    await fetch('/api/prices', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ingredient_id: ingredientId, price, quantity, unit, date: currentDate }),
-    });
-    setIngredientId('');
-    setPrice('');
-    setQuantity('');
-    setUnit('');
-    mutatePrices();
-  };
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/auth/signin');
+            return;
+        }
+        const currentDate = new Date().toISOString();
+        const response = await fetcher('/api/prices', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                ingredient_id: ingredientId,
+                price: parseFloat(price),
+                quantity: parseFloat(quantity),
+                unit: unit,
+                date: currentDate
+            }),
+        });
+
+        // Проверяем статус ответа. fetcher возвращает JSON или выбрасывает ошибку при неуспехе
+        if (!response || response.error) {
+            console.error('Failed to add price:', response.error || 'Unknown error');
+            throw new Error('Failed to add price');
+        }
+
+        // Сброс полей формы после успешного добавления цены
+        setIngredientId('');
+        setPrice('');
+        setQuantity('');
+        setUnit('');
+        mutatePrices();  // Обновляем данные
+    } catch (error) {
+        console.error('Failed to add price', error);
+    }
+};
+
+
 
   const updateUnits = () => {
-    const selectedIngredient = ingredients?.find((ingredient: any) => ingredient.id === parseInt(ingredientId));
+    const selectedIngredient = ingredients?.find((ingredient: any) => ingredient.id === parseInt(ingredientId, 10));
     if (!selectedIngredient) return;
 
     let units: string[] = [];
@@ -90,12 +114,15 @@ const Prices = () => {
     if (filterDate) queryParams.append('date', filterDate);
     if (sortColumn) queryParams.append('sort_column', sortColumn);
     if (sortDirection) queryParams.append('sort_direction', sortDirection);
-
-    const response = await fetch('/api/prices?' + queryParams.toString());
-    const data = await response.json();
-    mutatePrices(data, false);
+  
+    try {
+      const data = await fetcher('/api/prices?' + queryParams.toString()); // `fetcher` уже возвращает JSON
+      mutatePrices(data, false); // Используйте полученные данные напрямую
+    } catch (error) {
+      console.error('Failed to load prices', error);
+    }
   };
-
+  
   const sortPrices = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -109,7 +136,9 @@ const Prices = () => {
   const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : [];
   const unitOptions = units.map((unit: string) => ({ value: unit, label: t(unit) }));
 
-  if (isLoading || ingredientsError || pricesError) return <div>{t('loading')}</div>;
+  if (isLoading) return <div>{t('loading')}</div>;
+  if (ingredientsError) return <div>{t('ingredientsError')}</div>;
+  if (pricesError) return <div>{t('pricesError')}</div>;
 
   return (
     <Container>
@@ -199,8 +228,8 @@ const Prices = () => {
       <Table striped bordered hover className="mt-4">
         <thead>
           <tr>
-            <th onClick={() => sortPrices('ingredient_type')}>{t('ingredientType')}</th>
-            <th onClick={() => sortPrices('ingredient_name')}>{t('ingredientName')}</th>
+            <th onClick={() => sortPrices('ingredient.type')}>{t('ingredientType')}</th>
+            <th onClick={() => sortPrices('ingredient.name')}>{t('ingredientName')}</th>
             <th onClick={() => sortPrices('price')}>{t('price')}</th>
             <th onClick={() => sortPrices('quantity')}>{t('quantity')}</th>
             <th onClick={() => sortPrices('unit')}>{t('unit')}</th>
@@ -210,11 +239,11 @@ const Prices = () => {
         <tbody>
           {prices && prices.map((price: any) => (
             <tr key={price.id}>
-              <td>{t(price.ingredient_type)}</td>
-              <td>{price.ingredient_name}</td>
-              <td>{price.price}</td>
+              <td>{price.ingredient.type}</td>
+              <td>{price.ingredient.name}</td>
+              <td>{price.price} {t("currency")}</td>
               <td>{price.quantity}</td>
-              <td>{price.unit}</td>
+              <td>{t(price.unit)}</td>
               <td>{new Date(price.date).toLocaleString()}</td>
             </tr>
           ))}

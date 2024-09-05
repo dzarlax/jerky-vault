@@ -5,14 +5,14 @@ import { FaTimes } from 'react-icons/fa';
 import useTranslation from 'next-translate/useTranslation';
 
 interface OrderItem {
-  product_id: string;
+  product_id: number;
   quantity: number;
   price: number;
   cost_price: number; // Новое поле для себестоимости
 }
 
 interface Client {
-  id: string;
+  id: number;
   name: string;
   surname: string;
   telegram?: string;
@@ -26,15 +26,15 @@ interface OrderModalProps {
   show: boolean;
   onClose: () => void;
   onSave: () => void;
-  clientOptions: { value: string, label: string }[];
-  productOptions: { value: string, label: string }[];
+  clientOptions: { value: number, label: string }[];
+  productOptions: { value: number, label: string }[];
   statusOptions: { value: string, label: string }[];
-  clientId: string;
+  clientId: number;
   status: string;
   items: OrderItem[];
-  setClientId: (clientId: string) => void;
+  setClientId: (clientId: number) => void;
   setStatus: (status: string) => void;
-  handleProductChange: (index: number, product_id: string) => void;
+  handleProductChange: (index: number, product_id: number) => void;
   handleQuantityChange: (index: number, quantity: number) => void;
   handleItemChange: (index: number, field: keyof OrderItem, value: any) => void;
   handleRemoveItem: (index: number) => void;
@@ -75,7 +75,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
             <Select
               options={clientOptions}
               value={clientOptions.find(option => option.value === clientId)}
-              onChange={option => setClientId(option?.value || '')}
+              onChange={option => setClientId(option?.value || 0)}
             />
           </Form.Group>
 
@@ -97,15 +97,15 @@ const OrderModal: React.FC<OrderModalProps> = ({
                 <Select
                   options={productOptions}
                   value={productOptions.find(option => option.value === item.product_id)}
-                  onChange={option => handleProductChange(index, option?.value || '')}
-                  className="mr-3"  // Добавлено расстояние справа от продукта
+                  onChange={option => handleProductChange(index, option?.value || 0)}
+                  className="mr-3"
                 />
                 <FormControl
                   type="number"
                   min="1"
                   value={item.quantity}
                   onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
-                  className="mr-3"  // Добавлено расстояние справа от количества
+                  className="mr-3"
                 />
                 <FormControl
                   type="number"
@@ -114,7 +114,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
                   readOnly
                   value={item.price}
                   onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
-                  className="mr-3"  // Добавлено расстояние справа от цены
+                  className="mr-3"
                 />
                 <FormControl
                   type="number"
