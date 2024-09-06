@@ -2,6 +2,7 @@ import { Form, Button, Container } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import fetcher from '~/utils/fetcher';
 
 export default function SignIn() {
   const { t } = useTranslation('common');
@@ -14,7 +15,7 @@ export default function SignIn() {
 
     try {
       // Отправляем запрос на Go-бэкенд для авторизации
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const response = await fetcher(`/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
