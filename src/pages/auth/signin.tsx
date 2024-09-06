@@ -8,6 +8,7 @@ export default function SignIn() {
   const { t } = useTranslation('common');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -15,7 +16,7 @@ export default function SignIn() {
 
     try {
       // Отправляем запрос на Go-бэкенд для авторизации
-      const response = await fetcher(`/api/auth/login`, {
+      const data = await fetcher(`/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -23,20 +24,21 @@ export default function SignIn() {
         body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to login');
+      // Если fetcher уже возвращает JSON, то нет необходимости вызывать response.json()
+      if (!data || !data.token) {
+        console.error('Invalid response format:', data);
+        setError('Invalid response from server');
+        return;
       }
 
-      const data = await response.json();
-
       // Сохраняем токен в localStorage или куки
-      localStorage.setItem('token', data.token); // Используй нужное поле для токена из ответа
+      localStorage.setItem('token', data.token); // Используйте нужное поле для токена из ответа
 
       // Перенаправляем на защищенную страницу или домашнюю страницу
       router.push('/');
     } catch (error) {
       console.error('Login error:', error);
-      // Обработай ошибки логина, например, отображая сообщение пользователю
+      setError('Request failed, please try again later.');
     }
   };
 
@@ -64,6 +66,7 @@ export default function SignIn() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Form.Group>
+        {error && <div className="text-danger mt-2">{error}</div>}
         <Button variant="primary" type="submit" className="mt-3">
           {t('signIn')}
         </Button>
