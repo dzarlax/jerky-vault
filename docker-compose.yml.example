@@ -1,19 +1,36 @@
 version: '3.8'
 
 services:
-  app:
+  jerky_vault_frontenf:
     image: dzarlax/jerky_vault:latest
     ports:
-      - "3000:3000"
-    network_mode: "host"
+      - "3000:3000"  
+    working_dir: /app
     environment:
-      DATABASE_HOST: ''
-      DATABASE_USER: ''
-      DATABASE_PASSWORD: ''
-      DATABASE_NAME: ''
-      SECRET: ''
-      NEXTAUTH_URL: ''
-      NEXTAUTH_SECRET: ''
-      JWT_SECRET: ''
       MAPBOX_ACCESS_TOKEN: ''
-    command: /bin/sh -c "npm install && npm start"
+      NEXT_PUBLIC_API_URL: http://localhost:8080  
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm start
+    networks:
+      - jerky_vault_network  # Общая сеть
+
+  jerky_vault_backend:
+    image: dzarlax/jerky_vault_backend:latest
+    ports:
+      - "8080:8080"  # Порт для бэкенда
+    environment:
+      DB_USER: 
+      DB_PASSWORD: 
+      DB_HOST: 
+      DB_PORT: 
+      DB_NAME: 
+      JWT_SECRET: 
+      FRONT_URL: http://localhost:3000
+    networks:
+      - jerky_vault_network 
+
+networks:
+  jerky_vault_network:  
+    driver: bridge
