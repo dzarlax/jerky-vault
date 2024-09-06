@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Container, Form, Button, ListGroup, Row, Col } from 'react-bootstrap';
 import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
+import fetcher from '../utils/fetcher'; // Импорт фетчера из папки utils
+import { useRouter } from 'next/router';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Ingredient {
   id: number;
@@ -18,7 +19,14 @@ const Ingredients: React.FC = () => {
   const [ingredientType, setIngredientType] = useState('');
   const [ingredientName, setIngredientName] = useState('');
   const [filter, setFilter] = useState('');
-
+  const router = useRouter();
+    // Проверка токена и перенаправление на логин, если токена нет
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/signin');
+    }
+  }, [router]);
   const ingredientTypeOptions = [
     { value: 'base', label: t('base') },
     { value: 'spice', label: t('spice') },
@@ -34,11 +42,17 @@ const Ingredients: React.FC = () => {
       alert(t('ingredientExists'));
       return;
     }
-
-    await fetch('/api/ingredients', {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/signin');
+        return;
+      }
+    await fetcher('/api/ingredients', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({ type: ingredientType, name: ingredientName }),
     });
@@ -46,6 +60,9 @@ const Ingredients: React.FC = () => {
     setIngredientType('');
     setIngredientName('');
     mutate(); // Обновление списка ингредиентов
+  } catch (error) {
+    console.error('Failed to load recipes', error);
+  }
   };
 
   if (error) return <div>{t('failedToLoad')}</div>;

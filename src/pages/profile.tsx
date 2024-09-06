@@ -1,13 +1,9 @@
-// pages/profile.tsx
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import fetcher from '../utils/fetcher';
-import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Form, Button, Alert } from 'react-bootstrap';
 
 const Profile = () => {
-  const { data: session } = useSession();
   const { t } = useTranslation('common');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -18,27 +14,37 @@ const Profile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Проверка на совпадение нового пароля и подтверждения пароля
     if (newPassword !== confirmPassword) {
       setError(t('passwordsDoNotMatch'));
       return;
     }
 
+    // Проверка длины нового пароля
+    if (newPassword.length < 3) {
+      setError(t('passwordTooShort'));
+      return;
+    }
+
     try {
-      const response = await fetch('/api/profile/change-password', {
+      // Запрос на изменение пароля
+      const response = await fetcher('/api/profile/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавление авторизации
         },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      const result = await response.json();
       if (response.ok) {
         setSuccess(t('passwordChangedSuccessfully'));
+        setError(null); // Очистка ошибок
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
+        const result = await response.json();
         setError(result.error || t('unknownError'));
       }
     } catch (err) {
@@ -79,7 +85,9 @@ const Profile = () => {
         </Form.Group>
         {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
         {success && <Alert variant="success" className="mt-3">{success}</Alert>}
-        <Button variant="primary" type="submit" className="mt-3 w-100">{t('changePassword')}</Button>
+        <Button variant="primary" type="submit" className="mt-3 w-100">
+          {t('changePassword')}
+        </Button>
       </Form>
     </Container>
   );

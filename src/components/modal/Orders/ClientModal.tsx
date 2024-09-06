@@ -3,7 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 
 interface Client {
-    id: string;
+    id: number;  // Изменен тип id на number
     name: string;
     surname: string;
     telegram?: string;

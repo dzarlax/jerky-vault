@@ -1,12 +1,35 @@
-export default async function fetcher(url: string) {
+export default async function fetcher(endpoint, options = {}) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL; 
+  const url = `${baseUrl}${endpoint}`;
+  const token = localStorage.getItem('token');
+
   const response = await fetch(url, {
-    credentials: 'include' // Включаем учетные данные (cookies) для передачи сессионных данных
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    },
+    ...options,
   });
-  
+
+
   if (!response.ok) {
-    throw new Error('Failed to fetch');
+    const errorText = await response.text();
+    console.error('Fetch Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+    });
+    throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
   }
-  
-  const data = await response.json();
-  return data;
+
+  try {
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to parse JSON:', error);
+    const text = await response.text(); // Логирование текста ответа, если JSON парсинг не удался
+    console.log('Response Text:', text);
+    throw new Error('Failed to parse JSON response');
+  }
 }

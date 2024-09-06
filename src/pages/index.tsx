@@ -1,22 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Table } from 'react-bootstrap';
 import useSWR from 'swr';
-import { useSession, getSession } from 'next-auth/react';
 import useTranslation from 'next-translate/useTranslation';
 import { Pie } from 'react-chartjs-2';
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { useRouter } from 'next/router';
+import fetcher from '../utils/fetcher'; // Импорт фетчера из папки utils
 
 Chart.register(ArcElement, Tooltip, Legend);
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 const Dashboard = () => {
-  const { data: session } = useSession();
   const { t } = useTranslation('common');
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const { data: dashboardStats, error: dashboardError } = useSWR('/api/stats/dashboard', fetcher);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/signin'); // Перенаправление на страницу логина, если токена нет
+    } else {
+      setIsAuthenticated(true); // Устанавливаем статус аутентификации
+    }
+  }, [router]);
 
-  if (!session) return <div>{t('pleaseSignIn')}</div>;
+  // Используем фетчер из utils
+  const { data: dashboardStats, error: dashboardError } = useSWR(
+    isAuthenticated ? '/api/dashboard' : null,
+    fetcher
+  );
+
+  if (!isAuthenticated) return <div>{t('pleaseSignIn')}</div>;
 
   if (!dashboardStats) return <div>{t('loading')}</div>;
 
@@ -37,7 +50,6 @@ const Dashboard = () => {
     <Container fluid>
       <h1>{t('dashboard')}</h1>
 
-      {/* Старая статистика */}
       <Row className="mb-4">
         <Col md={4}>
           <Card>
@@ -57,7 +69,6 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Новая статистика */}
       <Row className="mb-4">
         <Col md={4}>
           <Card>
@@ -88,41 +99,25 @@ const Dashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {dashboardStats.pendingOrders && dashboardStats.pendingOrders.length > 0 ? (
-            dashboardStats.pendingOrders.map((order) => (
-              <tr key={order.id}>
-                <td>{order.id}</td>
-                <td>{`${order.client_name} ${order.client_surname}`}</td>
-                <td>{t(order.status.toLowerCase())}</td>
-                <td>{new Date(order.date).toLocaleString()}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={4}>{t('noPendingOrders')}</td>
-            </tr>
-          )}
-        </tbody>
+  {dashboardStats.pendingOrders && dashboardStats.pendingOrders.length > 0 ? (
+    dashboardStats.pendingOrders.map((order) => (
+      <tr key={order.id}>
+        <td>{order.id}</td>
+        <td>{`${order.client_name} ${order.client_surname}`}</td> {/* Проверка имён полей */}
+        <td>{t(order.status.toLowerCase())}</td>
+        <td>{new Date(order.created_at).toLocaleString()}</td> {/* Поле `created_at` вместо `date` */}
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={4}>{t('noPendingOrders')}</td>
+    </tr>
+  )}
+</tbody>
+
       </Table>
     </Container>
   );
 };
-
-export async function getServerSideProps(context: any) {
-  const session = await getSession(context);
-
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/auth/signin',
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: { session },
-  };
-}
 
 export default Dashboard;

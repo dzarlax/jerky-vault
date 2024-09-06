@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
 import Select from 'react-select';
 import { FaTrash } from 'react-icons/fa';
+import fetcher from '../../../utils/fetcher';
 
 const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe, onCloneRecipe, onUpdateRecipe }) => {
   const [ingredientId, setIngredientId] = useState<string>('');
@@ -60,69 +61,112 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
 
   const addIngredientToRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (!ingredientId || !quantity || !unit) {
-        console.error('Missing data for ingredient:', { ingredientId, quantity, unit });
-        return;
+      console.error('Missing data for ingredient:', { ingredientId, quantity, unit });
+      return;
     }
-
+  
     try {
-        const response = await fetch('/api/recipes/recipe_ingredients', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                recipe_id: editingRecipe.id,
-                ingredient_id: ingredientId,
-                quantity,
-                unit: unit ? unit.value : ''
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to add ingredient');
-        }
-
-        await loadRecipeIngredients(editingRecipe.id);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+  
+      const requestData = {
+        ingredient_id: parseInt(ingredientId, 10),
+        quantity,
+        unit: unit.value
+      };
+  
+      console.log('Sending data to add ingredient:', requestData); // Логирование данных перед отправкой
+  
+      const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+  
+      console.log('Response from adding ingredient:', response); // Логирование ответа
+  
+      // Обновление ингредиентов после успешного добавления
+      if (response) {
+        await loadRecipeIngredients(editingRecipe.id); // Перезагрузите ингредиенты
+      }
     } catch (error) {
-        console.error('Error adding ingredient:', error);
+      console.error('Error adding ingredient:', error);
     }
   };
+  
+  
 
   const loadRecipeIngredients = async (recipeId: string) => {
     try {
-        const response = await fetch(`/api/recipes/${recipeId}`);
-        const data = await response.json();
-        setEditingRecipe((prev: any) => ({ ...prev, ingredients: data.ingredients }));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+  
+      console.log('Fetching recipe ingredients from API'); // Логирование запроса
+      const data = await fetcher(`/api/recipes/${recipeId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+  
+      console.log('Response from loading ingredients:', data); // Логирование ответа
+      // Убедитесь, что вы обновляете состояние правильно
+      setEditingRecipe((prev: any) => ({
+        ...prev,
+        recipe_ingredients: data.recipe_ingredients || []
+      }));
     } catch (error) {
-        console.error('Failed to load ingredients:', error);
+      console.error('Failed to load ingredients:', error);
     }
   };
+  
+  
 
   const deleteIngredientFromRecipe = async (ingredientId: string) => {
     if (!editingRecipe || !ingredientId) return;
     try {
-        await fetch(`/api/recipes/${editingRecipe.id}/ingredients/${ingredientId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        await loadRecipeIngredients(editingRecipe.id);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+  
+      console.log('Sending request to delete ingredient by ingredientId:', { ingredientId }); // Логирование запроса
+      const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients/${ingredientId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      console.log('Response from deleting ingredient:', response); // Логирование ответа
+      await loadRecipeIngredients(editingRecipe.id);
     } catch (error) {
-        console.error('Failed to delete ingredient from recipe:', error);
+      console.error('Failed to delete ingredient from recipe:', error);
     }
-  };
+  };  
+  
 
   const handleSave = () => {
     onUpdateRecipe(editingRecipe);
     onHide(); // Закрываем модальное окно после сохранения
   };
+
   return (
     <Modal show={show} onHide={onHide}>
       <Modal.Header closeButton>
-        <Button variant="danger" onClick={onDeleteRecipe} style={{ position: 'relative',background: 'transparent', color:'darkred' }}>
+        <Button variant="danger" onClick={onDeleteRecipe} style={{ position: 'relative', background: 'transparent', color: 'darkred' }}>
           <FaTrash />
         </Button>
         <Modal.Title>{t('editRecipe')}</Modal.Title>
@@ -140,7 +184,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
                 />
               </Form.Group>
             </Form>
-            <p>{t('totalCost')}: {(editingRecipe.totalCost).toFixed(2)} {t('currency')}</p>
+            <p>{t('totalCost')}: {editingRecipe.totalCost ? editingRecipe.totalCost.toFixed(2) : 'N/A'} {t('currency')}</p>
 
             <Form onSubmit={addIngredientToRecipe}>
               <Form.Group>
@@ -180,12 +224,17 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
             </Form>
 
             <ListGroup>
-              {editingRecipe.ingredients.map((ingredient: any, index: number) => (
-                <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
-                  {ingredient.name} - {ingredient.quantity} {t(ingredient.unit)}({parseFloat(ingredient.ingredientCost).toFixed(2)} {t('currency')})
-                  <CloseButton onClick={() => deleteIngredientFromRecipe(ingredient.id)} />
-                </ListGroup.Item>
-              ))}
+              {editingRecipe.recipe_ingredients && editingRecipe.recipe_ingredients.length > 0 ? (
+                editingRecipe.recipe_ingredients.map((ingredient: any, index: number) => (
+                  <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
+  {ingredient.ingredient.name} - {ingredient.quantity} {ingredient.unit} ({ingredient.ingredientCost ? parseFloat(ingredient.ingredientCost).toFixed(2) : 'N/A'} {t('currency')})
+  <CloseButton onClick={() => deleteIngredientFromRecipe(ingredient.ingredient_id.toString())} />
+</ListGroup.Item>
+
+                ))
+              ) : (
+                <ListGroup.Item>{t('noIngredientsAvailable')}</ListGroup.Item>
+              )}
             </ListGroup>
           </>
         )}
