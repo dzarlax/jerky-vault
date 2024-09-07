@@ -160,5 +160,6 @@
   "enterYourPassword": "Enter your password",
   "userRegisteredSuccessfully": "User registered successfully",
   "failedToRegisterUser": "Failed to register user",
-  "confirmYourPassword": "Confirm your password"
+  "confirmYourPassword": "Confirm your password",
+  "pleaseSignIn": "Please sign in"
 }

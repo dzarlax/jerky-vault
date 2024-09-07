@@ -160,5 +160,6 @@
   "enterYourPassword": "Введите ваш пароль",
   "userRegisteredSuccessfully": "Пользователь успешно зарегистрирован",
   "failedToRegisterUser": "Не удалось зарегистрировать пользователя",
-  "confirmYourPassword": "Подтвердите ваш пароль"
+  "confirmYourPassword": "Подтвердите ваш пароль",
+  "pleaseSignIn": "Пожалуйста залогиньтесь"
 }

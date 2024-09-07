@@ -7,22 +7,19 @@ import { Navbar, Nav, Dropdown, Container } from 'react-bootstrap';
 const Header: React.FC = () => {
   const { t, lang } = useTranslation('common');
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    // Проверка наличия токена в localStorage
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
-
-  if (!isClient) {
-    return null; // или можно вернуть индикатор загрузки
-  }
+    // Проверка, что код выполняется на клиентской стороне
+    if (typeof window !== 'undefined') {
+      // Проверка наличия токена в localStorage
+      const token = localStorage.getItem('token');
+      setIsAuthenticated(!!token); // Установка состояния на основе наличия токена
+    }
+  }, [router]); // Добавление зависимости router для перехвата изменений маршрута
 
   const handleSignOut = () => {
-    // Удаление токена из localStorage или cookies
+    // Удаление токена из localStorage
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     router.push('/auth/signin'); // Перенаправление на страницу логина
@@ -48,13 +45,12 @@ const Header: React.FC = () => {
             <Nav.Link as={Link} href="/orders" locale={lang}>{t('orders')}</Nav.Link>
           </Nav>
           <Nav className="ms-auto">
-            {!isAuthenticated && (
+            {!isAuthenticated ? (
               <>
                 <Nav.Link as={Link} href="/auth/signin" locale={lang}>{t('signIn')}</Nav.Link>
                 <Nav.Link as={Link} href="/auth/signup" locale={lang}>{t('signUp')}</Nav.Link>
               </>
-            )}
-            {isAuthenticated && (
+            ) : (
               <>
                 <Nav.Link as={Link} href="/profile" locale={lang}>{t('profile')}</Nav.Link>
                 <Nav.Link href="#" onClick={handleSignOut}>{t('signOut')}</Nav.Link>
@@ -77,7 +73,6 @@ const Header: React.FC = () => {
                   <img src="/flags/rs.png" alt="Srbski" width={20} height={15} className="me-2" />
                   Srbski
                 </Dropdown.Item>
-                {/* Добавьте другие языки по мере необходимости */}
               </Dropdown.Menu>
             </Dropdown>
           </Nav>

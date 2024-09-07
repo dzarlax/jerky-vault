@@ -160,4 +160,6 @@
   "enterYourPassword": "Унесите своју лозинку",
   "userRegisteredSuccessfully": "Корисник је успешно регистрован",
   "failedToRegisterUser": "Неуспешна регистрација корисника",
-  "confirmYourPassword": "Потврдите своју лозинку"}
+  "confirmYourPassword": "Потврдите своју лозинку",
+  "pleaseSignIn": "Молимо вас да се пријавите"
+}
