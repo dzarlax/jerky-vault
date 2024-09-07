@@ -4,6 +4,11 @@ export default async function fetcher(endpoint, options = {}) {
     throw new Error('Базовый URL API не установлен. Проверьте переменные окружения.');
   }
 
+  // Проверяем, что код выполняется на клиентской стороне
+  if (typeof window === 'undefined') {
+    throw new Error('Fetcher должен выполняться только на клиенте');
+  }
+
   const url = `${baseUrl}${endpoint}`;
   const token = localStorage.getItem('token');
 
