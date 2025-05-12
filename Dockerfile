@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies, including dev dependencies needed for build
-RUN npm ci --include=dev
+# Install only production dependencies (next-translate-plugin is now in dependencies)
+RUN npm ci --omit=dev
 
 # Copy project files
 COPY . .
@@ -22,4 +22,4 @@ EXPOSE 3000
 
 # Build and start the application at runtime
 # This allows environment variables to be passed via docker-compose
-CMD npm run build && npm start
+CMD npm run build:no-ssg && npm start
