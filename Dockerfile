@@ -22,4 +22,4 @@ EXPOSE 3000
 
 # Build and start the application at runtime
 # This allows environment variables to be passed via docker-compose
-CMD npm run build:no-ssg && npm start
+CMD npm run build && npm start
