@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar';
 import Breadcrumbs from '../components/Breadcrumbs';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col } from 'react-bootstrap';
+import { AuthProvider } from '../utils/authContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { t } = useTranslation('common');
@@ -39,20 +40,16 @@ function MyApp({ Component, pageProps }: AppProps) {
     };
   }, []);
   
-  // Если это страница аутентификации, не показываем сайдбар и используем другой макет
-  if (isAuthPage) {
-    return (
-      <>
-        <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} />
-        <Container className="py-5">
-          <Component {...pageProps} />
-        </Container>
-        <Footer />
-      </>
-    );
-  }
-
-  return (
+  // Wrap the content with AuthProvider
+  const content = isAuthPage ? (
+    <>
+      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} />
+      <Container className="py-5">
+        <Component {...pageProps} />
+      </Container>
+      <Footer />
+    </>
+  ) : (
     <>
       <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} />
       <div className="d-flex">
@@ -73,6 +70,13 @@ function MyApp({ Component, pageProps }: AppProps) {
       </div>
       <Footer />
     </>
+  );
+
+  // Wrap everything with AuthProvider
+  return (
+    <AuthProvider>
+      {content}
+    </AuthProvider>
   );
 }
 

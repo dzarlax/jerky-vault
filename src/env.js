@@ -8,6 +8,7 @@ export const env = createEnv({
    */
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
+    MAPBOX_ACCESS_TOKEN: z.string().optional(),
   },
 
   /**
@@ -16,7 +17,17 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // API URL for backend connection
+    NEXT_PUBLIC_API_URL: z.string().url().optional(),
+    // Frontend URL for CORS and redirects
+    NEXT_PUBLIC_FRONTEND_URL: z.string().url().optional(),
+    // Authentication settings
+    NEXT_PUBLIC_AUTH_ENABLED: z.string().transform((val) => val === 'true').optional(),
+    // Build optimization flags
+    NEXT_PUBLIC_OPTIMIZE_IMAGES: z.string().transform((val) => val === 'true').optional(),
+    NEXT_PUBLIC_OPTIMIZE_FONTS: z.string().transform((val) => val === 'true').optional(),
+    // Disable static generation for authenticated routes during build
+    NEXT_PUBLIC_SKIP_AUTH_ROUTES_SSG: z.string().transform((val) => val === 'true').optional(),
   },
 
   /**
@@ -25,7 +36,13 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+    NEXT_PUBLIC_AUTH_ENABLED: process.env.NEXT_PUBLIC_AUTH_ENABLED,
+    NEXT_PUBLIC_OPTIMIZE_IMAGES: process.env.NEXT_PUBLIC_OPTIMIZE_IMAGES,
+    NEXT_PUBLIC_OPTIMIZE_FONTS: process.env.NEXT_PUBLIC_OPTIMIZE_FONTS,
+    NEXT_PUBLIC_SKIP_AUTH_ROUTES_SSG: process.env.NEXT_PUBLIC_SKIP_AUTH_ROUTES_SSG,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
