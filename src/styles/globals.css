@@ -58,7 +58,7 @@ body {
   margin: 0;
   padding: 0;
   transition: background-color var(--transition-standard), color var(--transition-standard);
-  padding-bottom: 60px; /* Для фиксированного футера */
+  padding-bottom: 30px; /* Для фиксированного футера */
 }
 
 /* Основные стили контейнера */
@@ -105,12 +105,13 @@ button, .btn {
   border-radius: var(--button-border-radius);
   padding: 10px 20px;
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: background var(--transition-standard), transform var(--transition-standard), box-shadow var(--transition-standard);
+  font-weight: 600;
+  transition: background var(--transition-standard), transform var(--transition-standard), box-shadow var(--transition-standard), color var(--transition-standard);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 button:hover, .btn:hover {
@@ -155,60 +156,80 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 
 .btn-primary {
   background-color: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(63, 81, 181, 0.3);
 }
 
 .btn-secondary {
   background-color: #6c757d;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
 }
 
 .btn-success {
   background-color: var(--success-color);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
 }
 
 .btn-danger {
   background-color: var(--error-color);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
 }
 
 .btn-warning {
   background-color: var(--warning-color);
   color: #212529;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
 }
 
 .btn-info {
   background-color: var(--info-color);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
 }
 
 .btn-outline-primary {
   background-color: transparent;
-  border: 1px solid var(--primary-color);
+  border: 2px solid var(--primary-color);
   color: var(--primary-color);
+  text-shadow: none;
+  font-weight: 600;
 }
 
 .btn-outline-primary:hover {
   background-color: var(--primary-color);
   color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-outline-secondary {
   background-color: transparent;
-  border: 1px solid #6c757d;
+  border: 2px solid #6c757d;
   color: #6c757d;
+  text-shadow: none;
+  font-weight: 600;
 }
 
 .btn-outline-secondary:hover {
   background-color: #6c757d;
   color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-outline-danger {
   background-color: transparent;
-  border: 1px solid var(--error-color);
+  border: 2px solid var(--error-color);
   color: var(--error-color);
+  text-shadow: none;
+  font-weight: 600;
 }
 
 .btn-outline-danger:hover {
   background-color: var(--error-color);
   color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-icon {
@@ -322,9 +343,37 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 
 /* Навигация */
 .navbar {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  background-color: var(--header-background-color) !important;
+  background-color: transparent !important;
   transition: background-color var(--transition-standard);
+}
+
+/* Fix for dropdown toggles */
+.dropdown-toggle.nav-link.bg-transparent {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dropdown-toggle.nav-link.bg-transparent::after {
+  display: none;
+}
+
+.dropdown-toggle.nav-link.bg-transparent:hover,
+.dropdown-toggle.nav-link.bg-transparent:focus,
+.dropdown-toggle.nav-link.bg-transparent:active {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-toggle.bg-transparent {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.theme-toggle.bg-transparent:hover,
+.theme-toggle.bg-transparent:focus,
+.theme-toggle.bg-transparent:active {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 .navbar-brand {
@@ -351,7 +400,7 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 
 /* Боковая навигация */
 .sidebar {
-  width: 250px;
+  width: 220px;
   height: 100vh;
   position: fixed;
   top: 0;
@@ -387,7 +436,8 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 
 .sidebar-link.active {
   background-color: var(--primary-color);
-  color: white;
+  color: white !important;
+  font-weight: bold;
 }
 
 .sidebar-link i, .sidebar-link svg {
@@ -417,16 +467,16 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 /* Футер */
 footer {
   text-align: center;
-  padding: 1rem;
-  background-color: var(--footer-background-color);
+  padding: 0.5rem;
+  background-color: transparent;
   color: var(--footer-text-color);
   width: 100%;
   position: fixed;
   bottom: 0;
   left: 0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   z-index: 1000;
-  transition: background-color var(--transition-standard), color var(--transition-standard);
+  transition: color var(--transition-standard);
+  font-size: 0.8rem;
 }
 
 /* Состояния загрузки */
@@ -576,8 +626,10 @@ footer {
   transition: transform var(--transition-standard), box-shadow var(--transition-standard);
   border-radius: var(--card-border-radius);
   overflow: hidden;
+  background-color: var(--container-background-color);
 }
 
+/* Старые стили для обратной совместимости */
 .product-image-container {
   position: relative;
   height: 200px;
@@ -600,6 +652,56 @@ footer {
   justify-content: center;
 }
 
+/* Новые компактные стили */
+.product-image-container-compact {
+  width: 80px;
+  min-width: 80px;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f5f5f5;
+}
+
+.product-image-compact {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-image-placeholder-compact {
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+}
+
+.product-title-compact {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 20px);
+}
+
+.product-description-compact {
+  font-size: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: 2.4em;
+}
+
+.product-detail-compact {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  background-color: rgba(63, 81, 181, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Старые стили для обратной совместимости */
 .product-actions {
   position: absolute;
   top: 10px;
@@ -693,6 +795,53 @@ footer {
   color: var(--text-color);
 }
 
+/* Fix for dashboard cards */
+.dashboard-stats .card {
+  background-color: white;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-stats .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-stats .card-body {
+  padding: 1.5rem;
+}
+
+.dashboard-stats .stat-icon {
+  background-color: rgba(63, 81, 181, 0.1);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dashboard-stats .stat-icon svg {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.dashboard-stats .stat-value {
+  color: #333;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-stats .stat-label {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
 .stat-label {
   font-size: 0.9rem;
   color: #666;
@@ -758,6 +907,175 @@ footer {
 
 .modal-title {
   position: relative;
+}
+
+/* Recipe Cards */
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.recipe-card {
+  background-color: var(--container-background-color);
+  border-radius: var(--card-border-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.recipe-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(63, 81, 181, 0.05);
+}
+
+.recipe-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--primary-color);
+}
+
+.recipe-card-cost {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.recipe-cost-value {
+  font-weight: 600;
+}
+
+.recipe-card-body {
+  padding: 12px 16px;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.recipe-ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipe-ingredient-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
+.ingredient-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.ingredient-details {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.no-ingredients {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
+}
+
+.recipe-card-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.no-recipes-message {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  grid-column: 1 / -1;
+}
+
+/* Product List Layout */
+.product-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.product-list-item {
+  height: 100%;
+}
+
+/* Order Products Table */
+.order-products-table {
+  width: 100%;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.order-products-header {
+  display: flex;
+  background-color: #f8f9fa;
+  padding: 12px 15px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+}
+
+.order-products-row {
+  display: flex;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  align-items: center;
+}
+
+.order-products-row:last-child {
+  border-bottom: none;
+}
+
+.product-column {
+  flex: 3;
+  padding-right: 10px;
+}
+
+.quantity-column {
+  flex: 1;
+  padding: 0 5px;
+}
+
+.price-column, .cost-column {
+  flex: 1;
+  padding: 0 5px;
+}
+
+.action-column {
+  width: 50px;
+  text-align: center;
+}
+
+.delete-btn {
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.product-select {
+  width: 100%;
 }
 
 /* Медиа-запросы для адаптивности */

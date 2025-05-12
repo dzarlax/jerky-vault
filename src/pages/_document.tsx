@@ -12,7 +12,6 @@ class MyDocument extends Document {
         <Head>
           <link rel="icon" href="/favicon.ico" />
           <meta name="description" content="JerkyVault - Jerky Management System" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           
           {/* Preload auth context to prevent errors during SSR */}
           <script
@@ -24,6 +23,11 @@ class MyDocument extends Document {
                   user: null,
                   token: null
                 };
+                
+                // Prevent auth errors during static generation
+                if (typeof window !== 'undefined' && !window.React) {
+                  window.React = { createElement: function() { return null; } };
+                }
               `,
             }}
           />

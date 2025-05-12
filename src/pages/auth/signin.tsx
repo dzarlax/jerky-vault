@@ -2,7 +2,8 @@ import { Form, Button, Container } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import fetcher from '~/utils/fetcher';
+import fetcher from '../../utils/fetcher';
+import { useAuth } from '../../utils/authContext';
 
 export default function SignIn() {
   const { t } = useTranslation('common');
@@ -10,6 +11,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,10 +33,10 @@ export default function SignIn() {
         return;
       }
 
-      // Сохраняем токен в localStorage или куки
-      localStorage.setItem('token', data.token); // Используйте нужное поле для токена из ответа
+      // Use the login function from AuthContext
+      login(data.token, data.user || { username });
 
-      // Перенаправляем на защищенную страницу или домашнюю страницу
+      // Redirect to the protected page or home page
       router.push('/');
     } catch (error) {
       console.error('Login error:', error);

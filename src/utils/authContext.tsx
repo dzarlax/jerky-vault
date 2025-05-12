@@ -26,6 +26,11 @@ export const useAuth = () => useContext(AuthContext);
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialState?: {
+    isAuthenticated: boolean;
+    user: any | null;
+    token: string | null;
+  };
 }
 
 // Get initial auth state from window if available (set in _document.tsx)
@@ -40,8 +45,8 @@ const getInitialAuthState = () => {
   };
 };
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [auth, setAuth] = useState(getInitialAuthState());
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialState }) => {
+  const [auth, setAuth] = useState(initialState || getInitialAuthState());
 
   useEffect(() => {
     // Check if we're in a browser environment
@@ -112,26 +117,30 @@ export const withAuth = (Component: React.ComponentType<any>) => {
 
     // During SSR or static generation, just render the component
     // This prevents errors during build time
-    if (!isClient) {
+    if (!isClient || typeof window === 'undefined') {
       return <Component {...props} />;
     }
 
     // On the client side, check authentication
     if (!auth.isAuthenticated) {
       // If we're in a browser environment, redirect to login
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/signin';
-        return null;
-      }
+      window.location.href = '/auth/signin';
+      return null;
     }
 
     return <Component {...props} />;
   };
 
-  // Copy getInitialProps so data fetching works
-  if ((Component as any).getInitialProps) {
-    (WithAuth as any).getInitialProps = (Component as any).getInitialProps;
-  }
+  // Add getInitialProps to disable automatic static optimization
+  // This ensures the component is always rendered on the server
+  WithAuth.getInitialProps = async (ctx: any) => {
+    // Get the existing getInitialProps from the component if it exists
+    const componentProps = (Component as any).getInitialProps 
+      ? await (Component as any).getInitialProps(ctx) 
+      : {};
+    
+    return { ...componentProps };
+  };
 
   return WithAuth;
 };

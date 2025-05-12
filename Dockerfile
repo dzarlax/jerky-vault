@@ -14,8 +14,8 @@ RUN npm ci
 COPY . .
 
 # Build the application with optimizations
-# Using our custom build script that skips static generation
-RUN npm run build:docker
+# Using our custom build script that completely skips static generation
+RUN npm run build:no-ssg
 
 # Production stage
 FROM node:20-alpine AS runner
@@ -35,10 +35,12 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/locales ./locales
 COPY --from=builder /app/i18n.* ./
 COPY --from=builder /app/src/types ./src/types
+COPY --from=builder /app/src/env.js ./src/env.js
 COPY --from=builder /app/.env ./.env
+COPY --from=builder /app/server.js ./server.js
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
+# Start the application with our custom server
 CMD ["npm", "start"]

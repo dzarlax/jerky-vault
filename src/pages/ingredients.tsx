@@ -5,6 +5,7 @@ import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../utils/fetcher'; // Импорт фетчера из папки utils
 import { useRouter } from 'next/router';
+import { useAuth, withAuth } from '../utils/authContext';
 
 
 interface Ingredient {
@@ -14,19 +15,19 @@ interface Ingredient {
 }
 
 const Ingredients: React.FC = () => {
+  const { auth } = useAuth();
   const { data: ingredients, error, mutate } = useSWR<Ingredient[]>('/api/ingredients', fetcher);
   const { t } = useTranslation('common');
   const [ingredientType, setIngredientType] = useState('');
   const [ingredientName, setIngredientName] = useState('');
   const [filter, setFilter] = useState('');
   const router = useRouter();
-    // Проверка токена и перенаправление на логин, если токена нет
+    // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!auth.isAuthenticated) {
       router.push('/auth/signin');
     }
-  }, [router]);
+  }, [auth.isAuthenticated, router]);
   const ingredientTypeOptions = [
     { value: 'base', label: t('base') },
     { value: 'spice', label: t('spice') },
@@ -43,8 +44,7 @@ const Ingredients: React.FC = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -52,7 +52,7 @@ const Ingredients: React.FC = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${auth.token}`,
       },
       body: JSON.stringify({ type: ingredientType, name: ingredientName }),
     });
@@ -126,4 +126,4 @@ const Ingredients: React.FC = () => {
   );
 };
 
-export default Ingredients;
+export default withAuth(Ingredients);

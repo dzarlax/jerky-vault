@@ -6,6 +6,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useRouter } from 'next/router';
 import fetcher from '../utils/fetcher';
+import { useAuth, withAuth } from '../utils/authContext';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import { 
@@ -24,23 +25,31 @@ Chart.register(ArcElement, Tooltip, Legend);
 const Dashboard = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/signin');
-    } else {
-      setIsAuthenticated(true);
-    }
-  }, [router]);
+  const { auth } = useAuth();
 
   const { data: dashboardStats, error: dashboardError, mutate } = useSWR(
-    isAuthenticated ? '/api/dashboard' : null,
-    fetcher
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard' : null,
+    fetcher,
+    {
+      // Don't revalidate on focus to avoid unnecessary API calls
+      revalidateOnFocus: false,
+      // Handle errors gracefully
+      onError: (err) => {
+        console.error('Dashboard data fetch error:', err);
+      },
+      // Provide fallback data for SSR
+      fallbackData: {
+        totalRecipes: 0,
+        totalIngredients: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        pendingOrders: [],
+        typeDistribution: []
+      }
+    }
   );
 
-  if (!isAuthenticated) {
+  if (!auth.isAuthenticated) {
     return (
       <Container className="text-center py-5">
         <h2>{t('pleaseSignIn')}</h2>
@@ -73,8 +82,8 @@ const Dashboard = () => {
     datasets: [
       {
         data: dashboardStats.typeDistribution.map((item) => item.count),
-        backgroundColor: ['#3f51b5', '#ff4081', '#4caf50', '#ff9800'],
-        hoverBackgroundColor: ['#303f9f', '#f50057', '#388e3c', '#f57c00'],
+        backgroundColor: ['#3f51b5', '#ff4081', '#4caf50', '#ff9800', '#673ab7'],
+        hoverBackgroundColor: ['#303f9f', '#f50057', '#388e3c', '#f57c00', '#512da8'],
         borderWidth: 0,
       },
     ],
@@ -87,7 +96,25 @@ const Dashboard = () => {
         labels: {
           padding: 20,
           usePointStyle: true,
+          color: '#333333',
+          font: {
+            size: 12,
+            weight: 'bold' as const
+          }
         }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        padding: 10,
+        titleFont: {
+          size: 14
+        },
+        bodyFont: {
+          size: 13
+        },
+        displayColors: true,
+        boxWidth: 10,
+        boxHeight: 10
       }
     },
     maintainAspectRatio: false
@@ -95,79 +122,79 @@ const Dashboard = () => {
 
   return (
     <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>{t('dashboard')}</h1>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h1 className="fs-4 mb-0">{t('dashboard')}</h1>
       </div>
 
-      <Row className="dashboard-stats g-4 mb-5">
+      <Row className="g-3 mb-4">
         <Col md={3}>
-          <Card className="stat-card h-100 border-0 shadow-sm">
-            <Card.Body className="d-flex flex-column">
-              <div className="stat-icon mb-3 rounded-circle bg-primary-light p-3 align-self-start">
-                <FaBook className="text-primary" size={24} />
+          <div className="stat-card h-100 border-0 bg-white rounded p-3">
+            <div className="d-flex flex-column">
+              <div className="stat-icon mb-2 rounded-circle bg-primary-light p-2 align-self-start">
+                <FaBook className="text-primary" size={18} />
               </div>
-              <div className="stat-value display-4 fw-bold mb-2">
+              <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
                 {dashboardStats.totalRecipes}
               </div>
-              <div className="stat-label text-muted">{t('totalRecipes')}</div>
-            </Card.Body>
-          </Card>
+              <div className="stat-label text-muted" style={{ fontSize: '0.85rem' }}>{t('totalRecipes')}</div>
+            </div>
+          </div>
         </Col>
         <Col md={3}>
-          <Card className="stat-card h-100 border-0 shadow-sm">
-            <Card.Body className="d-flex flex-column">
-              <div className="stat-icon mb-3 rounded-circle bg-primary-light p-3 align-self-start">
-                <FaLeaf className="text-primary" size={24} />
+          <div className="stat-card h-100 border-0 bg-white rounded p-3">
+            <div className="d-flex flex-column">
+              <div className="stat-icon mb-2 rounded-circle bg-primary-light p-2 align-self-start">
+                <FaLeaf className="text-primary" size={18} />
               </div>
-              <div className="stat-value display-4 fw-bold mb-2">
+              <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
                 {dashboardStats.totalIngredients}
               </div>
-              <div className="stat-label text-muted">{t('totalIngredients')}</div>
-            </Card.Body>
-          </Card>
+              <div className="stat-label text-muted" style={{ fontSize: '0.85rem' }}>{t('totalIngredients')}</div>
+            </div>
+          </div>
         </Col>
         <Col md={3}>
-          <Card className="stat-card h-100 border-0 shadow-sm">
-            <Card.Body className="d-flex flex-column">
-              <div className="stat-icon mb-3 rounded-circle bg-primary-light p-3 align-self-start">
-                <FaBoxOpen className="text-primary" size={24} />
+          <div className="stat-card h-100 border-0 bg-white rounded p-3">
+            <div className="d-flex flex-column">
+              <div className="stat-icon mb-2 rounded-circle bg-primary-light p-2 align-self-start">
+                <FaBoxOpen className="text-primary" size={18} />
               </div>
-              <div className="stat-value display-4 fw-bold mb-2">
+              <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
                 {dashboardStats.totalProducts}
               </div>
-              <div className="stat-label text-muted">{t('totalProducts')}</div>
-            </Card.Body>
-          </Card>
+              <div className="stat-label text-muted" style={{ fontSize: '0.85rem' }}>{t('totalProducts')}</div>
+            </div>
+          </div>
         </Col>
         <Col md={3}>
-          <Card className="stat-card h-100 border-0 shadow-sm">
-            <Card.Body className="d-flex flex-column">
-              <div className="stat-icon mb-3 rounded-circle bg-primary-light p-3 align-self-start">
-                <FaShoppingCart className="text-primary" size={24} />
+          <div className="stat-card h-100 border-0 bg-white rounded p-3">
+            <div className="d-flex flex-column">
+              <div className="stat-icon mb-2 rounded-circle bg-primary-light p-2 align-self-start">
+                <FaShoppingCart className="text-primary" size={18} />
               </div>
-              <div className="stat-value display-4 fw-bold mb-2">
+              <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
                 {dashboardStats.totalOrders}
               </div>
-              <div className="stat-label text-muted">{t('totalOrders')}</div>
-            </Card.Body>
-          </Card>
+              <div className="stat-label text-muted" style={{ fontSize: '0.85rem' }}>{t('totalOrders')}</div>
+            </div>
+          </div>
         </Col>
       </Row>
 
-      <Row className="mb-5">
+      <Row className="mb-4">
         {pieData && (
-          <Col lg={6} className="mb-4 mb-lg-0">
-            <Card className="border-0 shadow-sm h-100">
-              <Card.Body>
-                <Card.Title className="mb-4">
+          <Col lg={6} className="mb-3 mb-lg-0">
+            <Card className="border-0 h-100">
+              <Card.Body className="p-3">
+                <Card.Title className="mb-3 fs-5">
                   <FaChartPie className="me-2 text-primary" />
                   {t('ingredientTypeDistribution')}
                 </Card.Title>
-                <div className="chart-container">
+                <div className="chart-container" style={{ height: '250px' }}>
                   <Pie 
                     data={pieData} 
                     options={pieOptions} 
-                    height={300}
+                    height={250}
                   />
                 </div>
               </Card.Body>
@@ -175,15 +202,15 @@ const Dashboard = () => {
           </Col>
         )}
         <Col lg={6}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <Card.Title className="mb-4">
+          <Card className="border-0 h-100">
+            <Card.Body className="p-3">
+              <Card.Title className="mb-3 fs-5">
                 <FaCalendarAlt className="me-2 text-primary" />
                 {t('pendingOrders')}
               </Card.Title>
               {dashboardStats.pendingOrders && dashboardStats.pendingOrders.length > 0 ? (
                 <div className="table-responsive">
-                  <Table hover className="mb-0">
+                  <Table hover size="sm" className="mb-0">
                     <thead>
                       <tr>
                         <th>{t('order')}</th>
@@ -219,8 +246,8 @@ const Dashboard = () => {
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-muted">{t('noPendingOrders')}</p>
+                <div className="text-center py-3">
+                  <p className="text-muted small">{t('noPendingOrders')}</p>
                 </div>
               )}
             </Card.Body>
@@ -231,4 +258,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default withAuth(Dashboard);

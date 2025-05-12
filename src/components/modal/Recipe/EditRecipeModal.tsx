@@ -3,8 +3,10 @@ import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
 import Select from 'react-select';
 import { FaTrash } from 'react-icons/fa';
 import fetcher from '../../../utils/fetcher';
+import { useAuth } from '../../../utils/authContext';
 
 const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe, onCloneRecipe, onUpdateRecipe }) => {
+  const { auth } = useAuth();
   const [ingredientId, setIngredientId] = useState<string>('');
   const [quantity, setQuantity] = useState<string>('');
   const [unit, setUnit] = useState<{ value: string, label: string } | null>(null);
@@ -68,8 +70,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
     }
   
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         console.error('No token found');
         return;
       }
@@ -80,12 +81,12 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
         unit: unit.value
       };
   
-      console.log('Sending data to add ingredient:', requestData); // Логирование данных перед отправкой
+      console.log('Sending data to add ingredient:', requestData);
   
       const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestData),
@@ -106,16 +107,15 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
 
   const loadRecipeIngredients = async (recipeId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         console.error('No token found');
         return;
       }
   
-      console.log('Fetching recipe ingredients from API'); // Логирование запроса
+      console.log('Fetching recipe ingredients from API');
       const data = await fetcher(`/api/recipes/${recipeId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
         }
       });
   
@@ -135,17 +135,16 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   const deleteIngredientFromRecipe = async (ingredientId: string) => {
     if (!editingRecipe || !ingredientId) return;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         console.error('No token found');
         return;
       }
   
-      console.log('Sending request to delete ingredient by ingredientId:', { ingredientId }); // Логирование запроса
+      console.log('Sending request to delete ingredient by ingredientId:', { ingredientId });
       const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients/${ingredientId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
           'Content-Type': 'application/json',
         },
       });

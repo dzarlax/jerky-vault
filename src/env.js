@@ -9,6 +9,8 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
     MAPBOX_ACCESS_TOKEN: z.string().optional(),
+    NEXT_DISABLE_SSG: z.string().transform((val) => val === 'true').optional(),
+    SKIP_ENV_VALIDATION: z.string().transform((val) => val === 'true').optional(),
   },
 
   /**
@@ -37,6 +39,8 @@ export const env = createEnv({
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN,
+    NEXT_DISABLE_SSG: process.env.NEXT_DISABLE_SSG,
+    SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
     NEXT_PUBLIC_AUTH_ENABLED: process.env.NEXT_PUBLIC_AUTH_ENABLED,

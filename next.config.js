@@ -22,11 +22,13 @@ const nextConfig = {
     // Disable eslint during build to speed up production builds
     ignoreDuringBuilds: true,
   },
-  // Disable static generation for all pages
+  // Completely disable static generation
   staticPageGenerationTimeout: 1,
-  // Export as a standalone app
-  experimental: {
-    outputStandalone: true,
+  // Disable static exports
+  trailingSlash: false,
+  // Disable image optimization during build
+  images: {
+    disableStaticImages: true,
   },
 };
 

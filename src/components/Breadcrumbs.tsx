@@ -37,16 +37,25 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items = [] }) => {
   const breadcrumbs = items.length > 0 ? items : generateBreadcrumbs();
 
   return (
-    <Breadcrumb className="py-2 mb-4">
+    <Breadcrumb className="py-1 mb-2 small">
       {breadcrumbs.map((breadcrumb, i) => (
         <Breadcrumb.Item
           key={breadcrumb.href}
-          linkAs={Link}
-          linkProps={{ href: breadcrumb.href }}
           active={i === breadcrumbs.length - 1}
         >
-          {i === 0 ? <FaHome className="me-1" /> : null}
-          {breadcrumb.label}
+          {i === breadcrumbs.length - 1 ? (
+            <>
+              {i === 0 ? <FaHome className="me-1" /> : null}
+              {breadcrumb.label}
+            </>
+          ) : (
+            <Link href={breadcrumb.href} passHref legacyBehavior>
+              <a>
+                {i === 0 ? <FaHome className="me-1" /> : null}
+                {breadcrumb.label}
+              </a>
+            </Link>
+          )}
         </Breadcrumb.Item>
       ))}
     </Breadcrumb>

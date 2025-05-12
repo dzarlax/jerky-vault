@@ -3,6 +3,7 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import { useRouter } from 'next/router';
 import useTranslation from 'next-translate/useTranslation';
+import { useAuth, withAuth } from '../utils/authContext';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import Select, { SingleValue } from 'react-select';
 import ProductModal from '../components/modal/Products/ProductModal';
@@ -65,6 +66,7 @@ interface Package {
 
 const Products = () => {
   const { t } = useTranslation('common');
+  const { auth } = useAuth();
   const { data: products, mutate: mutateProducts, error: productsError } = useSWR<Product[]>('/api/products', fetcher);
   const { data: recipes, error: recipesError } = useSWR<Recipe[]>('/api/recipes', fetcher);
   const { data: packages, error: packagesError } = useSWR<Package[]>('/api/packages', fetcher);
@@ -94,12 +96,6 @@ const Products = () => {
     applyFilters();
   }, [selectedRecipe, selectedPackage, selectedProduct]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/signin');
-    }
-  }, [router]);
 
   const applyFilters = () => {
     let filtered = products || [];
@@ -161,8 +157,7 @@ const Products = () => {
 
   const handleSaveProductChanges = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -208,7 +203,7 @@ const Products = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${auth.token}`,
           },
           body: JSON.stringify(product),
         });
@@ -218,7 +213,7 @@ const Products = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${auth.token}`,
           },
           body: JSON.stringify(product),
         });
@@ -237,8 +232,7 @@ const Products = () => {
     if (!editingProduct) return;
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -250,7 +244,7 @@ const Products = () => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
         },
       });
 
@@ -380,18 +374,18 @@ const Products = () => {
             Object.entries(groupedProducts).map(([recipeNames, products]) => (
               <div key={recipeNames} className="mb-5">
                 <h2 className="mb-4">{recipeNames}</h2>
-                <Row className="g-4">
+                <div className="product-list-container">
                   {Array.isArray(products) && products.map((product: Product) => (
-                    <Col key={product.id} sm={6} md={4} lg={3}>
+                    <div key={product.id} className="product-list-item">
                       <ProductCard 
                         product={product} 
                         recipes={recipes || []} 
                         packages={packages || []} 
                         onEdit={handleEditProduct} 
                       />
-                    </Col>
+                    </div>
                   ))}
-                </Row>
+                </div>
               </div>
             ))
           )}
@@ -426,4 +420,4 @@ const Products = () => {
   );
 };
 
-export default Products;
+export default withAuth(Products);

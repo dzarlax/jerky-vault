@@ -64,11 +64,11 @@ const OrderModal: React.FC<OrderModalProps> = ({
   const showStatusSelect = false; // Здесь можно поставить условие для отображения статуса
 
   return (
-    <Modal show={show} onHide={onClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>{t('orderDetails')}</Modal.Title>
+    <Modal show={show} onHide={onClose} size="lg">
+      <Modal.Header closeButton className="border-bottom-0 pb-0">
+        <Modal.Title className="text-primary">{t('orderDetails')}</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="pt-2">
         <Form>
           <Form.Group controlId="clientSelect">
             <Form.Label>{t('client')}</Form.Label>
@@ -90,56 +90,121 @@ const OrderModal: React.FC<OrderModalProps> = ({
             </Form.Group>
           )}
 
-          <Form.Group controlId="items">
-            <Form.Label>{t('products')}</Form.Label>
-            {items.map((item, index) => (
-              <InputGroup className="mb-3" key={index}>
-                <Select
-                  options={productOptions}
-                  value={productOptions.find(option => option.value === item.product_id)}
-                  onChange={option => handleProductChange(index, option?.value || 0)}
-                  className="mr-3"
-                />
-                <FormControl
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
-                  className="mr-3"
-                />
-                <FormControl
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  readOnly
-                  value={item.price}
-                  onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
-                  className="mr-3"
-                />
-                <FormControl
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  readOnly
-                  placeholder={t('costPrice')}
-                  value={item.cost_price}
-                  onChange={e => handleItemChange(index, 'cost_price', parseFloat(e.target.value))}
-                />
-                <Button 
-                  variant="link" 
-                  onClick={() => handleRemoveItem(index)} 
-                  style={{ padding: '0.25rem', marginLeft: '0.5rem' }}
-                >
-                  <FaTimes size={16} />
-                </Button>
-              </InputGroup>
-            ))}
-            <Button variant="secondary" onClick={handleAddItem}>{t('addProduct')}</Button>
-          </Form.Group>
+          <div className="mt-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="mb-0">{t('products')}</h5>
+              <Button variant="primary" className="rounded-pill" onClick={handleAddItem}>
+                + {t('addProduct')}
+              </Button>
+            </div>
+            
+            <div className="order-products-table">
+              <div className="order-products-header">
+                <div className="product-column">{t('product')}</div>
+                <div className="quantity-column">{t('quantity')}</div>
+                <div className="price-column">{t('price')}</div>
+                <div className="cost-column">{t('costPrice')}</div>
+                <div className="action-column"></div>
+              </div>
+              
+              {items.map((item, index) => (
+                <div className="order-products-row" key={index}>
+                  <div className="product-column">
+                    <Select
+                      options={productOptions}
+                      value={productOptions.find(option => option.value === item.product_id)}
+                      onChange={option => handleProductChange(index, option?.value || 0)}
+                      placeholder={t('selectProduct')}
+                      className="product-select"
+                    />
+                  </div>
+                  <div className="quantity-column">
+                    <FormControl
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={e => handleQuantityChange(index, parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div className="price-column">
+                    <FormControl
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      readOnly
+                      value={item.price}
+                      onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="cost-column">
+                    <FormControl
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      readOnly
+                      value={item.cost_price}
+                      onChange={e => handleItemChange(index, 'cost_price', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="action-column">
+                    <Button 
+                      variant="outline-danger" 
+                      className="delete-btn"
+                      onClick={() => handleRemoveItem(index)}
+                    >
+                      <FaTimes />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              {items.length === 0 && (
+                <div className="text-center py-4 text-muted">
+                  <p>{t('noProductsAdded')}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </Form>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="primary" onClick={onSave}>{t('saveChanges')}</Button>
+      <Modal.Footer className="d-flex flex-column align-items-stretch">
+        {items.length > 0 && (
+          <div className="w-100 mb-3">
+            <div className="d-flex justify-content-between border-top pt-2">
+              <span className="fw-bold">{t('totalPrice')}:</span>
+              <span className="fw-bold">
+                {items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)} {t('currency')}
+              </span>
+            </div>
+            <div className="d-flex justify-content-between text-muted small">
+              <span>{t('totalCost')}:</span>
+              <span>
+                {items.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0).toFixed(2)} {t('currency')}
+              </span>
+            </div>
+            <div className="d-flex justify-content-between text-success small">
+              <span>{t('profit')}:</span>
+              <span>
+                {(
+                  items.reduce((sum, item) => sum + (item.price * item.quantity), 0) - 
+                  items.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0)
+                ).toFixed(2)} {t('currency')}
+              </span>
+            </div>
+          </div>
+        )}
+        <div className="d-flex justify-content-end w-100">
+          <Button variant="outline-secondary" className="me-2" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={onSave}
+            disabled={items.length === 0 || !clientId}
+          >
+            {t('saveChanges')}
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );

@@ -4,8 +4,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Exclude Next.js build output
-.next
+# Exclude Next.js build output for development
+# We need .next for the production build
 out
 
 # Exclude version control files

@@ -7,8 +7,10 @@ import Select from 'react-select';
 import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
 import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
 import { useRouter } from 'next/router';
+import { useAuth, withAuth } from '../utils/authContext';
 
 const Recipes: React.FC = () => {
+  const { auth } = useAuth();
   const { t, lang } = useTranslation('common');
   const router = useRouter();
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -20,13 +22,12 @@ const Recipes: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
 
-  // Проверка токена и перенаправление на логин, если токена нет
+  // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!auth.isAuthenticated) {
       router.push('/auth/signin');
     }
-  }, [router]);
+  }, [auth.isAuthenticated, router]);
 
   // Fetch списков рецептов и ингредиентов
   const { data: recipeNames, error: recipeNamesError } = useSWR(
@@ -54,12 +55,11 @@ const Recipes: React.FC = () => {
 
   const loadRecipes = async () => {
     const query = new URLSearchParams();
-    if (filterName) query.append('recipe_id', filterName); // Изменено на recipe_id
-    if (filterIngredient) query.append('ingredient_id', filterIngredient); // Изменено на ingredient_id
+    if (filterName) query.append('recipe_id', filterName);
+    if (filterIngredient) query.append('ingredient_id', filterIngredient);
   
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -67,7 +67,7 @@ const Recipes: React.FC = () => {
       // Используем fetcher для получения данных с авторизацией
       const response = await fetcher(`/api/recipes?${query.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -85,8 +85,7 @@ const Recipes: React.FC = () => {
   const deleteRecipe = async () => {
     if (!editingRecipe) return;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -94,7 +93,7 @@ const Recipes: React.FC = () => {
       const response = await fetcher(`/api/recipes/${editingRecipe.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -113,8 +112,7 @@ const Recipes: React.FC = () => {
   const cloneRecipe = async () => {
     if (!editingRecipe) return;
   
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!auth.isAuthenticated || !auth.token) {
       router.push('/auth/signin');
       return;
     }
@@ -131,7 +129,7 @@ const Recipes: React.FC = () => {
     const response = await fetcher('/api/recipes', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${auth.token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name: `${editingRecipe.name} (Copy)`, ingredients: [] }),
@@ -146,7 +144,7 @@ const Recipes: React.FC = () => {
           await fetcher(`/api/recipes/${newRecipe.id}/ingredients`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -169,8 +167,7 @@ const Recipes: React.FC = () => {
 
   const handleCreateRecipe = async (name: string, ingredients: any[]) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!auth.isAuthenticated || !auth.token) {
         router.push('/auth/signin');
         return;
       }
@@ -178,7 +175,7 @@ const Recipes: React.FC = () => {
       const response = await fetcher('/api/recipes', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${auth.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name }),
@@ -192,7 +189,7 @@ const Recipes: React.FC = () => {
           const ingredientResponse = await fetcher(`/api/recipes/${recipeId}/ingredients`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -278,40 +275,58 @@ const Recipes: React.FC = () => {
           {isLoading ? (
             <p>{t("loading")}</p>
           ) : (
-            <ListGroup>
+            <div className="recipe-grid">
               {recipes.length > 0 ? (
                 recipes.map((recipe) => (
-                  <ListGroup.Item key={recipe.id}>
-                    <h3>{recipe.name}</h3>
-                    <p>
-                      {t("totalCost")}: {recipe.total_cost ? recipe.total_cost.toFixed(2) : 'N/A'} {t("currency")}
-                    </p>
-                    <ListGroup>
-                      {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
-                        recipe.recipe_ingredients.map((ri: any) => (
-                          <ListGroup.Item key={ri.id}>
-                            {ri.ingredient.name} - {ri.quantity} {ri.unit} (
-                            {ri.ingredient.prices && ri.ingredient.prices.length > 0
-                              ? parseFloat(ri.ingredient.prices[0].price).toFixed(2)
-                              : 'N/A'} {t("currency")})
-                          </ListGroup.Item>
-                        ))
-                      ) : (
-                        <ListGroup.Item>{t("noIngredientsAvailable")}</ListGroup.Item>
-                      )}
-                    </ListGroup>
-                    <Button onClick={() => {
-                      setEditingRecipe(recipe);
-                      setShowModal(true);
-                    }}>
-                      {t("edit")}
-                    </Button>
-                  </ListGroup.Item>
+                  <div key={recipe.id} className="recipe-card">
+                    <div className="recipe-card-header">
+                      <h3 className="recipe-card-title">{recipe.name}</h3>
+                      <div className="recipe-card-cost">
+                        <span className="recipe-cost-label">{t("totalCost")}:</span>
+                        <span className="recipe-cost-value">{recipe.total_cost ? recipe.total_cost.toFixed(2) : 'N/A'} {t("currency")}</span>
+                      </div>
+                    </div>
+                    <div className="recipe-card-body">
+                      <div className="recipe-ingredients-list">
+                        {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
+                          recipe.recipe_ingredients.map((ri: any) => (
+                            <div key={ri.id} className="recipe-ingredient-item">
+                              <div className="ingredient-name">{ri.ingredient.name}</div>
+                              <div className="ingredient-details">
+                                <span className="ingredient-quantity">{ri.quantity} {ri.unit}</span>
+                                <span className="ingredient-price">
+                                  ({ri.ingredient.prices && ri.ingredient.prices.length > 0
+                                    ? parseFloat(ri.ingredient.prices[0].price).toFixed(2)
+                                    : 'N/A'} {t("currency")})
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-ingredients">{t("noIngredientsAvailable")}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="recipe-card-footer">
+                      <Button 
+                        variant="primary" 
+                        size="sm" 
+                        onClick={() => {
+                          setEditingRecipe(recipe);
+                          setShowModal(true);
+                        }}
+                      >
+                        {t("edit")}
+                      </Button>
+                    </div>
+                  </div>
                 ))
               ) : (
-                <p>{t("noRecipesFound")}</p>
+                <div className="no-recipes-message">
+                  <p>{t("noRecipesFound")}</p>
+                </div>
               )}
-            </ListGroup>
+            </div>
           )}
         </Col>
       </Row>
@@ -338,4 +353,4 @@ const Recipes: React.FC = () => {
   );
 };
 
-export default Recipes;
+export default withAuth(Recipes);

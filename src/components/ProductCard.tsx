@@ -54,66 +54,55 @@ const ProductCard: React.FC<ProductCardProps> = ({
     .join(', ');
 
   return (
-    <Card className="h-100 product-card border-0 shadow-sm">
-      <div className="product-image-container">
-        {product.image ? (
-          <Card.Img 
-            variant="top" 
-            src={product.image} 
-            alt={product.name} 
-            className="product-image"
-          />
-        ) : (
-          <div className="product-image-placeholder d-flex align-items-center justify-content-center">
-            <FaBoxOpen size={40} className="text-muted" />
+    <Card className="h-100 product-card border-0">
+      <div className="d-flex h-100">
+        <div className="product-image-container-compact">
+          {product.image ? (
+            <img 
+              src={product.image} 
+              alt={product.name} 
+              className="product-image-compact"
+            />
+          ) : (
+            <div className="product-image-placeholder-compact d-flex align-items-center justify-content-center">
+              <FaBoxOpen size={24} className="text-muted" />
+            </div>
+          )}
+        </div>
+        <div className="flex-grow-1 p-2">
+          <div className="d-flex justify-content-between align-items-start">
+            <h6 className="product-title-compact mb-1">{product.name}</h6>
+            <Button
+              variant="link"
+              className="p-0 text-primary"
+              onClick={() => onEdit(product)}
+              title={t("edit")}
+              aria-label={t("edit") + " " + product.name}
+            >
+              <FaEdit size={14} />
+            </Button>
           </div>
-        )}
-        <div className="product-actions">
-          <Button
-            variant="light"
-            className="btn-icon shadow-sm"
-            onClick={() => onEdit(product)}
-            title={t("edit")}
-            aria-label={t("edit") + " " + product.name}
-          >
-            <FaEdit />
-          </Button>
+          <p className="product-description-compact text-muted small mb-2">{product.description}</p>
+          <div className="d-flex flex-wrap gap-2">
+            <div className="product-detail-compact">
+              <FaDollarSign size={12} className="me-1 text-primary" />
+              <span className="small">{product.price}</span>
+            </div>
+            <div className="product-detail-compact">
+              <FaTag size={12} className="me-1 text-primary" />
+              <span className="small">{product.cost}</span>
+            </div>
+            <div className="product-detail-compact">
+              <FaBoxOpen size={12} className="me-1 text-primary" />
+              <span className="small">{packageName}</span>
+            </div>
+          </div>
+          <div className="mt-1">
+            <FaListUl size={12} className="me-1 text-primary" />
+            <span className="small">{recipeNames}</span>
+          </div>
         </div>
       </div>
-      <Card.Body>
-        <Card.Title className="product-title">{product.name}</Card.Title>
-        <div className="product-description text-muted mb-3">{product.description}</div>
-        <div className="product-details">
-          <div className="detail-item">
-            <FaDollarSign className="detail-icon" />
-            <div>
-              <small className="text-muted">{t("price")}</small>
-              <div className="fw-bold">{product.price}</div>
-            </div>
-          </div>
-          <div className="detail-item">
-            <FaTag className="detail-icon" />
-            <div>
-              <small className="text-muted">{t("cost")}</small>
-              <div className="fw-bold">{product.cost}</div>
-            </div>
-          </div>
-          <div className="detail-item">
-            <FaBoxOpen className="detail-icon" />
-            <div>
-              <small className="text-muted">{t("package")}</small>
-              <div>{packageName}</div>
-            </div>
-          </div>
-          <div className="detail-item">
-            <FaListUl className="detail-icon" />
-            <div>
-              <small className="text-muted">{t("recipes")}</small>
-              <div>{recipeNames}</div>
-            </div>
-          </div>
-        </div>
-      </Card.Body>
     </Card>
   );
 };

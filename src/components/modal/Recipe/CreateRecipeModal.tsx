@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
 import Select from 'react-select';
+import { useAuth } from '../../../utils/authContext';
 
 const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => {
+  const { auth } = useAuth();
   const [newRecipeName, setNewRecipeName] = useState<string>('');
   const [newIngredients, setNewIngredients] = useState<any[]>([]);
   const [newIngredientId, setNewIngredientId] = useState<string>('');

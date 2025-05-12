@@ -76,70 +76,53 @@ const Sidebar: React.FC<SidebarProps> = ({
       )}
       
       <Nav className="flex-column">
-        <Nav.Link 
-          as={Link} 
-          href="/" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/') ? 'active' : ''}`}
-        >
-          <FaHome className="me-3" /> {t('home')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/recipes" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/recipes') ? 'active' : ''}`}
-        >
-          <FaClipboardList className="me-3" /> {t('recipes')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/ingredients" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/ingredients') ? 'active' : ''}`}
-        >
-          <FaLeaf className="me-3" /> {t('ingredients')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/prices" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}
-        >
-          <FaTag className="me-3" /> {t('prices')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/clients" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/clients') ? 'active' : ''}`}
-        >
-          <FaUsers className="me-3" /> {t('clients')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/products" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/products') ? 'active' : ''}`}
-        >
-          <FaBoxOpen className="me-3" /> {t('products')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/orders" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/orders') ? 'active' : ''}`}
-        >
-          <FaShoppingCart className="me-3" /> {t('orders')}
-        </Nav.Link>
-        <Nav.Link 
-          as={Link} 
-          href="/profile" 
-          locale={lang}
-          className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}
-        >
-          <FaUser className="me-3" /> {t('profile')}
-        </Nav.Link>
+        <Link href="/" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/') ? 'active' : ''}`}>
+            <FaHome className="me-3" /> {t('home')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/recipes" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/recipes') ? 'active' : ''}`}>
+            <FaClipboardList className="me-3" /> {t('recipes')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/ingredients" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/ingredients') ? 'active' : ''}`}>
+            <FaLeaf className="me-3" /> {t('ingredients')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/prices" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}>
+            <FaTag className="me-3" /> {t('prices')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/clients" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/clients') ? 'active' : ''}`}>
+            <FaUsers className="me-3" /> {t('clients')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/products" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/products') ? 'active' : ''}`}>
+            <FaBoxOpen className="me-3" /> {t('products')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/orders" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/orders') ? 'active' : ''}`}>
+            <FaShoppingCart className="me-3" /> {t('orders')}
+          </Nav.Link>
+        </Link>
+        
+        <Link href="/profile" locale={lang} passHref legacyBehavior>
+          <Nav.Link className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}>
+            <FaUser className="me-3" /> {t('profile')}
+          </Nav.Link>
+        </Link>
       </Nav>
     </div>
   );

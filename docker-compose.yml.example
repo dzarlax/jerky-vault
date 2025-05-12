@@ -1,36 +1,47 @@
 version: '3.8'
 
 services:
-  jerky_vault_frontenf:
+  jerky_vault_frontend:
     image: dzarlax/jerky_vault:latest
     ports:
-      - "3000:3000"  
-    working_dir: /app
+      - "3000:3000"  # Port for frontend
     environment:
-      MAPBOX_ACCESS_TOKEN: ''
-      NEXT_PUBLIC_API_URL: http://localhost:8080  
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm start
+      MAPBOX_ACCESS_TOKEN: 'your_mapbox_access_token_here'
+      NEXT_PUBLIC_API_URL: 'https://api.example.com'  # Backend address
+      NEXT_PUBLIC_FRONTEND_URL: 'https://admin.example.com'  # Frontend address
+      NEXT_PUBLIC_AUTH_ENABLED: 'true'
+      NEXT_PUBLIC_OPTIMIZE_IMAGES: 'true'
+      NEXT_PUBLIC_OPTIMIZE_FONTS: 'true'
+      NEXT_PUBLIC_SKIP_AUTH_ROUTES_SSG: 'true'
+      NEXT_DISABLE_SSG: 'true'
+      SKIP_ENV_VALIDATION: 'true'
+      NODE_ENV: 'production'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jerkyvault_front.entrypoints=https"
+      - "traefik.http.routers.jerkyvault_front.rule=Host(`admin.example.com`)"
+      - "traefik.http.routers.jerkyvault_front.tls=true"
+      - "traefik.http.routers.jerkyvault_front.tls.certresolver=letsEncrypt"
     networks:
-      - jerky_vault_network  # Общая сеть
+      - traefik
 
   jerky_vault_backend:
     image: dzarlax/jerky_vault_backend:latest
     ports:
-      - "8080:8080"  # Порт для бэкенда
+      - "8080:8080"  # Port for backend
     environment:
-      DB_USER: 
-      DB_PASSWORD: 
-      DB_HOST: 
-      DB_PORT: 
-      DB_NAME: 
-      JWT_SECRET: 
-      FRONT_URL: http://localhost:3000
+      JWT_SECRET: your_jwt_secret_here
+      FRONT_URL: 'https://admin.example.com'
+      DATABASE_URL: 'postgresql://username:password@hostname:port/database?sslmode=require&search_path=schema'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jerkyvault_back.entrypoints=https"
+      - "traefik.http.routers.jerkyvault_back.rule=Host(`api.example.com`)"
+      - "traefik.http.routers.jerkyvault_back.tls=true"
+      - "traefik.http.routers.jerkyvault_back.tls.certresolver=letsEncrypt"
     networks:
-      - jerky_vault_network 
+      - traefik
 
 networks:
-  jerky_vault_network:  
-    driver: bridge
+  traefik:
+    external: true

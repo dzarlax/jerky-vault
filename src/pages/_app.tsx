@@ -3,10 +3,10 @@ import '../styles/globals.css';
 import { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
-import Breadcrumbs from '../components/Breadcrumbs';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col } from 'react-bootstrap';
 import { AuthProvider } from '../utils/authContext';
@@ -43,7 +43,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   // Wrap the content with AuthProvider
   const content = isAuthPage ? (
     <>
-      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} />
+      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} showNavLinks={true} />
       <Container className="py-5">
         <Component {...pageProps} />
       </Container>
@@ -51,7 +51,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     </>
   ) : (
     <>
-      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} />
+      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} showNavLinks={false} />
       <div className="d-flex">
         {!isMobileView && <Sidebar />}
         {isMobileView && (
@@ -61,9 +61,8 @@ function MyApp({ Component, pageProps }: AppProps) {
             isMobile={true} 
           />
         )}
-        <div className="flex-grow-1 ms-0 ms-lg-250" style={{ marginLeft: isMobileView ? 0 : '250px' }}>
-          <Container fluid className="py-4 px-4">
-            <Breadcrumbs />
+        <div className="flex-grow-1" style={{ marginLeft: isMobileView ? 0 : '220px' }}>
+          <Container fluid className="py-2 px-4">
             <Component {...pageProps} />
           </Container>
         </div>
@@ -72,9 +71,19 @@ function MyApp({ Component, pageProps }: AppProps) {
     </>
   );
 
+  // Initialize auth context for SSR
+  const initialAuthState = {
+    isAuthenticated: false,
+    user: null,
+    token: null,
+  };
+
   // Wrap everything with AuthProvider
   return (
-    <AuthProvider>
+    <AuthProvider initialState={initialAuthState}>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </Head>
       {content}
     </AuthProvider>
   );
