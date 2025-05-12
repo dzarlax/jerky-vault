@@ -2,6 +2,20 @@ version: '3.8'
 
 services:
   jerky_vault_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build-time environment variables
+        NEXT_PUBLIC_API_URL: 'https://api.example.com'
+        NEXT_PUBLIC_FRONTEND_URL: 'https://admin.example.com'
+        NEXT_PUBLIC_AUTH_ENABLED: 'true'
+        NEXT_PUBLIC_OPTIMIZE_IMAGES: 'true'
+        NEXT_PUBLIC_OPTIMIZE_FONTS: 'true'
+        NEXT_PUBLIC_SKIP_AUTH_ROUTES_SSG: 'true'
+        NEXT_DISABLE_SSG: 'true'
+        SKIP_ENV_VALIDATION: 'true'
+        NODE_ENV: 'production'
     image: dzarlax/jerky_vault:latest
     ports:
       - "3000:3000"  # Port for frontend

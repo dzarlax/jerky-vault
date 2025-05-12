@@ -1,5 +1,4 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
@@ -13,34 +12,14 @@ RUN npm ci
 # Copy project files
 COPY . .
 
-# Build the application with optimizations
-# Using our custom build script that completely skips static generation
-RUN npm run build:no-ssg
-
-# Production stage
-FROM node:20-alpine AS runner
-
-# Set working directory
-WORKDIR /app
-
-# Set environment to production
+# Set default environment variables
 ENV NODE_ENV=production
-
-# Copy necessary files from build stage
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/locales ./locales
-COPY --from=builder /app/i18n.* ./
-COPY --from=builder /app/src/types ./src/types
-COPY --from=builder /app/src/env.js ./src/env.js
-COPY --from=builder /app/.env ./.env
-COPY --from=builder /app/server.js ./server.js
+ENV NEXT_DISABLE_SSG=true
+ENV SKIP_ENV_VALIDATION=true
 
 # Expose port
 EXPOSE 3000
 
-# Start the application with our custom server
-CMD ["npm", "start"]
+# Build and start the application at runtime
+# This allows environment variables to be passed via docker-compose
+CMD npm run build:no-ssg && npm start
