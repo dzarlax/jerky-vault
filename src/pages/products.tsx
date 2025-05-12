@@ -69,7 +69,7 @@ const Products = () => {
   const { auth } = useAuth();
   const { data: products, mutate: mutateProducts, error: productsError } = useSWR<Product[]>('/api/products', fetcher);
   const { data: recipes, error: recipesError } = useSWR<Recipe[]>('/api/recipes', fetcher);
-  const { data: packages, error: packagesError } = useSWR<Package[]>('/api/packages', fetcher);
+  const { data: packages, mutate: mutatePackages, error: packagesError } = useSWR<Package[]>('/api/packages', fetcher);
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -170,19 +170,14 @@ const Products = () => {
       const parsedPrice = parseFloat(price);
       const parsedCost = parseFloat(cost);
   
-      const isValidUrl = (url: string) => {
-        if (!url) return true;
+      // Only validate the image URL if it's not empty
+      if (image.trim()) {
         try {
-          new URL(url);
-          return true;
+          new URL(image);
         } catch (_) {
-          return false;
+          alert(t('invalidImageUrl'));
+          return;
         }
-      };
-  
-      if (!isValidUrl(image)) {
-        alert(t('invalidImageUrl'));
-        return;
       }
   
       // Формируем массив recipeIds на основе selectedRecipes

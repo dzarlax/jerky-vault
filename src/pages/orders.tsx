@@ -363,6 +363,7 @@ const Orders = () => {
             <th>{t("products")}</th>
             <th>{t("totalCost")}</th>
             <th>{t("totalCostPrice")}</th>
+            <th>{t("profit")}</th>
             <th>{t("actions")}</th>
           </tr>
         </thead>
@@ -397,6 +398,9 @@ const Orders = () => {
               <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
               <td>
                 {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
+              </td>
+              <td className="text-success">
+                {(calculateTotalPrice(order.items) - calculateTotalCostPrice(order.items)).toFixed(2)}{" "}{t("currency")}
               </td>
               <td>
                 <div className="d-flex flex-column gap-1 align-items-stretch">

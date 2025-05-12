@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import Select from "react-select";
-import { FaTrash, FaSave, FaTimes } from "react-icons/fa";
+import { FaTrash, FaSave, FaTimes, FaPlus } from "react-icons/fa";
 import useTranslation from "next-translate/useTranslation";
+import PackageModal from "./PackageModal";
 
 interface ProductModalProps {
   show: boolean;
@@ -52,6 +53,15 @@ const ProductModal: React.FC<ProductModalProps> = ({
   packageOptions,
 }) => {
   const { t } = useTranslation("common");
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  
+  const handlePackageCreated = (newPackage: { id: number; name: string }) => {
+    // Update the packageId with the newly created package
+    setPackageId(newPackage.id);
+    
+    // Refresh the packages list in the parent component
+    // This will be handled by the parent component through SWR's mutate
+  };
 
   return (
     <Modal show={show} onHide={onClose} centered size="lg" className="product-modal">
@@ -153,18 +163,30 @@ const ProductModal: React.FC<ProductModalProps> = ({
               <Col md={6}>
                 <Form.Group controlId="packageId" className="mb-3">
                   <Form.Label>{t("package")}</Form.Label>
-                  <Select
-                    options={packageOptions}
-                    value={packageOptions.find(
-                      (option) => option.value === packageId
-                    )}
-                    onChange={(selectedOption) =>
-                      setPackageId(selectedOption?.value || null)
-                    }
-                    placeholder={t("choosePackage")}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                  />
+                  <div className="d-flex">
+                    <div className="flex-grow-1 me-2">
+                      <Select
+                        options={packageOptions}
+                        value={packageOptions.find(
+                          (option) => option.value === packageId
+                        )}
+                        onChange={(selectedOption) =>
+                          setPackageId(selectedOption?.value || null)
+                        }
+                        placeholder={t("choosePackage")}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+                    <Button 
+                      variant="outline-primary" 
+                      className="add-package-btn"
+                      onClick={() => setShowPackageModal(true)}
+                      title={t("addPackage")}
+                    >
+                      <FaPlus />
+                    </Button>
+                  </div>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -195,6 +217,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
           <FaSave className="me-2" /> {t("save")}
         </Button>
       </Modal.Footer>
+      
+      <PackageModal 
+        show={showPackageModal}
+        onClose={() => setShowPackageModal(false)}
+        onPackageCreated={handlePackageCreated}
+      />
     </Modal>
   );
 };
