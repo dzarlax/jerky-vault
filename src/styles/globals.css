@@ -410,6 +410,8 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
   z-index: 1030;
   transition: transform var(--transition-standard), background-color var(--transition-standard);
   padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-header {

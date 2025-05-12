@@ -121,10 +121,11 @@ const Dashboard = () => {
   };
 
   return (
-    <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h1 className="fs-4 mb-0">{t('dashboard')}</h1>
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t('dashboard')}</h1>
       </div>
+      <div className="p-4">
 
       <Row className="g-3 mb-4">
         <Col md={3}>
@@ -254,7 +255,8 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
-    </Container>
+      </div>
+    </div>
   );
 };
 

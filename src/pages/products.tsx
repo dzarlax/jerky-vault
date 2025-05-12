@@ -295,9 +295,9 @@ const Products = () => {
   }
 
   return (
-    <div className="products-page">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>{t('products')}</h1>
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t('products')}</h1>
         <div>
           <Button 
             variant="outline-primary" 
@@ -314,6 +314,7 @@ const Products = () => {
           </Button>
         </div>
       </div>
+      <div className="p-4">
 
       {showFilters && (
         <Row className="mb-4 filter-container p-3 rounded shadow-sm">
@@ -416,6 +417,7 @@ const Products = () => {
         setPackageId={setPackageId}
         packageOptions={packageOptions}
       />
+      </div>
     </div>
   );
 };

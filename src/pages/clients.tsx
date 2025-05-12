@@ -125,9 +125,12 @@ const Clients = ({ mapboxToken }) => {
   if (!clients) return <div>{t('loading')}</div>;
 
   return (
-    <div className="container">
-      <h1>{t('clients')}</h1>
-      <InputGroup className="mb-3">
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t('clients')}</h1>
+      </div>
+      <div className="p-4">
+        <InputGroup className="mb-3">
         <FormControl
           placeholder={t('search')}
           aria-label={t('search')}
@@ -214,6 +217,7 @@ const Clients = ({ mapboxToken }) => {
         mapboxToken={mapboxToken}
         t={t}
       />
+      </div>
     </div>
   );
 };

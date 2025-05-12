@@ -3,6 +3,7 @@ import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
 import { Container, Table, Button, InputGroup } from "react-bootstrap";
+import { FaSync, FaPencilAlt, FaTrash } from "react-icons/fa";
 import Select, { SingleValue } from 'react-select';
 import OrderModal from "../components/modal/Orders/OrderModal";
 import ClientModal from "../components/modal/Orders/ClientModal";
@@ -330,26 +331,29 @@ const Orders = () => {
   };
 
   return (
-    <Container>
-      <h1>{t("orders")}</h1>
-      <InputGroup className="mb-3">
-        <Select
-          className="me-2"
-          options={statusOptions}
-          onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
-          placeholder={t("filterByStatus")}
-        />
-        <Select
-          className="me-2"
-          options={clientOptions}
-          onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
-          placeholder={t("filterByClient")}
-        />
-        <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>
-          {t("createOrder")}
-        </Button>
-      </InputGroup>
-      <Table striped bordered hover>
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t("orders")}</h1>
+        <div className="d-flex">
+          <Select
+            className="me-2"
+            options={statusOptions}
+            onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
+            placeholder={t("filterByStatus")}
+          />
+          <Select
+            className="me-2"
+            options={clientOptions}
+            onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
+            placeholder={t("filterByClient")}
+          />
+          <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>
+            {t("createOrder")}
+          </Button>
+        </div>
+      </div>
+      <div className="table-responsive">
+        <Table striped hover className="mb-0">
         <thead>
           <tr>
             <th>{t("order")}</th>
@@ -394,42 +398,42 @@ const Orders = () => {
               <td>
                 {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
               </td>
-              <td className="d-flex justify-content-between">
-                <span
-                  onClick={() => handleChangeStatus(order.id)}
-                  style={{
-                    cursor: "pointer",
-                    color: "blue",
-                    textAlign: "left",
-                  }}
-                >
-                  {t("changeStatus")}
-                </span>
-                <span
-                  onClick={() => handleEditOrder(order)}
-                  style={{
-                    cursor: "pointer",
-                    color: "blue",
-                    textAlign: "center",
-                  }}
-                >
-                  {t("edit")}
-                </span>
-                <span
-                  onClick={() => handleDeleteOrder(order.id)}
-                  style={{
-                    cursor: "pointer",
-                    color: "red",
-                    textAlign: "right",
-                  }}
-                >
-                  {t("delete")}
-                </span>
+              <td>
+                <div className="d-flex flex-column gap-1 align-items-stretch">
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm" 
+                    onClick={() => handleChangeStatus(order.id)}
+                    className="d-flex align-items-center justify-content-center"
+                  >
+                    <FaSync size={12} className="me-1" />
+                    {t("changeStatus")}
+                  </Button>
+                  <Button 
+                    variant="outline-secondary" 
+                    size="sm" 
+                    onClick={() => handleEditOrder(order)}
+                    className="d-flex align-items-center justify-content-center"
+                  >
+                    <FaPencilAlt size={12} className="me-1" />
+                    {t("edit")}
+                  </Button>
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm" 
+                    onClick={() => handleDeleteOrder(order.id)}
+                    className="d-flex align-items-center justify-content-center"
+                  >
+                    <FaTrash size={12} className="me-1" />
+                    {t("delete")}
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
+      </div>
 
       <OrderModal
         show={showOrderModal || showCreateOrderModal}
@@ -474,7 +478,7 @@ const Orders = () => {
         onClose={() => setShowDeleteModal(false)}
         onDelete={handleConfirmDelete}
       />
-    </Container>
+    </div>
   );
 };
 

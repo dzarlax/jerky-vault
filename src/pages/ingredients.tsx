@@ -73,8 +73,11 @@ const Ingredients: React.FC = () => {
   );
 
   return (
-    <Container>
-      <h1>{t('ingredients')}</h1>
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t('ingredients')}</h1>
+      </div>
+      <div className="p-4">
 
       <Form className="mb-4" onSubmit={addIngredient}>
         <Row>
@@ -122,7 +125,8 @@ const Ingredients: React.FC = () => {
           </ListGroup.Item>
         ))}
       </ListGroup>
-    </Container>
+      </div>
+    </div>
   );
 };
 

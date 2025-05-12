@@ -215,15 +215,14 @@ const Recipes: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Row>
-        <Col>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h1>{t("recipes")}</h1>
-            <Button onClick={() => setShowCreateModal(true)}>
-              {t("addRecipe")}
-            </Button>
-          </div>
+    <div className="p-0">
+      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+        <h1 className="mb-0">{t("recipes")}</h1>
+        <Button onClick={() => setShowCreateModal(true)}>
+          {t("addRecipe")}
+        </Button>
+      </div>
+      <div className="p-4">
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
@@ -328,8 +327,7 @@ const Recipes: React.FC = () => {
               )}
             </div>
           )}
-        </Col>
-      </Row>
+        </div>
 
       <EditRecipeModal
         show={showModal}
@@ -349,7 +347,7 @@ const Recipes: React.FC = () => {
         t={t}
         onCreateRecipe={handleCreateRecipe}
       />
-    </Container>
+    </div>
   );
 };
 

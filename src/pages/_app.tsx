@@ -51,20 +51,47 @@ function MyApp({ Component, pageProps }: AppProps) {
     </>
   ) : (
     <>
-      <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} showNavLinks={false} />
       <div className="d-flex">
         {!isMobileView && <Sidebar />}
         {isMobileView && (
-          <Sidebar 
-            isOpen={showMobileSidebar} 
-            onClose={() => setShowMobileSidebar(false)} 
-            isMobile={true} 
-          />
+          <>
+            <Sidebar 
+              isOpen={showMobileSidebar} 
+              onClose={() => setShowMobileSidebar(false)} 
+              isMobile={true} 
+            />
+            <div 
+              className="mobile-menu-toggle d-lg-none" 
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              style={{
+                position: 'fixed',
+                top: '1rem',
+                left: '1rem',
+                zIndex: 1020,
+                background: 'var(--primary-color)',
+                color: 'white',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                cursor: 'pointer'
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+            </div>
+          </>
         )}
-        <div className="flex-grow-1" style={{ marginLeft: isMobileView ? 0 : '220px' }}>
-          <Container fluid className="py-2 px-4">
-            <Component {...pageProps} />
-          </Container>
+        <div className="flex-grow-1" style={{ 
+          marginLeft: isMobileView ? 0 : '220px',
+          backgroundColor: 'var(--container-background-color)',
+          minHeight: '100vh'
+        }}>
+          <Component {...pageProps} />
         </div>
       </div>
       <Footer />
