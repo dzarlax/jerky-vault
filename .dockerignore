@@ -1,0 +1,45 @@
+# Exclude node_modules and npm debug logs
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Exclude Next.js build output
+.next
+out
+
+# Exclude version control files
+.git
+.gitignore
+
+# Exclude development and environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+
+# Exclude test files
+__tests__
+*.test.js
+*.spec.js
+
+# Exclude documentation
+README.md
+CHANGELOG.md
+LICENSE
+
+# Exclude Docker files (they'll be copied separately)
+Dockerfile
+docker-compose.yml
+docker-compose.yml.example
+.dockerignore
+
+# Exclude other unnecessary files
+.DS_Store
+*.log

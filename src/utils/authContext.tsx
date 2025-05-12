@@ -28,12 +28,20 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [auth, setAuth] = useState({
+// Get initial auth state from window if available (set in _document.tsx)
+const getInitialAuthState = () => {
+  if (typeof window !== 'undefined' && window.__INITIAL_AUTH_STATE__) {
+    return window.__INITIAL_AUTH_STATE__;
+  }
+  return {
     isAuthenticated: false,
     user: null,
     token: null,
-  });
+  };
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [auth, setAuth] = useState(getInitialAuthState());
 
   useEffect(() => {
     // Check if we're in a browser environment

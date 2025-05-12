@@ -12,12 +12,8 @@ const nextConfig = {
 
       return config;
   },
-  // Disable static generation for authenticated routes
-  // This will prevent errors during build time when auth context is not available
-  experimental: {
-    // Only generate auth pages on-demand, not during static build
-    outputStandalone: true,
-  },
+  // Completely disable static site generation to avoid auth errors
+  output: 'standalone',
   // Skip type checking during build to speed up production builds
   typescript: {
     ignoreBuildErrors: true,
@@ -25,6 +21,12 @@ const nextConfig = {
   eslint: {
     // Disable eslint during build to speed up production builds
     ignoreDuringBuilds: true,
+  },
+  // Disable static generation for all pages
+  staticPageGenerationTimeout: 1,
+  // Export as a standalone app
+  experimental: {
+    outputStandalone: true,
   },
 };
 
