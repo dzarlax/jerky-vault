@@ -1,7 +1,7 @@
 import React from "react";
-import { Modal, Button, Form, Col } from "react-bootstrap";
+import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import Select from "react-select";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaSave, FaTimes } from "react-icons/fa";
 import useTranslation from "next-translate/useTranslation";
 
 interface ProductModalProps {
@@ -54,106 +54,145 @@ const ProductModal: React.FC<ProductModalProps> = ({
   const { t } = useTranslation("common");
 
   return (
-    <Modal show={show} onHide={onClose}>
-      <Modal.Header closeButton>
-        <div className="d-flex align-items-center">
-          {product && (
-            <Button
-              variant="danger"
-              onClick={onDelete}
-              style={{
-                position: "relative",
-                background: "transparent",
-                color: "darkred",
-              }}
-            >
-              <FaTrash />
-            </Button>
-          )}
-          <Modal.Title>
-            {product ? t("editProduct") : t("addProduct")}
-          </Modal.Title>
-        </div>
+    <Modal show={show} onHide={onClose} centered size="lg" className="product-modal">
+      <Modal.Header closeButton className="border-0 pb-0">
+        <Modal.Title className="w-100">
+          <div className="d-flex align-items-center justify-content-between">
+            <h4 className="mb-0">{product ? t("editProduct") : t("addProduct")}</h4>
+            {product && (
+              <Button
+                variant="outline-danger"
+                onClick={onDelete}
+                className="btn-icon"
+                title={t("delete")}
+                aria-label={t("delete") + " " + product.name}
+              >
+                <FaTrash />
+              </Button>
+            )}
+          </div>
+        </Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="pt-0">
         <Form>
-          <Form.Group controlId="name">
-            <Form.Label>{t("name")}</Form.Label>
-            <Form.Control
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="description">
-            <Form.Label>{t("description")}</Form.Label>
-            <Form.Control
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group as={Col} md="6" controlId="price">
-            <Form.Label>{t("price")}</Form.Label>
-            <Form.Control
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group as={Col} md="6" controlId="cost">
-            <Form.Label>{t("cost")}</Form.Label>
-            <Form.Control
-              type="number"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group as={Col} md="6" controlId="image">
-            <Form.Label>{t("imageUrl")}</Form.Label>
-            <Form.Control
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-            />
-          </Form.Group>
-<Form.Group as={Col} md="6" controlId="recipeIds">
-  <Form.Label>{t("recipes")}</Form.Label>
-  <Select
-    isMulti
-    options={recipeOptions}
-    value={selectedRecipes}
-    onChange={(selectedOptions) => {
-      // Убедитесь, что передается массив выбранных опций
-      setSelectedRecipes(selectedOptions as { value: number; label: string }[]);
-    }}
-  />
-</Form.Group>
+          <div className="form-section mb-4">
+            <h5 className="section-title">{t("basicInfo")}</h5>
+            <Row>
+              <Col md={6}>
+                <Form.Group controlId="name" className="mb-3">
+                  <Form.Label>{t("name")}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder={t("productName")}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="image" className="mb-3">
+                  <Form.Label>{t("imageUrl")}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={image}
+                    onChange={(e) => setImage(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Form.Group controlId="description" className="mb-3">
+              <Form.Label>{t("description")}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                placeholder={t("description")}
+              />
+            </Form.Group>
+          </div>
 
-          <Form.Group as={Col} md="6" controlId="packageId">
-            <Form.Label>{t("package")}</Form.Label>
-            <Select
-              options={packageOptions}
-              value={packageOptions.find(
-                (option) => option.value === packageId
-              )}
-              onChange={(selectedOption) =>
-                setPackageId(selectedOption?.value || null)
-              }
-            />
-          </Form.Group>
+          <div className="form-section mb-4">
+            <h5 className="section-title">{t("prices")}</h5>
+            <Row>
+              <Col md={6}>
+                <Form.Group controlId="price" className="mb-3">
+                  <Form.Label>{t("price")}</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="cost" className="mb-3">
+                  <Form.Label>{t("cost")}</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="form-section">
+            <h5 className="section-title">{t("details")}</h5>
+            <Row>
+              <Col md={6}>
+                <Form.Group controlId="packageId" className="mb-3">
+                  <Form.Label>{t("package")}</Form.Label>
+                  <Select
+                    options={packageOptions}
+                    value={packageOptions.find(
+                      (option) => option.value === packageId
+                    )}
+                    onChange={(selectedOption) =>
+                      setPackageId(selectedOption?.value || null)
+                    }
+                    placeholder={t("choosePackage")}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="recipeIds" className="mb-3">
+                  <Form.Label>{t("recipes")}</Form.Label>
+                  <Select
+                    isMulti
+                    options={recipeOptions}
+                    value={selectedRecipes}
+                    onChange={(selectedOptions) => {
+                      setSelectedRecipes(selectedOptions as { value: number; label: string }[]);
+                    }}
+                    placeholder={t("chooseRecipe")}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
         </Form>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
-          {t("close")}
+      <Modal.Footer className="border-0 pt-0">
+        <Button variant="outline-secondary" onClick={onClose}>
+          <FaTimes className="me-2" /> {t("cancel")}
         </Button>
         <Button variant="primary" onClick={onSave}>
-          {t("saveChanges")}
+          <FaSave className="me-2" /> {t("save")}
         </Button>
       </Modal.Footer>
     </Modal>

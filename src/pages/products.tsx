@@ -3,11 +3,14 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import { useRouter } from 'next/router';
 import useTranslation from 'next-translate/useTranslation';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap';
 import Select, { SingleValue } from 'react-select';
-import ProductModal from '../components/modal/Products/ProductModal'; // Импортируем модалку
-import { FaEdit, FaTag, FaBoxOpen, FaListUl, FaDollarSign } from 'react-icons/fa'; // Импортируем иконки
-
+import ProductModal from '../components/modal/Products/ProductModal';
+import { FaPlus, FaFilter } from 'react-icons/fa';
+import ProductCard from '../components/ProductCard';
+import ProductSkeleton from '../components/ProductSkeleton';
+import ErrorState from '../components/ErrorState';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 interface Product {
   id: number;
@@ -62,9 +65,9 @@ interface Package {
 
 const Products = () => {
   const { t } = useTranslation('common');
-  const { data: products, mutate: mutateProducts } = useSWR<Product[]>('/api/products', fetcher);
-  const { data: recipes } = useSWR<Recipe[]>('/api/recipes', fetcher);
-  const { data: packages } = useSWR<Package[]>('/api/packages', fetcher);
+  const { data: products, mutate: mutateProducts, error: productsError } = useSWR<Product[]>('/api/products', fetcher);
+  const { data: recipes, error: recipesError } = useSWR<Recipe[]>('/api/recipes', fetcher);
+  const { data: packages, error: packagesError } = useSWR<Package[]>('/api/packages', fetcher);
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -81,6 +84,7 @@ const Products = () => {
   const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: number; label: string }> | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: number; label: string }> | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<SingleValue<{ value: number; label: string }> | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     setFilteredProducts(products || []);
@@ -195,11 +199,9 @@ const Products = () => {
         price: parsedPrice,
         cost: parsedCost,
         image: image || null,
-        recipe_ids: recipeIds, // Убедитесь, что recipeIds правильно передается
+        recipe_ids: recipeIds,
         package_id: packageId,
       };
-  
-      console.log('Product to save:', product); // Debug: Проверьте, что передается правильный объект
   
       if (editingProduct) {
         await fetcher(`/api/products/${editingProduct.id}`, {
@@ -264,6 +266,13 @@ const Products = () => {
   const packageOptions = packages?.map(pkg => ({ value: pkg.id, label: pkg.name })) || [];
   const productOptions = products?.map(product => ({ value: product.id, label: product.name })) || [];
 
+  // Проверяем наличие ошибок
+  const hasError = productsError || recipesError || packagesError;
+  
+  // Проверяем загрузку данных
+  const isLoading = !products || !recipes || !packages;
+
+  // Группируем продукты по рецептам
   const groupedProducts = filteredProducts.reduce<{ [key: string]: Product[] }>((acc, product) => {
     const recipeNames = product.options
       .map(option => {
@@ -279,95 +288,116 @@ const Products = () => {
     return acc;
   }, {});
 
-  if (!products || !recipes || !packages) return <div>{t('loading')}</div>;
+  // Если есть ошибка, показываем компонент ошибки
+  if (hasError) {
+    return (
+      <ErrorState 
+        message={t('failedToLoadProducts')} 
+        onRetry={() => {
+          mutateProducts();
+        }} 
+      />
+    );
+  }
 
   return (
-    <Container>
-      <h1>{t('products')}</h1>
-
-      <Row className="mb-3">
-        <Col md="4">
-          <Select
-            options={recipeOptions}
-            onChange={setSelectedRecipe}
-            placeholder={t('recipe')}
-            isClearable
-          />
-        </Col>
-        <Col md="4">
-          <Select
-            options={packageOptions}
-            onChange={setSelectedPackage}
-            placeholder={t('package')}
-            isClearable
-          />
-        </Col>
-        <Col md="4">
-          <Select
-            options={productOptions}
-            onChange={setSelectedProduct}
-            placeholder={t('product')}
-            isClearable
-          />
-        </Col>
-      </Row>
-
-      <div className="d-flex justify-content-end mb-3">
-        <Button variant="primary" onClick={() => setShowProductModal(true)} className="me-2">
-          {t('addProduct')}
-        </Button>
+    <div className="products-page">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>{t('products')}</h1>
+        <div>
+          <Button 
+            variant="outline-primary" 
+            className="me-2" 
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FaFilter className="me-2" /> {t('filter')}
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => setShowProductModal(true)}
+          >
+            <FaPlus className="me-2" /> {t('addProduct')}
+          </Button>
+        </div>
       </div>
 
-      {groupedProducts && Object.entries(groupedProducts).map(([recipeNames, products]) => (
-  <div key={recipeNames}>
-    <h2>{recipeNames}</h2>
-    <Row className="mt-4">
-      {Array.isArray(products) && products.map((product: Product) => {
-        const packageName = packages?.find(pkg => pkg.id === product.package_id)?.name || t('unknownPackage');
-
-        return (
-          <Col key={product.id} sm={6} md={4} lg={3}>
-            <Card className="h-100 shadow-sm">
-              {product.image && (
-                <Card.Img variant="top" src={product.image} alt={product.name} style={{ height: '150px', objectFit: 'cover' }} />
-              )}
-              <Card.Body className="d-flex flex-column">
-                <Card.Title className="text-truncate" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-                  {product.name}
-                </Card.Title>
-                <div className="mt-2">
-                  <Card.Text className="d-flex align-items-center">
-                    <FaDollarSign className="me-2 text-secondary" />
-                    <span className="text-muted">{t('price')}: </span> {product.price}
-                  </Card.Text>
-                  <Card.Text className="d-flex align-items-center">
-                    <FaTag className="me-2 text-secondary" />
-                    <span className="text-muted">{t('cost')}: </span> {product.cost}
-                  </Card.Text>
-                  <Card.Text className="d-flex align-items-center">
-                    <FaBoxOpen className="me-2 text-secondary" />
-                    <span className="text-muted">{t('package')}: </span> {packageName}
-                  </Card.Text>
-                  <Card.Text className="d-flex align-items-center">
-                    <FaListUl className="me-2 text-secondary" />
-                    <span className="text-muted">{t('recipes')}: </span> {recipeNames}
-                  </Card.Text>
-                </div>
-                <Button
-                  variant="outline-primary"
-                  className="mt-auto align-self-end"
-                  onClick={() => handleEditProduct(product)}
-                >
-                  <FaEdit className="me-1" />
-                </Button>
-              </Card.Body>
-            </Card>
+      {showFilters && (
+        <Row className="mb-4 filter-container p-3 rounded shadow-sm">
+          <Col md={4} className="mb-3 mb-md-0">
+            <label className="form-label">{t('recipe')}</label>
+            <Select
+              options={recipeOptions}
+              onChange={setSelectedRecipe}
+              placeholder={t('chooseRecipe')}
+              isClearable
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
           </Col>
-        );
-      })}
-    </Row>
-  </div>
-))}
+          <Col md={4} className="mb-3 mb-md-0">
+            <label className="form-label">{t('package')}</label>
+            <Select
+              options={packageOptions}
+              onChange={setSelectedPackage}
+              placeholder={t('choosePackage')}
+              isClearable
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          </Col>
+          <Col md={4}>
+            <label className="form-label">{t('product')}</label>
+            <Select
+              options={productOptions}
+              onChange={setSelectedProduct}
+              placeholder={t('chooseProduct')}
+              isClearable
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+          </Col>
+        </Row>
+      )}
+
+      {isLoading ? (
+        <Row>
+          <ProductSkeleton count={8} />
+        </Row>
+      ) : (
+        <>
+          {Object.entries(groupedProducts).length === 0 ? (
+            <div className="text-center py-5">
+              <p className="text-muted">{t('noProductsFound')}</p>
+              <Button 
+                variant="primary" 
+                onClick={() => setShowProductModal(true)}
+                className="mt-3"
+              >
+                <FaPlus className="me-2" /> {t('addProduct')}
+              </Button>
+            </div>
+          ) : (
+            Object.entries(groupedProducts).map(([recipeNames, products]) => (
+              <div key={recipeNames} className="mb-5">
+                <h2 className="mb-4">{recipeNames}</h2>
+                <Row className="g-4">
+                  {Array.isArray(products) && products.map((product: Product) => (
+                    <Col key={product.id} sm={6} md={4} lg={3}>
+                      <ProductCard 
+                        product={product} 
+                        recipes={recipes || []} 
+                        packages={packages || []} 
+                        onEdit={handleEditProduct} 
+                      />
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            ))
+          )}
+        </>
+      )}
+
       {/* Модалка для продукта */}
       <ProductModal
         show={showProductModal}
@@ -392,7 +422,7 @@ const Products = () => {
         setPackageId={setPackageId}
         packageOptions={packageOptions}
       />
-    </Container>
+    </div>
   );
 };
 
