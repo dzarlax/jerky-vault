@@ -43,11 +43,27 @@ const Dashboard = () => {
         totalIngredients: 0,
         totalProducts: 0,
         totalOrders: 0,
-        pendingOrders: [],
         typeDistribution: []
       }
     }
   );
+  
+  // Fetch orders using the same endpoint as the orders page
+  const { data: orders = [], error: ordersError } = useSWR(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/orders' : null,
+    fetcher
+  );
+  
+  // Fetch clients for displaying client names
+  const { data: clients = [] } = useSWR(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/clients' : null,
+    fetcher
+  );
+  
+  // Filter orders to show only pending ones (new or in_progress)
+  const pendingOrders = orders.filter(order => 
+    order.status === 'new' || order.status === 'in_progress'
+  ).slice(0, 5); // Show only the first 5 pending orders
 
   if (!auth.isAuthenticated) {
     return (
@@ -64,7 +80,7 @@ const Dashboard = () => {
     );
   }
 
-  if (dashboardError) {
+  if (dashboardError || ordersError) {
     return (
       <ErrorState 
         message={t('failedToLoadDashboard')} 
@@ -73,7 +89,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!dashboardStats) {
+  if (!dashboardStats || !orders) {
     return <LoadingState fullPage />;
   }
 
@@ -209,7 +225,7 @@ const Dashboard = () => {
                 <FaCalendarAlt className="me-2 text-primary" />
                 {t('pendingOrders')}
               </Card.Title>
-              {dashboardStats.pendingOrders && dashboardStats.pendingOrders.length > 0 ? (
+              {pendingOrders.length > 0 ? (
                 <div className="table-responsive">
                   <Table hover size="sm" className="mb-0">
                     <thead>
@@ -222,27 +238,35 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {dashboardStats.pendingOrders.map((order) => (
-                        <tr key={order.id}>
-                          <td>#{order.id}</td>
-                          <td>{`${order.client_name} ${order.client_surname}`}</td>
-                          <td>
-                            <span className={`badge bg-${order.status.toLowerCase() === 'new' ? 'primary' : 'warning'}`}>
-                              {t(order.status.toLowerCase())}
-                            </span>
-                          </td>
-                          <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                          <td>
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm"
-                              onClick={() => router.push(`/orders?id=${order.id}`)}
-                            >
-                              {t('view')}
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                      {pendingOrders.map((order) => {
+                        const client = clients.find(c => c.id === order.client_id) || {};
+                        return (
+                          <tr key={order.id}>
+                            <td>#{order.id}</td>
+                            <td>{client.name ? `${client.name} ${client.surname || ''}` : t('unknownClient')}</td>
+                            <td>
+                              <span className={`badge bg-${order.status.toLowerCase() === 'new' ? 'primary' : 'warning'}`}>
+                                {t(order.status.toLowerCase())}
+                              </span>
+                            </td>
+                            <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                            <td>
+                              <div className="d-flex gap-1 align-items-center">
+                                <button 
+                                  onClick={() => router.push(`/orders?id=${order.id}`)}
+                                  className="action-icon-btn"
+                                  title={t('view')}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                    <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </Table>
                 </div>

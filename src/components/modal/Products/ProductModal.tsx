@@ -68,7 +68,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="w-100">
           <div className="d-flex align-items-center justify-content-between">
-            <h4 className="mb-0">{product ? t("editProduct") : t("addProduct")}</h4>
+            <h4 className="mb-0 text-primary">{product ? t("editProduct") : t("addProduct")}</h4>
             {product && (
               <Button
                 variant="outline-danger"
@@ -83,11 +83,11 @@ const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </Modal.Title>
       </Modal.Header>
-      <Modal.Body className="pt-0">
+      <Modal.Body className="pt-0 px-3 px-md-4">
         <Form>
-          <div className="form-section mb-4">
-            <h5 className="section-title">{t("basicInfo")}</h5>
-            <Row>
+          <div className="form-section mb-3 p-3 rounded bg-light">
+            <h5 className="section-title text-primary mb-3">{t("basicInfo")}</h5>
+            <Row className="g-2">
               <Col md={6}>
                 <Form.Group controlId="name" className="mb-3">
                   <Form.Label>{t("name")}</Form.Label>
@@ -125,9 +125,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </Form.Group>
           </div>
 
-          <div className="form-section mb-4">
-            <h5 className="section-title">{t("prices")}</h5>
-            <Row>
+          <div className="form-section mb-3 p-3 rounded bg-light">
+            <h5 className="section-title text-primary mb-3">{t("prices")}</h5>
+            <Row className="g-2">
               <Col md={6}>
                 <Form.Group controlId="price" className="mb-3">
                   <Form.Label>{t("price")}</Form.Label>
@@ -157,9 +157,9 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </Row>
           </div>
 
-          <div className="form-section">
-            <h5 className="section-title">{t("details")}</h5>
-            <Row>
+          <div className="form-section p-3 rounded bg-light">
+            <h5 className="section-title text-primary mb-3">{t("details")}</h5>
+            <Row className="g-2">
               <Col md={6}>
                 <Form.Group controlId="packageId" className="mb-3">
                   <Form.Label>{t("package")}</Form.Label>
@@ -209,11 +209,11 @@ const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </Form>
       </Modal.Body>
-      <Modal.Footer className="border-0 pt-0">
-        <Button variant="outline-secondary" onClick={onClose}>
+      <Modal.Footer className="border-0 pt-3 px-3 px-md-4 d-flex flex-column flex-sm-row">
+        <Button variant="outline-secondary" onClick={onClose} className="w-100 mb-2 mb-sm-0 me-sm-2">
           <FaTimes className="me-2" /> {t("cancel")}
         </Button>
-        <Button variant="primary" onClick={onSave}>
+        <Button variant="primary" onClick={onSave} className="w-100">
           <FaSave className="me-2" /> {t("save")}
         </Button>
       </Modal.Footer>

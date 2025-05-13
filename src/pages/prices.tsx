@@ -142,67 +142,74 @@ const Prices = () => {
 
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t('prices')}</h1>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
+        <h1 className="mb-3 mb-md-0">{t('prices')}</h1>
       </div>
-      <div className="p-4">
-      <Form onSubmit={addPrice}>
-        <Row className="align-items-end">
-          <Col>
-            <Form.Group controlId="ingredientSelect">
-              <Select
-                value={ingredientOptions.find(option => option.value === ingredientId) || null}
-                onChange={(option) => setIngredientId(option ? option.value : '')}
-                options={ingredientOptions}
-                isClearable
-                placeholder={t('chooseIngredient')}
-              />
-            </Form.Group>
-          </Col>
-          <Col>
-            <Form.Group controlId="priceInput">
-              <Form.Control
-                type="number"
-                step="0.01"
-                placeholder={t('price')}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col>
-            <Form.Group controlId="quantityInput">
-              <Form.Control
-                type="number"
-                step="0.01"
-                placeholder={t('quantity')}
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                required
-              />
-            </Form.Group>
-          </Col>
-          <Col>
-            <Form.Group controlId="unitSelect">
-              <Select
-                value={unitOptions.find(option => option.value === unit) || null}
-                onChange={(option) => setUnit(option ? option.value : '')}
-                options={unitOptions}
-                isClearable
-                placeholder={t('unit')}
-              />
-            </Form.Group>
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" type="submit">{t('addPrice')}</Button>
-          </Col>
-        </Row>
-      </Form>
+      <div className="p-3 p-md-4">
+      <div className="bg-light p-3 rounded mb-4">
+        <Form onSubmit={addPrice}>
+          <Row className="g-2">
+            <Col md={6} lg={3} className="mb-2 mb-lg-0">
+              <Form.Group controlId="ingredientSelect">
+                <Form.Label className="d-block d-lg-none">{t('ingredient')}</Form.Label>
+                <Select
+                  value={ingredientOptions.find(option => option.value === ingredientId) || null}
+                  onChange={(option) => setIngredientId(option ? option.value : '')}
+                  options={ingredientOptions}
+                  isClearable
+                  placeholder={t('chooseIngredient')}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6} lg={2} className="mb-2 mb-lg-0">
+              <Form.Group controlId="priceInput">
+                <Form.Label className="d-block d-lg-none">{t('price')}</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  placeholder={t('price')}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6} lg={2} className="mb-2 mb-lg-0">
+              <Form.Group controlId="quantityInput">
+                <Form.Label className="d-block d-lg-none">{t('quantity')}</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  placeholder={t('quantity')}
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6} lg={3} className="mb-2 mb-lg-0">
+              <Form.Group controlId="unitSelect">
+                <Form.Label className="d-block d-lg-none">{t('unit')}</Form.Label>
+                <Select
+                  value={unitOptions.find(option => option.value === unit) || null}
+                  onChange={(option) => setUnit(option ? option.value : '')}
+                  options={unitOptions}
+                  isClearable
+                  placeholder={t('unit')}
+                />
+              </Form.Group>
+            </Col>
+            <Col xs={12} lg={2} className="d-flex align-items-end">
+              <Button variant="primary" type="submit" className="w-100">{t('addPrice')}</Button>
+            </Col>
+          </Row>
+        </Form>
+      </div>
 
-      <div className="filter-section mt-4">
-        <Row>
-          <Col md={4}>
+      <div className="filter-section mb-4 bg-light p-3 rounded">
+        <Row className="g-2">
+          <Col md={6} lg={5}>
+            <Form.Label>{t('filterByIngredient')}</Form.Label>
             <Form.Group controlId="filterIngredientSelect">
               <Select
                 value={ingredientOptions.find(option => option.value === filterIngredientId) || null}
@@ -213,7 +220,8 @@ const Prices = () => {
               />
             </Form.Group>
           </Col>
-          <Col md={4}>
+          <Col md={6} lg={4}>
+            <Form.Label>{t('filterByDate')}</Form.Label>
             <Form.Group controlId="filterDateInput">
               <Form.Control
                 type="date"
@@ -222,36 +230,38 @@ const Prices = () => {
               />
             </Form.Group>
           </Col>
-          <Col md={4} className="d-flex align-items-end">
-            <Button variant="primary" onClick={loadPrices}>{t('applyFilters')}</Button>
+          <Col lg={3} className="d-flex align-items-end mt-3 mt-lg-0">
+            <Button variant="primary" onClick={loadPrices} className="w-100">{t('applyFilters')}</Button>
           </Col>
         </Row>
       </div>
 
-      <Table striped bordered hover className="mt-4">
-        <thead>
-          <tr>
-            <th onClick={() => sortPrices('ingredient.type')}>{t('ingredientType')}</th>
-            <th onClick={() => sortPrices('ingredient.name')}>{t('ingredientName')}</th>
-            <th onClick={() => sortPrices('price')}>{t('price')}</th>
-            <th onClick={() => sortPrices('quantity')}>{t('quantity')}</th>
-            <th onClick={() => sortPrices('unit')}>{t('unit')}</th>
-            <th onClick={() => sortPrices('date')}>{t('date')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {prices && prices.map((price: any) => (
-            <tr key={price.id}>
-              <td>{price.ingredient.type}</td>
-              <td>{price.ingredient.name}</td>
-              <td>{price.price} {t("currency")}</td>
-              <td>{price.quantity}</td>
-              <td>{t(price.unit)}</td>
-              <td>{new Date(price.date).toLocaleString()}</td>
+      <div className="table-responsive">
+        <Table striped bordered hover className="mt-2">
+          <thead>
+            <tr>
+              <th onClick={() => sortPrices('ingredient.type')} className="cursor-pointer">{t('ingredientType')}</th>
+              <th onClick={() => sortPrices('ingredient.name')} className="cursor-pointer">{t('ingredientName')}</th>
+              <th onClick={() => sortPrices('price')} className="cursor-pointer">{t('price')}</th>
+              <th onClick={() => sortPrices('quantity')} className="cursor-pointer">{t('quantity')}</th>
+              <th onClick={() => sortPrices('unit')} className="cursor-pointer">{t('unit')}</th>
+              <th onClick={() => sortPrices('date')} className="cursor-pointer">{t('date')}</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {prices && prices.map((price: any) => (
+              <tr key={price.id}>
+                <td>{price.ingredient.type}</td>
+                <td>{price.ingredient.name}</td>
+                <td>{price.price} {t("currency")}</td>
+                <td>{price.quantity}</td>
+                <td>{t(price.unit)}</td>
+                <td>{new Date(price.date).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
       </div>
     </div>
   );

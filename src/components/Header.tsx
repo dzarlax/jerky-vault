@@ -158,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
         </div>
         <Navbar.Toggle aria-controls="main-navbar" />
         <Navbar.Collapse id="main-navbar">
-          {showNavLinks && (
+          {showNavLinks && auth.isAuthenticated && (
             <Nav className="mx-auto">
               <Link href="/" locale={lang} passHref legacyBehavior>
                 <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/') ? 'active' : ''}`}>

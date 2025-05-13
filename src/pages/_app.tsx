@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Header from '../components/Header';
-import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col } from 'react-bootstrap';
@@ -47,7 +46,6 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Container className="py-5">
         <Component {...pageProps} />
       </Container>
-      <Footer />
     </>
   ) : (
     <>
@@ -94,7 +92,6 @@ function MyApp({ Component, pageProps }: AppProps) {
           <Component {...pageProps} />
         </div>
       </div>
-      <Footer />
     </>
   );
 

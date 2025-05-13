@@ -54,7 +54,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     .join(', ');
 
   return (
-    <Card className="h-100 product-card border-0">
+    <Card className="h-100 product-card border-0 shadow-sm">
       <div className="d-flex h-100">
         <div className="product-image-container-compact">
           {product.image ? (
@@ -62,6 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               src={product.image} 
               alt={product.name} 
               className="product-image-compact"
+              loading="lazy"
             />
           ) : (
             <div className="product-image-placeholder-compact d-flex align-items-center justify-content-center">
@@ -69,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
         </div>
-        <div className="flex-grow-1 p-2">
+        <div className="flex-grow-1 p-2 p-sm-3">
           <div className="d-flex justify-content-between align-items-start">
             <h6 className="product-title-compact mb-1">{product.name}</h6>
             <Button
@@ -83,7 +84,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </Button>
           </div>
           <p className="product-description-compact text-muted small mb-2">{product.description}</p>
-          <div className="d-flex flex-wrap gap-2">
+          <div className="d-flex flex-wrap gap-2 mb-1">
             <div className="product-detail-compact">
               <FaDollarSign size={12} className="me-1 text-primary" />
               <span className="small">{product.price}</span>
@@ -97,9 +98,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <span className="small">{packageName}</span>
             </div>
           </div>
-          <div className="mt-1">
-            <FaListUl size={12} className="me-1 text-primary" />
-            <span className="small">{recipeNames}</span>
+          <div className="mt-1 d-flex align-items-center">
+            <FaListUl size={12} className="me-1 text-primary flex-shrink-0" />
+            <span className="small text-truncate">{recipeNames}</span>
           </div>
         </div>
       </div>

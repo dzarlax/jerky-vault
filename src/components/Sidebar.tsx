@@ -126,49 +126,73 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       <Nav className="flex-column">
         <Link href="/" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaHome className="me-3" /> {t('home')}
           </Nav.Link>
         </Link>
         
         <Link href="/recipes" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/recipes') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/recipes') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaClipboardList className="me-3" /> {t('recipes')}
           </Nav.Link>
         </Link>
         
         <Link href="/ingredients" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/ingredients') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/ingredients') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaLeaf className="me-3" /> {t('ingredients')}
           </Nav.Link>
         </Link>
         
         <Link href="/prices" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaTag className="me-3" /> {t('prices')}
           </Nav.Link>
         </Link>
         
         <Link href="/clients" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/clients') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/clients') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaUsers className="me-3" /> {t('clients')}
           </Nav.Link>
         </Link>
         
         <Link href="/products" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/products') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/products') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaBoxOpen className="me-3" /> {t('products')}
           </Nav.Link>
         </Link>
         
         <Link href="/orders" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/orders') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/orders') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaShoppingCart className="me-3" /> {t('orders')}
           </Nav.Link>
         </Link>
         
         <Link href="/profile" locale={lang} passHref legacyBehavior>
-          <Nav.Link className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}>
+          <Nav.Link 
+            className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
             <FaUser className="me-3" /> {t('profile')}
           </Nav.Link>
         </Link>

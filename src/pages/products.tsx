@@ -291,12 +291,12 @@ const Products = () => {
 
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t('products')}</h1>
-        <div>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
+        <h1 className="mb-3 mb-md-0">{t('products')}</h1>
+        <div className="d-flex flex-wrap">
           <Button 
             variant="outline-primary" 
-            className="me-2" 
+            className="me-2 mb-2 mb-md-0" 
             onClick={() => setShowFilters(!showFilters)}
           >
             <FaFilter className="me-2" /> {t('filter')}
@@ -309,44 +309,61 @@ const Products = () => {
           </Button>
         </div>
       </div>
-      <div className="p-4">
+      <div className="p-3 p-md-4">
 
       {showFilters && (
-        <Row className="mb-4 filter-container p-3 rounded shadow-sm">
-          <Col md={4} className="mb-3 mb-md-0">
-            <label className="form-label">{t('recipe')}</label>
-            <Select
-              options={recipeOptions}
-              onChange={setSelectedRecipe}
-              placeholder={t('chooseRecipe')}
-              isClearable
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          </Col>
-          <Col md={4} className="mb-3 mb-md-0">
-            <label className="form-label">{t('package')}</label>
-            <Select
-              options={packageOptions}
-              onChange={setSelectedPackage}
-              placeholder={t('choosePackage')}
-              isClearable
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          </Col>
-          <Col md={4}>
-            <label className="form-label">{t('product')}</label>
-            <Select
-              options={productOptions}
-              onChange={setSelectedProduct}
-              placeholder={t('chooseProduct')}
-              isClearable
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          </Col>
-        </Row>
+        <div className="mb-4 filter-container p-3 rounded shadow-sm bg-light">
+          <Row className="g-2">
+            <Col md={4} className="mb-3 mb-md-0">
+              <label className="form-label">{t('recipe')}</label>
+              <Select
+                options={recipeOptions}
+                onChange={setSelectedRecipe}
+                placeholder={t('chooseRecipe')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+            <Col md={4} className="mb-3 mb-md-0">
+              <label className="form-label">{t('package')}</label>
+              <Select
+                options={packageOptions}
+                onChange={setSelectedPackage}
+                placeholder={t('choosePackage')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+            <Col md={4}>
+              <label className="form-label">{t('product')}</label>
+              <Select
+                options={productOptions}
+                onChange={setSelectedProduct}
+                placeholder={t('chooseProduct')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+          </Row>
+          <div className="d-flex justify-content-end mt-3">
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={() => {
+                setSelectedRecipe(null);
+                setSelectedPackage(null);
+                setSelectedProduct(null);
+                setFilteredProducts(products || []);
+              }}
+              className="me-2"
+            >
+              {t('clearFilters')}
+            </Button>
+          </div>
+        </div>
       )}
 
       {isLoading ? (
@@ -356,20 +373,19 @@ const Products = () => {
       ) : (
         <>
           {Object.entries(groupedProducts).length === 0 ? (
-            <div className="text-center py-5">
-              <p className="text-muted">{t('noProductsFound')}</p>
+            <div className="text-center py-5 bg-light rounded shadow-sm">
+              <p className="text-muted mb-3">{t('noProductsFound')}</p>
               <Button 
                 variant="primary" 
                 onClick={() => setShowProductModal(true)}
-                className="mt-3"
               >
                 <FaPlus className="me-2" /> {t('addProduct')}
               </Button>
             </div>
           ) : (
             Object.entries(groupedProducts).map(([recipeNames, products]) => (
-              <div key={recipeNames} className="mb-5">
-                <h2 className="mb-4">{recipeNames}</h2>
+              <div key={recipeNames} className="mb-4">
+                <h2 className="mb-3 px-2">{recipeNames}</h2>
                 <div className="product-list-container">
                   {Array.isArray(products) && products.map((product: Product) => (
                     <div key={product.id} className="product-list-item">

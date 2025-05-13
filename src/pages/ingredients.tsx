@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import { Container, Form, Button, ListGroup, Row, Col } from 'react-bootstrap';
+import { Container, Form, Button, ListGroup, Row, Col, Alert } from 'react-bootstrap';
 import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../utils/fetcher'; // Импорт фетчера из папки utils
@@ -21,6 +21,9 @@ const Ingredients: React.FC = () => {
   const [ingredientType, setIngredientType] = useState('');
   const [ingredientName, setIngredientName] = useState('');
   const [filter, setFilter] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showError, setShowError] = useState(false);
+  const ingredientNameRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
     // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
   useEffect(() => {
@@ -37,10 +40,24 @@ const Ingredients: React.FC = () => {
 
   const addIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Trim the ingredient name to remove leading/trailing whitespace
+    const trimmedName = ingredientName.trim();
+    
+    if (!trimmedName) {
+      setErrorMessage(t('ingredientNameRequired'));
+      setShowError(true);
+      ingredientNameRef.current?.focus();
+      return;
+    }
 
-    // Проверка на уникальность имени
-    if (ingredients?.find((ingredient) => ingredient.name.toLowerCase() === ingredientName.toLowerCase())) {
-      alert(t('ingredientExists'));
+    // Проверка на уникальность имени (case-insensitive and ignoring whitespace)
+    if (ingredients?.find((ingredient) => 
+      ingredient.name.toLowerCase().trim() === trimmedName.toLowerCase()
+    )) {
+      setErrorMessage(t('ingredientExists'));
+      setShowError(true);
+      ingredientNameRef.current?.focus();
       return;
     }
     try {
@@ -59,6 +76,7 @@ const Ingredients: React.FC = () => {
 
     setIngredientType('');
     setIngredientName('');
+    setShowError(false);
     mutate(); // Обновление списка ингредиентов
   } catch (error) {
     console.error('Failed to load recipes', error);
@@ -79,6 +97,12 @@ const Ingredients: React.FC = () => {
       </div>
       <div className="p-4">
 
+      {showError && (
+        <Alert variant="danger" onClose={() => setShowError(false)} dismissible>
+          {errorMessage}
+        </Alert>
+      )}
+      
       <Form className="mb-4" onSubmit={addIngredient}>
         <Row>
           <Col>
@@ -95,12 +119,20 @@ const Ingredients: React.FC = () => {
           <Col>
             <Form.Group controlId="ingredientName">
               <Form.Control
+                ref={ingredientNameRef}
                 type="text"
                 placeholder={t('ingredientName')}
                 value={ingredientName}
-                onChange={(e) => setIngredientName(e.target.value)}
+                onChange={(e) => {
+                  setIngredientName(e.target.value);
+                  if (showError) setShowError(false);
+                }}
+                isInvalid={showError}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                {errorMessage}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col xs="auto">

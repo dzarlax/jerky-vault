@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
-import { Container, Table, Button, InputGroup } from "react-bootstrap";
+import { Container, Table, Button, InputGroup, Row, Col, Form } from "react-bootstrap";
 import { FaSync, FaPencilAlt, FaTrash } from "react-icons/fa";
 import Select, { SingleValue } from 'react-select';
 import OrderModal from "../components/modal/Orders/OrderModal";
@@ -332,111 +332,125 @@ const Orders = () => {
 
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t("orders")}</h1>
-        <div className="d-flex">
-          <Select
-            className="me-2"
-            options={statusOptions}
-            onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
-            placeholder={t("filterByStatus")}
-          />
-          <Select
-            className="me-2"
-            options={clientOptions}
-            onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
-            placeholder={t("filterByClient")}
-          />
-          <Button variant="primary" onClick={() => setShowCreateOrderModal(true)}>
-            {t("createOrder")}
-          </Button>
-        </div>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
+        <h1 className="mb-3 mb-md-0">{t("orders")}</h1>
+        <Button 
+          variant="primary" 
+          onClick={() => setShowCreateOrderModal(true)}
+          className="mb-3 mb-md-0 order-3 order-md-2"
+        >
+          {t("createOrder")}
+        </Button>
       </div>
-      <div className="table-responsive">
-        <Table striped hover className="mb-0">
-        <thead>
-          <tr>
-            <th>{t("order")}</th>
-            <th>{t("client")}</th>
-            <th>{t("status")}</th>
-            <th>{t("date")}</th>
-            <th>{t("products")}</th>
-            <th>{t("totalCost")}</th>
-            <th>{t("totalCostPrice")}</th>
-            <th>{t("profit")}</th>
-            <th>{t("actions")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredOrders.map((order) => (
-            <tr key={order.id}>
-              <td>{order.id}</td>
-              <td
-                onClick={() =>
-                  handleClientClick(
-                    clients.find((client) => client.id === order.client_id) ||
-                      ({} as Client)
-                  )
-                }
-                style={{ cursor: "pointer" }}
-              >
-                {clients.find((client) => client.id === order.client_id)?.name ||
-                  t("unknownClient")}
-              </td>
-              <td>{t(order.status.toLowerCase())}</td>
-              <td>{new Date(order.created_at).toLocaleDateString()}</td>
-              <td>{groupedItems(order.items).map((item) => {
-                  const product = products.find((p) => p.id === item.product_id);
-                  return (
-                    <div key={item.product_id}>
-                      {product ? product.name : t("unknownProduct")} (
-                      {item.quantity})
+      
+      <div className="p-3 p-md-4">
+        <div className="filter-section mb-4 bg-light p-3 rounded">
+          <Row className="g-2">
+            <Col md={6}>
+              <Form.Label>{t("filterByStatus")}</Form.Label>
+              <Select
+                options={statusOptions}
+                onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
+                placeholder={t("filterByStatus")}
+                className="mb-2 mb-md-0"
+              />
+            </Col>
+            <Col md={6}>
+              <Form.Label>{t("filterByClient")}</Form.Label>
+              <Select
+                options={clientOptions}
+                onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
+                placeholder={t("filterByClient")}
+              />
+            </Col>
+          </Row>
+        </div>
+        
+        <div className="table-responsive">
+          <Table striped hover className="mb-0">
+            <thead>
+              <tr>
+                <th>{t("order")}</th>
+                <th>{t("client")}</th>
+                <th>{t("status")}</th>
+                <th>{t("date")}</th>
+                <th>{t("products")}</th>
+                <th>{t("totalCost")}</th>
+                <th>{t("totalCostPrice")}</th>
+                <th>{t("profit")}</th>
+                <th>{t("actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map((order) => (
+                <tr key={order.id}>
+                  <td>{order.id}</td>
+                  <td
+                    onClick={() =>
+                      handleClientClick(
+                        clients.find((client) => client.id === order.client_id) ||
+                          ({} as Client)
+                      )
+                    }
+                    style={{ cursor: "pointer" }}
+                    className="text-primary"
+                  >
+                    {clients.find((client) => client.id === order.client_id)?.name ||
+                      t("unknownClient")}
+                  </td>
+                  <td>
+                    <span className={`badge bg-${order.status === 'new' ? 'primary' : order.status === 'in_progress' ? 'info' : order.status === 'delivery' ? 'warning' : 'success'}`}>
+                      {t(order.status.toLowerCase())}
+                    </span>
+                  </td>
+                  <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                  <td>{groupedItems(order.items).map((item) => {
+                      const product = products.find((p) => p.id === item.product_id);
+                      return (
+                        <div key={item.product_id}>
+                          {product ? product.name : t("unknownProduct")} (
+                          {item.quantity})
+                        </div>
+                      );
+                    })}
+                  </td>
+                  <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
+                  <td>
+                    {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
+                  </td>
+                  <td className="text-success">
+                    {(calculateTotalPrice(order.items) - calculateTotalCostPrice(order.items)).toFixed(2)}{" "}{t("currency")}
+                  </td>
+                  <td>
+                    <div className="d-flex gap-1 align-items-center">
+                      <button 
+                        onClick={() => handleChangeStatus(order.id)}
+                        className="action-icon-btn"
+                        title={t("changeStatus")}
+                      >
+                        <FaSync size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleEditOrder(order)}
+                        className="action-icon-btn"
+                        title={t("edit")}
+                      >
+                        <FaPencilAlt size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="action-icon-btn text-danger"
+                        title={t("delete")}
+                      >
+                        <FaTrash size={14} />
+                      </button>
                     </div>
-                  );
-                })}
-              </td>
-              <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
-              <td>
-                {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
-              </td>
-              <td className="text-success">
-                {(calculateTotalPrice(order.items) - calculateTotalCostPrice(order.items)).toFixed(2)}{" "}{t("currency")}
-              </td>
-              <td>
-                <div className="d-flex flex-column gap-1 align-items-stretch">
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm" 
-                    onClick={() => handleChangeStatus(order.id)}
-                    className="d-flex align-items-center justify-content-center"
-                  >
-                    <FaSync size={12} className="me-1" />
-                    {t("changeStatus")}
-                  </Button>
-                  <Button 
-                    variant="outline-secondary" 
-                    size="sm" 
-                    onClick={() => handleEditOrder(order)}
-                    className="d-flex align-items-center justify-content-center"
-                  >
-                    <FaPencilAlt size={12} className="me-1" />
-                    {t("edit")}
-                  </Button>
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm" 
-                    onClick={() => handleDeleteOrder(order.id)}
-                    className="d-flex align-items-center justify-content-center"
-                  >
-                    <FaTrash size={12} className="me-1" />
-                    {t("delete")}
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
       </div>
 
       <OrderModal
