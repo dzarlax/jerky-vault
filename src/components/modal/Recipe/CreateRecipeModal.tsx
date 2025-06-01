@@ -126,7 +126,7 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
             {t('addIngredient')}
           </p>
         </Form>
-        <ListGroup>
+        <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
           {newIngredients.map((ingredient, index) => (
             <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
               {ingredient.name} - {ingredient.quantity} {t(ingredient.unit.value)}

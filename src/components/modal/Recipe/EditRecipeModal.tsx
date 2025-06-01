@@ -222,7 +222,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
               </p>
             </Form>
 
-            <ListGroup>
+            <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
               {editingRecipe.recipe_ingredients && editingRecipe.recipe_ingredients.length > 0 ? (
                 editingRecipe.recipe_ingredients.map((ingredient: any, index: number) => (
                   <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">

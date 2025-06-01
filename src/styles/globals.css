@@ -1234,8 +1234,6 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
 .recipe-card-body {
   padding: 12px 16px;
   flex-grow: 1;
-  overflow-y: auto;
-  max-height: 200px;
 }
 
 .recipe-ingredients-list {
