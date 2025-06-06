@@ -5,14 +5,24 @@ export const setAuthErrorHandler = (handler: () => void) => {
   authErrorHandler = handler;
 };
 
-// Custom error class with status property
+// Enhanced error class with structured error support
 class FetchError extends Error {
   status: number;
+  field?: string;
+  value?: string;
+  existing_id?: number;
   
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, errorData?: any) {
     super(message);
     this.name = 'FetchError';
     this.status = status;
+    
+    // Include structured error data if available
+    if (errorData) {
+      this.field = errorData.field;
+      this.value = errorData.value;
+      this.existing_id = errorData.existing_id;
+    }
   }
 }
 
@@ -59,20 +69,46 @@ export default async function fetcher(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorData = null;
+      let errorMessage = `Failed to fetch: ${response.status} ${response.statusText}`;
+      
+      try {
+        // Try to parse JSON error response
+        const errorText = await response.text();
+        if (errorText) {
+          try {
+            errorData = JSON.parse(errorText);
+            // Use server error message if available
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, use the text as is
+            errorMessage = errorText;
+          }
+        }
+      } catch (textError) {
+        console.warn('Failed to read error response text:', textError);
+      }
+      
       console.error('Fetch Error:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText,
+        errorData: errorData,
       });
       
-      throw new FetchError(`Failed to fetch: ${response.status} ${response.statusText}`, response.status);
+      throw new FetchError(errorMessage, response.status, errorData);
     }
 
     const data = await response.json();
     return data;
 
   } catch (error) {
+    // If it's already a FetchError, rethrow as is
+    if (error instanceof FetchError) {
+      throw error;
+    }
+    
     console.error('Fetch request failed:', error);
     throw error;
   }

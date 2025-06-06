@@ -123,23 +123,23 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
         const fieldErrors = [];
         switch (error.field) {
           case 'ingredient_id':
-            fieldErrors.push(error.error || t('ingredientRequired'));
+            fieldErrors.push(error.message || t('ingredientRequired'));
             break;
           case 'price':
-            fieldErrors.push(error.error || t('validPriceRequired'));
+            fieldErrors.push(error.message || t('validPriceRequired'));
             break;
           case 'quantity':
-            fieldErrors.push(error.error || t('validQuantityRequired'));
+            fieldErrors.push(error.message || t('validQuantityRequired'));
             break;
           case 'unit':
-            fieldErrors.push(error.error || t('unitRequired'));
+            fieldErrors.push(error.message || t('unitRequired'));
             break;
           default:
-            fieldErrors.push(error.error || t('failedToAddPrice'));
+            fieldErrors.push(error.message || t('failedToAddPrice'));
         }
         setErrors(fieldErrors);
       } else {
-        setErrors([error?.error || t('failedToAddPrice')]);
+        setErrors([error?.message || t('failedToAddPrice')]);
       }
     } finally {
       setIsLoading(false);

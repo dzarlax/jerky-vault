@@ -89,19 +89,20 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       console.error('Failed to add ingredient', error);
       
       // Обработка структурированной ошибки от сервера
-      if (error?.error === 'Ingredient with this name already exists') {
+      if (error?.message === 'Ingredient with this name already exists' || 
+          error?.message?.includes('already exists')) {
         setErrorMessage(t('ingredientExistsServer', { 
-          name: error.value,
-          id: error.existing_id 
+          name: error.value || ingredientName,
+          id: error.existing_id || 'unknown'
         }));
         setErrorField('name');
         ingredientNameRef.current?.focus();
       } else if (error?.field === 'name') {
-        setErrorMessage(error.error || t('invalidIngredientName'));
+        setErrorMessage(error.message || t('invalidIngredientName'));
         setErrorField('name');
         ingredientNameRef.current?.focus();
       } else {
-        setErrorMessage(error?.error || t('failedToAddIngredient'));
+        setErrorMessage(error?.message || t('failedToAddIngredient'));
         setErrorField('');
       }
       
