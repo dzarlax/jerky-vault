@@ -9,12 +9,17 @@ import Sidebar from '../components/Sidebar';
 import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col } from 'react-bootstrap';
 import { AuthProvider } from '../utils/authContext';
+import { useAuthHandler } from '../utils/useAuthHandler';
 
-function MyApp({ Component, pageProps }: AppProps) {
+// Component to handle auth logic inside AuthProvider
+function AppContent({ Component, pageProps }: AppProps) {
   const { t } = useTranslation('common');
   const router = useRouter();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  
+  // Use the auth handler hook to manage authentication
+  useAuthHandler();
   
   // Проверяем, является ли текущая страница страницей аутентификации
   const isAuthPage = router.pathname.startsWith('/auth/');
@@ -111,6 +116,11 @@ function MyApp({ Component, pageProps }: AppProps) {
       {content}
     </AuthProvider>
   );
+}
+
+// Main app component wrapper
+function MyApp(props: AppProps) {
+  return <AppContent {...props} />;
 }
 
 export default MyApp;

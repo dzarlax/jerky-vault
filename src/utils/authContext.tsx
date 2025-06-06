@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { setAuthErrorHandler } from './fetcher';
 
 interface AuthContextType {
   auth: {
@@ -8,6 +9,7 @@ interface AuthContextType {
   };
   login: (token: string, user: any) => void;
   logout: () => void;
+  isInitialized: boolean;
 }
 
 const defaultAuthContext: AuthContextType = {
@@ -18,6 +20,7 @@ const defaultAuthContext: AuthContextType = {
   },
   login: () => {},
   logout: () => {},
+  isInitialized: false,
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -47,30 +50,84 @@ const getInitialAuthState = () => {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialState }) => {
   const [auth, setAuth] = useState(initialState || getInitialAuthState());
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Memoized logout function to prevent unnecessary re-renders
+  const logout = useCallback(() => {
+    console.log('Logging out user...');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    
+    setAuth({
+      isAuthenticated: false,
+      user: null,
+      token: null,
+    });
+  }, []);
+
+  // Validate token format and expiration (basic check)
+  const isValidToken = useCallback((token: string): boolean => {
+    if (!token) return false;
+    
+    try {
+      // Basic JWT structure check (should have 3 parts separated by dots)
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      
+      // Try to decode the payload to check expiration
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Check if token is expired (with 5 minute buffer)
+      if (payload.exp && payload.exp < (currentTime + 300)) {
+        console.warn('Token is expired or about to expire');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Invalid token format:', error);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
+    // Set up the global auth error handler
+    setAuthErrorHandler(logout);
+    
     // Check if we're in a browser environment
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       
       if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          setAuth({
-            isAuthenticated: true,
-            user,
-            token,
-          });
-        } catch (error) {
-          console.error('Failed to parse user data from localStorage', error);
-          // Clear invalid data
+        // Validate token before using it
+        if (isValidToken(token)) {
+          try {
+            const user = JSON.parse(userStr);
+            setAuth({
+              isAuthenticated: true,
+              user,
+              token,
+            });
+          } catch (error) {
+            console.error('Failed to parse user data from localStorage', error);
+            // Clear invalid data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        } else {
+          console.warn('Invalid or expired token found, clearing localStorage');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
       }
+      
+      setIsInitialized(true);
     }
-  }, []);
+  }, [logout, isValidToken]);
 
   const login = (token: string, user: any) => {
     if (typeof window !== 'undefined') {
@@ -85,21 +142,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialSta
     });
   };
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
-    
-    setAuth({
-      isAuthenticated: false,
-      user: null,
-      token: null,
-    });
-  };
-
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, login, logout, isInitialized }}>
       {children}
     </AuthContext.Provider>
   );
@@ -108,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialSta
 // Higher-order component to protect routes that require authentication
 export const withAuth = (Component: React.ComponentType<any>) => {
   const WithAuth = (props: any) => {
-    const { auth } = useAuth();
+    const { auth, isInitialized } = useAuth();
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -121,7 +165,18 @@ export const withAuth = (Component: React.ComponentType<any>) => {
       return <Component {...props} />;
     }
 
-    // On the client side, check authentication
+    // Show loading while auth is initializing
+    if (!isInitialized) {
+      return (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      );
+    }
+
+    // On the client side, check authentication after initialization
     if (!auth.isAuthenticated) {
       // If we're in a browser environment, redirect to login
       window.location.href = '/auth/signin';

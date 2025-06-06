@@ -9,6 +9,7 @@ import fetcher from '../utils/fetcher';
 import { useAuth, withAuth } from '../utils/authContext';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+import { swrConfigs } from '../utils/swrConfig';
 import { 
   FaBook, 
   FaLeaf, 
@@ -31,12 +32,7 @@ const Dashboard = () => {
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard' : null,
     fetcher,
     {
-      // Don't revalidate on focus to avoid unnecessary API calls
-      revalidateOnFocus: false,
-      // Handle errors gracefully
-      onError: (err) => {
-        console.error('Dashboard data fetch error:', err);
-      },
+      ...swrConfigs.dashboard,
       // Provide fallback data for SSR
       fallbackData: {
         totalRecipes: 0,
@@ -51,13 +47,15 @@ const Dashboard = () => {
   // Fetch orders using the same endpoint as the orders page
   const { data: orders = [], error: ordersError } = useSWR(
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/orders' : null,
-    fetcher
+    fetcher,
+    swrConfigs.list
   );
   
   // Fetch clients for displaying client names
   const { data: clients = [] } = useSWR(
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/clients' : null,
-    fetcher
+    fetcher,
+    swrConfigs.static
   );
   
   // Filter orders to show only pending ones (new or in_progress)

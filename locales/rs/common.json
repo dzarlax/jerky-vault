@@ -181,5 +181,9 @@
   "view": "Преглед",
   "details": "Детаљи",
   "basicInfo": "Основне информације",
-  "tryAgain": "Покушајте поново"
+  "tryAgain": "Покушајте поново",
+  "authenticationWarning": "Упозорење о аутентификацији",
+  "sessionExpiredPleaseSignInAgain": "Сесија је истекла. Молимо вас да се поново пријавите.",
+  "authenticationFailed": "Аутентификација није успешна",
+  "tokenExpired": "Токен је истекао"
 }

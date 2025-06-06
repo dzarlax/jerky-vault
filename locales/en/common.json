@@ -181,5 +181,9 @@
   "enterYourPassword": "Enter your password",
   "confirmYourPassword": "Confirm your password",
   "pleaseSignIn": "Please sign in",
-  "basicInfo": "Basic Information"
+  "basicInfo": "Basic Information",
+  "authenticationWarning": "Authentication Warning",
+  "sessionExpiredPleaseSignInAgain": "Session expired. Please sign in again.",
+  "authenticationFailed": "Authentication failed",
+  "tokenExpired": "Token expired"
 }

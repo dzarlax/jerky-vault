@@ -181,5 +181,9 @@
   "confirmYourPassword": "Подтвердите ваш пароль",
   "pleaseSignIn": "Пожалуйста залогиньтесь",
   "view": "Просмотр",
-  "details": "Детали"
+  "details": "Детали",
+  "authenticationWarning": "Предупреждение авторизации",
+  "sessionExpiredPleaseSignInAgain": "Сессия истекла. Пожалуйста, войдите в систему снова.",
+  "authenticationFailed": "Ошибка авторизации",
+  "tokenExpired": "Токен истек"
 }
