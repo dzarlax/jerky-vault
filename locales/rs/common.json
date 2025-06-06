@@ -185,5 +185,12 @@
   "authenticationWarning": "Упозорење о аутентификацији",
   "sessionExpiredPleaseSignInAgain": "Сесија је истекла. Молимо вас да се поново пријавите.",
   "authenticationFailed": "Аутентификација није успешна",
-  "tokenExpired": "Токен је истекао"
+  "tokenExpired": "Токен је истекао",
+  "recipeNameRequired": "Потребно је унети назив рецепта",
+  "atLeastOneIngredientRequired": "Мора се додати најмање један састојак",
+  "ingredientAlreadyExists": "Овај састојак је већ додат у рецепт",
+  "noIngredientsAddedYet": "Састојци још нису додати",
+  "noIngredientsInRecipe": "Нема састојака у рецепту",
+  "ingredientsInRecipe": "Састојци у рецепту",
+  "selected": "одабрано"
 }

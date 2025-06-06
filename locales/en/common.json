@@ -185,5 +185,12 @@
   "authenticationWarning": "Authentication Warning",
   "sessionExpiredPleaseSignInAgain": "Session expired. Please sign in again.",
   "authenticationFailed": "Authentication failed",
-  "tokenExpired": "Token expired"
+  "tokenExpired": "Token expired",
+  "recipeNameRequired": "Recipe name is required",
+  "atLeastOneIngredientRequired": "At least one ingredient must be added",
+  "ingredientAlreadyExists": "This ingredient is already added to the recipe",
+  "noIngredientsAddedYet": "No ingredients added yet",
+  "noIngredientsInRecipe": "No ingredients in recipe",
+  "ingredientsInRecipe": "Ingredients in recipe",
+  "selected": "selected"
 }

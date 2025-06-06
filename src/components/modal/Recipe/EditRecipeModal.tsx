@@ -64,24 +64,31 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   const addIngredientToRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    if (!ingredientId || !quantity || !unit) {
-      console.error('Missing data for ingredient:', { ingredientId, quantity, unit });
+    if (!ingredientId || !quantity.trim() || !unit) {
+      alert(t('fillRequiredFields'));
+      return;
+    }
+
+    // Check if ingredient already exists in the recipe
+    const existingIngredient = editingRecipe.recipe_ingredients?.find(
+      (ing: any) => ing.ingredient_id === parseInt(ingredientId, 10)
+    );
+    if (existingIngredient) {
+      alert(t('ingredientAlreadyExists'));
       return;
     }
   
     try {
       if (!auth.isAuthenticated || !auth.token) {
-        console.error('No token found');
+        alert(t('authenticationFailed'));
         return;
       }
   
       const requestData = {
         ingredient_id: parseInt(ingredientId, 10),
-        quantity,
+        quantity: quantity.trim(),
         unit: unit.value
       };
-  
-      console.log('Sending data to add ingredient:', requestData);
   
       const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients`, {
         method: 'POST',
@@ -92,14 +99,18 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
         body: JSON.stringify(requestData),
       });
   
-      console.log('Response from adding ingredient:', response); // Логирование ответа
-  
       // Обновление ингредиентов после успешного добавления
       if (response) {
-        await loadRecipeIngredients(editingRecipe.id); // Перезагрузите ингредиенты
+        await loadRecipeIngredients(editingRecipe.id);
+        // Clear form after successful addition
+        setIngredientId('');
+        setQuantity('');
+        setUnit(null);
+        setUnits([]);
       }
     } catch (error) {
       console.error('Error adding ingredient:', error);
+      alert(t('errorOccurred'));
     }
   };
   
@@ -214,27 +225,69 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
                   placeholder={t('chooseUnit')}
                 />
               </Form.Group>
-              <p
-                style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-                onClick={addIngredientToRecipe}
-              >
-                {t('addIngredient')}
-              </p>
+              <div className="d-flex justify-content-end mt-3">
+                <Button 
+                  type="button"
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={addIngredientToRecipe}
+                  disabled={!ingredientId || !quantity || !unit}
+                  className="d-flex align-items-center add-ingredient-button"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="me-2" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                  </svg>
+                  {t('addIngredient')}
+                </Button>
+              </div>
             </Form>
 
-            <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {editingRecipe.recipe_ingredients && editingRecipe.recipe_ingredients.length > 0 ? (
-                editingRecipe.recipe_ingredients.map((ingredient: any, index: number) => (
-                  <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
-  {ingredient.ingredient.name} - {ingredient.quantity} {ingredient.unit} ({ingredient.ingredientCost ? parseFloat(ingredient.ingredientCost).toFixed(2) : 'N/A'} {t('currency')})
-  <CloseButton onClick={() => deleteIngredientFromRecipe(ingredient.ingredient_id.toString())} />
-</ListGroup.Item>
-
-                ))
-              ) : (
-                <ListGroup.Item>{t('noIngredientsAvailable')}</ListGroup.Item>
-              )}
-            </ListGroup>
+            {editingRecipe.recipe_ingredients && editingRecipe.recipe_ingredients.length > 0 ? (
+              <div className="mt-3">
+                <h6 className="text-muted mb-2">{t('ingredientsInRecipe')} ({editingRecipe.recipe_ingredients.length})</h6>
+                <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {editingRecipe.recipe_ingredients.map((ingredient: any, index: number) => (
+                    <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center py-2">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2">🥄</span>
+                        <div>
+                          <strong>{ingredient.ingredient.name}</strong>
+                          <div className="text-muted small">
+                            {ingredient.quantity} {ingredient.unit}
+                            {ingredient.ingredientCost && (
+                              <span className="ms-2 text-success">
+                                ({parseFloat(ingredient.ingredientCost).toFixed(2)} {t('currency')})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm" 
+                        onClick={() => deleteIngredientFromRecipe(ingredient.ingredient_id.toString())}
+                        className="btn-icon-small"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                          <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                      </Button>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </div>
+            ) : (
+              <div className="text-center py-3 mt-3 bg-light rounded">
+                <div className="text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="mb-2" viewBox="0 0 16 16">
+                    <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+                  </svg>
+                  <p className="mb-0 small">{t('noIngredientsInRecipe')}</p>
+                </div>
+              </div>
+            )}
           </>
         )}
       </Modal.Body>

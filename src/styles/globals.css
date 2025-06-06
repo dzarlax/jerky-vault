@@ -1786,3 +1786,106 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
     font-size: 0.8rem;
   }
 }
+
+/* Custom styles for recipe ingredient management */
+.btn-icon-small {
+  padding: 6px 8px;
+  min-width: auto;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-small:hover {
+  transform: translateY(-1px);
+}
+
+.ingredient-item-card {
+  border: 1px solid var(--table-border-color);
+  border-radius: var(--button-border-radius);
+  transition: all var(--transition-standard);
+}
+
+.ingredient-item-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.1);
+}
+
+.ingredient-emoji {
+  font-size: 1.2em;
+  margin-right: 8px;
+}
+
+.ingredients-counter {
+  background: var(--primary-color);
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.empty-state {
+  background: var(--background-color);
+  border: 2px dashed var(--table-border-color);
+  border-radius: var(--card-border-radius);
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state svg {
+  opacity: 0.6;
+}
+
+.add-ingredient-button {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  color: white;
+  transition: all var(--transition-standard);
+  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.3);
+}
+
+.add-ingredient-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(63, 81, 181, 0.4);
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  color: white;
+}
+
+.add-ingredient-button:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ingredient-cost {
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+/* Animations for ingredient list */
+.ingredient-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.ingredient-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.ingredient-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ingredient-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}

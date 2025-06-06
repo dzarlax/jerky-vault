@@ -185,5 +185,12 @@
   "authenticationWarning": "Предупреждение авторизации",
   "sessionExpiredPleaseSignInAgain": "Сессия истекла. Пожалуйста, войдите в систему снова.",
   "authenticationFailed": "Ошибка авторизации",
-  "tokenExpired": "Токен истек"
+  "tokenExpired": "Токен истек",
+  "recipeNameRequired": "Требуется указать название рецепта",
+  "atLeastOneIngredientRequired": "Необходимо добавить хотя бы один ингредиент",
+  "ingredientAlreadyExists": "Этот ингредиент уже добавлен в рецепт",
+  "noIngredientsAddedYet": "Ингредиенты еще не добавлены",
+  "noIngredientsInRecipe": "В рецепте нет ингредиентов",
+  "ingredientsInRecipe": "Ингредиенты в рецепте",
+  "selected": "выбрано"
 }
