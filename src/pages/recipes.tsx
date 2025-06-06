@@ -294,8 +294,8 @@ const Recipes: React.FC = () => {
                               <div className="ingredient-details">
                                 <span className="ingredient-quantity">{ri.quantity} {ri.unit}</span>
                                 <span className="ingredient-price">
-                                  ({ri.ingredient.prices && ri.ingredient.prices.length > 0
-                                    ? parseFloat(ri.ingredient.prices[0].price).toFixed(2)
+                                  ({ri.calculated_cost 
+                                    ? parseFloat(ri.calculated_cost).toFixed(2)
                                     : 'N/A'} {t("currency")})
                                 </span>
                               </div>
