@@ -4,7 +4,10 @@ import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
 import { Container, Table, Button, InputGroup, Row, Col, Form } from "react-bootstrap";
 import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
-import Select, { SingleValue } from 'react-select';
+import { SingleValue } from 'react-select';
+import dynamic from 'next/dynamic';
+
+const Select = dynamic(() => import('react-select'), { ssr: false });
 import OrderModal from "../components/modal/Orders/OrderModal";
 import ClientModal from "../components/modal/Orders/ClientModal";
 import StatusModal from "../components/modal/Orders/StatusModal";
@@ -67,7 +70,17 @@ const Orders = () => {
   ];
 
   useEffect(() => {
-    filterOrders(selectedStatus, selectedClientFilter);
+    let filtered = orders;
+
+    if (selectedStatus) {
+      filtered = filtered.filter((order) => order.status === selectedStatus.value);
+    }
+
+    if (selectedClientFilter) {
+      filtered = filtered.filter((order) => order.client_id === selectedClientFilter.value);
+    }
+
+    setFilteredOrders(filtered);
   }, [selectedStatus, selectedClientFilter, orders]);
 
   const handleEditOrder = (order: Order) => {
@@ -273,19 +286,7 @@ const Orders = () => {
     }
   };
 
-  const filterOrders = (status: SingleValue<{ value: string; label: string }> | null, client: SingleValue<{ value: number; label: string }> | null) => {
-    let filtered = orders;
 
-    if (status) {
-      filtered = filtered.filter((order) => order.status === status.value);
-    }
-
-    if (client) {
-      filtered = filtered.filter((order) => order.client_id === client.value);
-    }
-
-    setFilteredOrders(filtered);
-  };
 
   const clientOptions = clients.map((client) => ({
     value: client.id,

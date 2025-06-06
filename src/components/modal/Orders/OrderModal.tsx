@@ -1,8 +1,10 @@
 import React from 'react';
 import { Modal, Form, Button, InputGroup, FormControl } from 'react-bootstrap';
-import Select from 'react-select';
+import dynamic from 'next/dynamic';
 import { FaTimes } from 'react-icons/fa';
 import useTranslation from 'next-translate/useTranslation';
+
+const Select = dynamic(() => import('react-select'), { ssr: false });
 
 interface OrderItem {
   product_id: number;
@@ -80,7 +82,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
               onChange={option => setClientId(option?.value || null)}
               placeholder={t('chooseClient')}
               isClearable
-              menuPortalTarget={document.body}
+
+              menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
               styles={{
                 menuPortal: (base) => ({
                   ...base,
@@ -101,7 +104,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
                 options={statusOptions}
                 value={statusOptions.find(option => option.value === status)}
                 onChange={option => setStatus(option?.value || '')}
-                menuPortalTarget={document.body}
+                menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
                 styles={{
                   menuPortal: (base) => ({
                     ...base,
@@ -143,7 +146,7 @@ const OrderModal: React.FC<OrderModalProps> = ({
                       placeholder={t('selectProduct')}
                       isSearchable
                       isClearable
-                      menuPortalTarget={document.body}
+                      menuPortalTarget={typeof window !== 'undefined' ? document.body : undefined}
                       styles={{
                         menuPortal: (base) => ({
                           ...base,
