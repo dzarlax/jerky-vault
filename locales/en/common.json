@@ -275,5 +275,9 @@
   "confirmNewPassword": "Confirm new password",
   "passwordMinLength": "Minimum 3 characters",
   "success": "Success",
-  "filterOrders": "Filter Orders"
+  "filterOrders": "Filter Orders",
+  "selectProduct": "Select Product",
+  "noProductsAdded": "No Products Added",
+  "totalPrice": "Total Price",
+  "deleteError": "Delete Error"
 }

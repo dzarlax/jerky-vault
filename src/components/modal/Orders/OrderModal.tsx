@@ -29,10 +29,10 @@ interface OrderModalProps {
   clientOptions: { value: number, label: string }[];
   productOptions: { value: number, label: string }[];
   statusOptions: { value: string, label: string }[];
-  clientId: number;
+  clientId: number | null;
   status: string;
   items: OrderItem[];
-  setClientId: (clientId: number) => void;
+  setClientId: (clientId: number | null) => void;
   setStatus: (status: string) => void;
   handleProductChange: (index: number, product_id: number) => void;
   handleQuantityChange: (index: number, quantity: number) => void;
@@ -61,6 +61,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
 }) => {
   const { t } = useTranslation('common');
 
+
+
   const showStatusSelect = false; // Здесь можно поставить условие для отображения статуса
 
   return (
@@ -74,8 +76,21 @@ const OrderModal: React.FC<OrderModalProps> = ({
             <Form.Label>{t('client')}</Form.Label>
             <Select
               options={clientOptions}
-              value={clientOptions.find(option => option.value === clientId)}
-              onChange={option => setClientId(option?.value || 0)}
+              value={clientId ? clientOptions.find(option => option.value === clientId) : null}
+              onChange={option => setClientId(option?.value || null)}
+              placeholder={t('chooseClient')}
+              isClearable
+              menuPortalTarget={document.body}
+              styles={{
+                menuPortal: (base) => ({
+                  ...base,
+                  zIndex: 9999999,
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 9999999,
+                }),
+              }}
             />
           </Form.Group>
 
@@ -86,6 +101,17 @@ const OrderModal: React.FC<OrderModalProps> = ({
                 options={statusOptions}
                 value={statusOptions.find(option => option.value === status)}
                 onChange={option => setStatus(option?.value || '')}
+                menuPortalTarget={document.body}
+                styles={{
+                  menuPortal: (base) => ({
+                    ...base,
+                    zIndex: 9999999,
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    zIndex: 9999999,
+                  }),
+                }}
               />
             </Form.Group>
           )}
@@ -112,10 +138,22 @@ const OrderModal: React.FC<OrderModalProps> = ({
                   <div className="product-column">
                     <Select
                       options={productOptions}
-                      value={productOptions.find(option => option.value === item.product_id)}
+                      value={item.product_id > 0 ? productOptions.find(option => option.value === item.product_id) : null}
                       onChange={option => handleProductChange(index, option?.value || 0)}
                       placeholder={t('selectProduct')}
-                      className="product-select"
+                      isSearchable
+                      isClearable
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999999,
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 9999999,
+                        }),
+                      }}
                     />
                   </div>
                   <div className="quantity-column">

@@ -359,7 +359,12 @@ const Orders = () => {
         <div className="action-buttons d-flex gap-2">
           <Button 
             variant="primary" 
-            onClick={() => setShowCreateOrderModal(true)}
+            onClick={() => {
+              setClientId(null);
+              setStatus("new");
+              setItems([{ product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
+              setShowCreateOrderModal(true);
+            }}
           >
             <FaPlus className="me-2" /> 
             {t('createOrder')}

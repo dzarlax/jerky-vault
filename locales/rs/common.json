@@ -275,5 +275,9 @@
   "confirmNewPassword": "Potvrdite novu lozinku",
   "passwordMinLength": "Minimum 3 karaktera",
   "success": "Uspeh",
-  "filterOrders": "Filtriraj narudžbine"
+  "filterOrders": "Filtriraj narudžbine",
+  "selectProduct": "Izaberi proizvod",
+  "noProductsAdded": "Nema dodanih proizvoda",
+  "totalPrice": "Ukupna cena",
+  "deleteError": "Greška pri brisanju"
 }

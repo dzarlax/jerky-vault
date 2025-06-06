@@ -275,5 +275,9 @@
   "confirmNewPassword": "Подтвердите новый пароль",
   "passwordMinLength": "Минимум 3 символа",
   "success": "Успех",
-  "filterOrders": "Фильтр заказов"
+  "filterOrders": "Фильтр заказов",
+  "selectProduct": "Выберите продукт",
+  "noProductsAdded": "Продукты не добавлены",
+  "totalPrice": "Общая цена",
+  "deleteError": "Ошибка при удалении"
 }

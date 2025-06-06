@@ -2836,9 +2836,18 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
   color: var(--primary-color);
 }
 
-.react-select-container .react-select__option--is-selected {
-  background-color: var(--primary-color);
-  color: white;
+  .react-select-container .react-select__option--is-selected {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+/* Fix z-index for react-select in modals */
+.react-select__menu-portal {
+  z-index: 10000 !important;
+}
+
+.react-select__menu {
+  z-index: 10000 !important;
 }
 
 /* Input Group Enhanced Styles */
