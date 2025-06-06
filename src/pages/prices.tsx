@@ -2,25 +2,23 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
-import { Form, Button, Table, Container, Row, Col } from 'react-bootstrap';
+import { Form, Button, Table, Container, Row, Col, Alert, InputGroup } from 'react-bootstrap';
 import Select from 'react-select';
 import { useRouter } from 'next/router';
+import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaFilter, FaTimes, FaTag } from 'react-icons/fa';
+import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 
 const Prices = () => {
   const { t, lang } = useTranslation('common');
   const { data: ingredients, error: ingredientsError } = useSWR('/api/ingredients', fetcher);
   const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR('/api/prices', fetcher);
 
-  const [ingredientId, setIngredientId] = useState('');
-  const [price, setPrice] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState('');
-  const [units, setUnits] = useState<string[]>([]);
   const [filterIngredientId, setFilterIngredientId] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const router = useRouter();
 
@@ -34,78 +32,52 @@ const Prices = () => {
     if (router.locale !== lang) {
       router.push(router.pathname, router.asPath, { locale: lang });
     }
-    updateUnits();
-  }, [ingredientId, lang, router]);
+  }, [lang, router]);
 
-  const addPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddPrice = async (priceData: {
+    ingredient_id: string;
+    price: string;
+    quantity: string;
+    unit: string;
+  }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/signin');
+      return;
+    }
+    
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            router.push('/auth/signin');
-            return;
-        }
-        const currentDate = new Date().toISOString();
-        const response = await fetcher('/api/prices', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                ingredient_id: ingredientId,
-                price: parseFloat(price),
-                quantity: parseFloat(quantity),
-                unit: unit,
-                date: currentDate
-            }),
-        });
+      const currentDate = new Date().toISOString();
+      const response = await fetcher('/api/prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ingredient_id: priceData.ingredient_id,
+          price: parseFloat(priceData.price),
+          quantity: parseFloat(priceData.quantity),
+          unit: priceData.unit,
+          date: currentDate
+        }),
+      });
 
-        // Проверяем статус ответа. fetcher возвращает JSON или выбрасывает ошибку при неуспехе
-        if (!response || response.error) {
-            console.error('Failed to add price:', response.error || 'Unknown error');
-            throw new Error('Failed to add price');
-        }
+      if (!response || response.error) {
+        throw response || { error: 'Failed to add price' };
+      }
 
-        // Сброс полей формы после успешного добавления цены
-        setIngredientId('');
-        setPrice('');
-        setQuantity('');
-        setUnit('');
-        mutatePrices();  // Обновляем данные
+      mutatePrices();
     } catch (error) {
-        console.error('Failed to add price', error);
+      // Пробрасываем ошибку дальше для обработки в модальном окне
+      throw error;
     }
-};
+  };
 
-
-
-  const updateUnits = () => {
-    const selectedIngredient = ingredients?.find((ingredient: any) => ingredient.id === parseInt(ingredientId, 10));
-    if (!selectedIngredient) return;
-
-    let units: string[] = [];
-    switch (selectedIngredient.type) {
-      case 'base':
-        units = ['kg', 'g'];
-        break;
-      case 'spice':
-        units = ['g'];
-        break;
-      case 'sauce':
-        units = ['ml'];
-        break;
-      case 'electricity':
-        units = ['hh'];
-        break;
-      case 'packing':
-        units = ['pieces'];
-        break;
-      default:
-        units = [];
-    }
-    setUnits(units);
-    setUnit(units[0] || '');
+  const clearFilters = () => {
+    setFilterIngredientId('');
+    setFilterDate('');
+    loadPrices();
   };
 
   const loadPrices = async () => {
@@ -116,8 +88,8 @@ const Prices = () => {
     if (sortDirection) queryParams.append('sort_direction', sortDirection);
   
     try {
-      const data = await fetcher('/api/prices?' + queryParams.toString()); // `fetcher` уже возвращает JSON
-      mutatePrices(data, false); // Используйте полученные данные напрямую
+      const data = await fetcher('/api/prices?' + queryParams.toString());
+      mutatePrices(data, false);
     } catch (error) {
       console.error('Failed to load prices', error);
     }
@@ -134,7 +106,8 @@ const Prices = () => {
   };
 
   const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : [];
-  const unitOptions = units.map((unit: string) => ({ value: unit, label: t(unit) }));
+
+  const hasActiveFilters = filterIngredientId || filterDate;
 
   if (isLoading) return <div>{t('loading')}</div>;
   if (ingredientsError) return <div>{t('ingredientsError')}</div>;
@@ -142,74 +115,54 @@ const Prices = () => {
 
   return (
     <div className="p-0">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
-        <h1 className="mb-3 mb-md-0">{t('prices')}</h1>
+      <div className="prices-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaDollarSign className="me-2" />
+            {t('prices')}
+          </h1>
+          <div className="stats-summary d-flex flex-wrap gap-2">
+            <span className="badge bg-primary">
+              {t('totalPrices')}: {prices?.length || 0}
+            </span>
+            {hasActiveFilters && (
+              <span className="badge bg-warning">
+                {t('filtered')}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="action-buttons d-flex gap-2">
+          <Button 
+            variant="primary" 
+            onClick={() => setShowAddModal(true)}
+          >
+            <FaPlus className="me-2" /> 
+            {t('addPrice')}
+          </Button>
+        </div>
       </div>
-      <div className="p-3 p-md-4">
-      <div className="bg-light p-3 rounded mb-4">
-        <Form onSubmit={addPrice}>
-          <Row className="g-2">
-            <Col md={6} lg={3} className="mb-2 mb-lg-0">
-              <Form.Group controlId="ingredientSelect">
-                <Form.Label className="d-block d-lg-none">{t('ingredient')}</Form.Label>
-                <Select
-                  value={ingredientOptions.find(option => option.value === ingredientId) || null}
-                  onChange={(option) => setIngredientId(option ? option.value : '')}
-                  options={ingredientOptions}
-                  isClearable
-                  placeholder={t('chooseIngredient')}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6} lg={2} className="mb-2 mb-lg-0">
-              <Form.Group controlId="priceInput">
-                <Form.Label className="d-block d-lg-none">{t('price')}</Form.Label>
-                <Form.Control
-                  type="number"
-                  step="0.01"
-                  placeholder={t('price')}
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6} lg={2} className="mb-2 mb-lg-0">
-              <Form.Group controlId="quantityInput">
-                <Form.Label className="d-block d-lg-none">{t('quantity')}</Form.Label>
-                <Form.Control
-                  type="number"
-                  step="0.01"
-                  placeholder={t('quantity')}
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6} lg={3} className="mb-2 mb-lg-0">
-              <Form.Group controlId="unitSelect">
-                <Form.Label className="d-block d-lg-none">{t('unit')}</Form.Label>
-                <Select
-                  value={unitOptions.find(option => option.value === unit) || null}
-                  onChange={(option) => setUnit(option ? option.value : '')}
-                  options={unitOptions}
-                  isClearable
-                  placeholder={t('unit')}
-                />
-              </Form.Group>
-            </Col>
-            <Col xs={12} lg={2} className="d-flex align-items-end">
-              <Button variant="primary" type="submit" className="w-100">{t('addPrice')}</Button>
-            </Col>
-          </Row>
-        </Form>
-      </div>
+      <div className="prices-content p-3 p-md-4">
 
-      <div className="filter-section mb-4 bg-light p-3 rounded">
-        <Row className="g-2">
-          <Col md={6} lg={5}>
-            <Form.Label>{t('filterByIngredient')}</Form.Label>
+      <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <h5 className="mb-0 text-primary">
+            <FaFilter className="me-2" />
+            {t('filterPrices')}
+          </h5>
+          <Button 
+            variant="outline-secondary" 
+            size="sm"
+            onClick={clearFilters}
+            disabled={!hasActiveFilters}
+          >
+            <FaTimes className="me-1" />
+            {t('clearFilters')}
+          </Button>
+        </div>
+        <Row className="g-3">
+          <Col md={6}>
+            <Form.Label className="fw-semibold">{t('filterByIngredient')}</Form.Label>
             <Form.Group controlId="filterIngredientSelect">
               <Select
                 value={ingredientOptions.find(option => option.value === filterIngredientId) || null}
@@ -217,11 +170,13 @@ const Prices = () => {
                 options={ingredientOptions}
                 isClearable
                 placeholder={t('allIngredients')}
+                className="react-select-container"
+                classNamePrefix="react-select"
               />
             </Form.Group>
           </Col>
-          <Col md={6} lg={4}>
-            <Form.Label>{t('filterByDate')}</Form.Label>
+          <Col md={6}>
+            <Form.Label className="fw-semibold">{t('filterByDate')}</Form.Label>
             <Form.Group controlId="filterDateInput">
               <Form.Control
                 type="date"
@@ -230,10 +185,12 @@ const Prices = () => {
               />
             </Form.Group>
           </Col>
-          <Col lg={3} className="d-flex align-items-end mt-3 mt-lg-0">
-            <Button variant="primary" onClick={loadPrices} className="w-100">{t('applyFilters')}</Button>
-          </Col>
         </Row>
+        <div className="d-flex justify-content-end mt-3">
+          <Button variant="primary" onClick={loadPrices}>
+            {t('applyFilters')}
+          </Button>
+        </div>
       </div>
 
       <div className="table-responsive">
@@ -262,6 +219,13 @@ const Prices = () => {
           </tbody>
         </Table>
       </div>
+
+      <AddPriceModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddPrice}
+        ingredients={ingredients || []}
+      />
       </div>
     </div>
   );

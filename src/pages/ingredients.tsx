@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import { Container, Form, Button, ListGroup, Row, Col, Alert } from 'react-bootstrap';
+import { Container, Form, Button, ListGroup, Row, Col, Alert, Badge, InputGroup } from 'react-bootstrap';
 import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../utils/fetcher'; // Импорт фетчера из папки utils
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
-
+import { FaPlus, FaFilter, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint } from 'react-icons/fa';
+import AddIngredientModal from '../components/modal/Ingredients/AddIngredientModal';
 
 interface Ingredient {
   id: number;
@@ -18,145 +19,224 @@ const Ingredients: React.FC = () => {
   const { auth } = useAuth();
   const { data: ingredients, error, mutate } = useSWR<Ingredient[]>('/api/ingredients', fetcher);
   const { t } = useTranslation('common');
-  const [ingredientType, setIngredientType] = useState('');
-  const [ingredientName, setIngredientName] = useState('');
   const [filter, setFilter] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showError, setShowError] = useState(false);
-  const ingredientNameRef = useRef<HTMLInputElement>(null);
+  const [filterType, setFilterType] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
-    // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
+
+  // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
   useEffect(() => {
     if (!auth.isAuthenticated) {
       router.push('/auth/signin');
     }
   }, [auth.isAuthenticated, router]);
+
   const ingredientTypeOptions = [
-    { value: 'base', label: t('base') },
-    { value: 'spice', label: t('spice') },
-    { value: 'sauce', label: t('sauce') },
+    { value: 'base', label: t('base'), icon: FaUtensils },
+    { value: 'spice', label: t('spice'), icon: FaFlask },
+    { value: 'sauce', label: t('sauce'), icon: FaTint },
     // Add more types as needed
   ];
 
-  const addIngredient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Trim the ingredient name to remove leading/trailing whitespace
-    const trimmedName = ingredientName.trim();
-    
-    if (!trimmedName) {
-      setErrorMessage(t('ingredientNameRequired'));
-      setShowError(true);
-      ingredientNameRef.current?.focus();
-      return;
+  const getTypeIcon = (type: string) => {
+    const typeOption = ingredientTypeOptions.find(option => option.value === type);
+    if (typeOption) {
+      const IconComponent = typeOption.icon;
+      return <IconComponent className="me-1" />;
     }
+    return <FaTag className="me-1" />;
+  };
 
-    // Проверка на уникальность имени (case-insensitive and ignoring whitespace)
-    if (ingredients?.find((ingredient) => 
-      ingredient.name.toLowerCase().trim() === trimmedName.toLowerCase()
-    )) {
-      setErrorMessage(t('ingredientExists'));
-      setShowError(true);
-      ingredientNameRef.current?.focus();
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'base': return 'primary';
+      case 'spice': return 'warning';
+      case 'sauce': return 'info';
+      default: return 'secondary';
+    }
+  };
+
+  const handleAddIngredient = async (ingredientData: {
+    type: string;
+    name: string;
+  }) => {
+    if (!auth.isAuthenticated || !auth.token) {
+      router.push('/auth/signin');
       return;
     }
+    
     try {
-      if (!auth.isAuthenticated || !auth.token) {
-        router.push('/auth/signin');
-        return;
-      }
-    await fetcher('/api/ingredients', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.token}`,
-      },
-      body: JSON.stringify({ type: ingredientType, name: ingredientName }),
-    });
+      const response = await fetcher('/api/ingredients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(ingredientData),
+      });
 
-    setIngredientType('');
-    setIngredientName('');
-    setShowError(false);
-    mutate(); // Обновление списка ингредиентов
-  } catch (error) {
-    console.error('Failed to load recipes', error);
-  }
+      if (!response || response.error) {
+        throw response || { error: 'Failed to add ingredient' };
+      }
+
+      mutate();
+    } catch (error) {
+      // Пробрасываем ошибку дальше для обработки в модальном окне
+      throw error;
+    }
+  };
+
+  const clearFilters = () => {
+    setFilter('');
+    setFilterType('');
   };
 
   if (error) return <div>{t('failedToLoad')}</div>;
   if (!ingredients) return <div>{t('loading')}</div>;
 
-  const filteredIngredients = ingredients.filter((ingredient) =>
-    ingredient.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const filteredIngredients = ingredients.filter((ingredient) => {
+    const nameMatch = ingredient.name.toLowerCase().includes(filter.toLowerCase());
+    const typeMatch = !filterType || ingredient.type === filterType;
+    return nameMatch && typeMatch;
+  });
+
+  const hasActiveFilters = filter || filterType;
+  const getStats = () => {
+    const stats = ingredients.reduce((acc, ingredient) => {
+      acc[ingredient.type] = (acc[ingredient.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return stats;
+  };
+
+  const stats = getStats();
 
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t('ingredients')}</h1>
+      <div className="ingredients-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaList className="me-2" />
+            {t('ingredients')}
+          </h1>
+          <div className="stats-summary d-flex flex-wrap gap-2">
+            <span className="badge bg-primary">
+              {t('total')}: {ingredients?.length || 0}
+            </span>
+            {Object.entries(stats).map(([type, count]) => (
+              <span key={type} className={`badge bg-${getTypeColor(type)}`}>
+                {getTypeIcon(type)}
+                {t(type)}: {count}
+              </span>
+            ))}
+            {hasActiveFilters && (
+              <span className="badge bg-warning">
+                {t('filtered')}: {filteredIngredients.length}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="action-buttons d-flex gap-2">
+          <Button 
+            variant="primary"
+            onClick={() => setShowAddModal(true)}
+          >
+            <FaPlus className="me-2" /> 
+            {t('addIngredient')}
+          </Button>
+        </div>
       </div>
-      <div className="p-4">
+      <div className="ingredients-content p-3 p-md-4">
 
-      {showError && (
-        <Alert variant="danger" onClose={() => setShowError(false)} dismissible>
-          {errorMessage}
-        </Alert>
-      )}
-      
-      <Form className="mb-4" onSubmit={addIngredient}>
-        <Row>
-          <Col>
-            <Form.Group controlId="ingredientType">
-              <Select
-                value={ingredientTypeOptions.find(option => option.value === ingredientType) || null}
-                onChange={(option) => setIngredientType(option ? option.value : '')}
-                options={ingredientTypeOptions}
-                isClearable
-                placeholder={t('chooseType')}
-              />
-            </Form.Group>
-          </Col>
-          <Col>
-            <Form.Group controlId="ingredientName">
-              <Form.Control
-                ref={ingredientNameRef}
-                type="text"
-                placeholder={t('ingredientName')}
-                value={ingredientName}
-                onChange={(e) => {
-                  setIngredientName(e.target.value);
-                  if (showError) setShowError(false);
-                }}
-                isInvalid={showError}
-                required
-              />
-              <Form.Control.Feedback type="invalid">
-                {errorMessage}
-              </Form.Control.Feedback>
-            </Form.Group>
-          </Col>
-          <Col xs="auto">
-            <Button variant="primary" type="submit">{t('addIngredient')}</Button>
-          </Col>
-        </Row>
-      </Form>
+        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0 text-primary">
+              <FaFilter className="me-2" />
+              {t('filterIngredients')}
+            </h5>
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+            >
+              <FaTimes className="me-1" />
+              {t('clearFilters')}
+            </Button>
+          </div>
+          <Row className="g-3">
+            <Col md={6}>
+              <Form.Label className="fw-semibold">{t('searchByName')}</Form.Label>
+              <Form.Group controlId="filter">
+                <InputGroup>
+                  <InputGroup.Text>
+                    <FaSearch />
+                  </InputGroup.Text>
+                  <Form.Control
+                    type="text"
+                    placeholder={t('filterIngredients')}
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                  />
+                </InputGroup>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Label className="fw-semibold">{t('filterByType')}</Form.Label>
+              <Form.Group controlId="filterType">
+                <Select
+                  value={ingredientTypeOptions.find(option => option.value === filterType) || null}
+                  onChange={(option) => setFilterType(option ? option.value : '')}
+                  options={ingredientTypeOptions}
+                  isClearable
+                  placeholder={t('allTypes')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+        </div>
 
-      <Form.Group controlId="filter">
-        <Form.Control
-          type="text"
-          placeholder={t('filterIngredients')}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+        {filteredIngredients.length === 0 ? (
+          <div className="empty-state text-center py-5">
+            <FaList size={64} className="text-muted mb-3" />
+            <h4 className="text-muted">{t('noIngredientsFound')}</h4>
+            <p className="text-muted">{t('noIngredientsFoundDescription')}</p>
+            {!hasActiveFilters && (
+              <Button variant="primary" onClick={() => setShowAddModal(true)}>
+                <FaPlus className="me-2" />
+                {t('addFirstIngredient')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="ingredients-grid">
+            <ListGroup>
+              {filteredIngredients.map((ingredient) => (
+                <ListGroup.Item 
+                  key={ingredient.id} 
+                  className="d-flex justify-content-between align-items-center ingredient-item"
+                >
+                  <div className="ingredient-info">
+                    <span className="ingredient-name fw-medium">{ingredient.name}</span>
+                  </div>
+                  <Badge bg={getTypeColor(ingredient.type)} className="ingredient-type-badge">
+                    {getTypeIcon(ingredient.type)}
+                    {t(ingredient.type)}
+                  </Badge>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </div>
+        )}
+
+        <AddIngredientModal
+          show={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSave={handleAddIngredient}
+          existingIngredients={ingredients || []}
         />
-      </Form.Group>
-
-      <ListGroup className="mt-4">
-        {filteredIngredients.map((ingredient) => (
-          <ListGroup.Item key={ingredient.id}>
-            {ingredient.name} ({t(ingredient.type)})
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
       </div>
     </div>
   );

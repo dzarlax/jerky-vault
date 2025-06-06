@@ -5,6 +5,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
 import { Button, InputGroup, FormControl } from 'react-bootstrap';
 import ClientModal from '../components/modal/Clients/ClientModal';
+import { FaPlus, FaUsers, FaSearch, FaTimes } from 'react-icons/fa';
 
 const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
@@ -122,26 +123,72 @@ const Clients = ({ mapboxToken }) => {
     client.source?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
   if (!clients) return <div>{t('loading')}</div>;
 
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t('clients')}</h1>
+      <div className="clients-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaUsers className="me-2" />
+            {t('clients')}
+          </h1>
+          <div className="stats-summary d-flex flex-wrap gap-2">
+            <span className="badge bg-primary">
+              {t('total')}: {clients?.length || 0}
+            </span>
+            {filteredClients && filteredClients.length !== clients.length && (
+              <span className="badge bg-warning">
+                {t('filtered')}: {filteredClients.length}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="action-buttons d-flex gap-2">
+          <Button 
+            variant="primary" 
+            onClick={() => openClientModal()}
+          >
+            <FaPlus className="me-2" /> 
+            {t('addClient')}
+          </Button>
+        </div>
       </div>
-      <div className="p-4">
-        <InputGroup className="mb-3">
-        <FormControl
-          placeholder={t('search')}
-          aria-label={t('search')}
-          aria-describedby="basic-addon2"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <Button variant="outline-secondary" onClick={() => openClientModal()}>
-          {t('addClient')}
-        </Button>
-      </InputGroup>
+      <div className="clients-content p-3 p-md-4">
+
+        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0 text-primary">
+              <FaSearch className="me-2" />
+              {t('searchClients')}
+            </h5>
+            {searchTerm && (
+              <Button 
+                variant="outline-secondary" 
+                size="sm"
+                onClick={clearSearch}
+              >
+                <FaTimes className="me-1" />
+                {t('clearSearch')}
+              </Button>
+            )}
+          </div>
+          <InputGroup>
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <FormControl
+              placeholder={t('searchClientsPlaceholder')}
+              aria-label={t('search')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </InputGroup>
+        </div>
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-4">
         {filteredClients.map((client) => (
           <div key={client.id} className="col">
@@ -181,7 +228,7 @@ const Clients = ({ mapboxToken }) => {
                   {client.phone && (
                     <a href={`tel:${client.phone}`} className="client-contact-link phone">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/>
+                        <path fillRule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/>
                       </svg>
                       <span>{client.phone}</span>
                     </a>

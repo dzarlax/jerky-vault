@@ -3,7 +3,7 @@ import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
 import { Container, Table, Button, InputGroup, Row, Col, Form } from "react-bootstrap";
-import { FaSync, FaPencilAlt, FaTrash } from "react-icons/fa";
+import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
 import Select, { SingleValue } from 'react-select';
 import OrderModal from "../components/modal/Orders/OrderModal";
 import ClientModal from "../components/modal/Orders/ClientModal";
@@ -330,38 +330,88 @@ const Orders = () => {
     )}`;
   };
 
+  const clearFilters = () => {
+    setSelectedStatus(null);
+    setSelectedClientFilter(null);
+  };
+
+  const hasActiveFilters = selectedStatus || selectedClientFilter;
+
   return (
     <div className="p-0">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
-        <h1 className="mb-3 mb-md-0">{t("orders")}</h1>
-        <Button 
-          variant="primary" 
-          onClick={() => setShowCreateOrderModal(true)}
-          className="mb-3 mb-md-0 order-3 order-md-2"
-        >
-          {t("createOrder")}
-        </Button>
+      <div className="orders-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaShoppingCart className="me-2" />
+            {t('orders')}
+          </h1>
+          <div className="stats-summary d-flex flex-wrap gap-2">
+            <span className="badge bg-primary">
+              {t('total')}: {orders?.length || 0}
+            </span>
+            {hasActiveFilters && (
+              <span className="badge bg-warning">
+                {t('filtered')}: {filteredOrders.length}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="action-buttons d-flex gap-2">
+          <Button 
+            variant="primary" 
+            onClick={() => setShowCreateOrderModal(true)}
+          >
+            <FaPlus className="me-2" /> 
+            {t('createOrder')}
+          </Button>
+        </div>
       </div>
       
-      <div className="p-3 p-md-4">
-        <div className="filter-section mb-4 bg-light p-3 rounded">
-          <Row className="g-2">
+      <div className="orders-content p-3 p-md-4">
+        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0 text-primary">
+              <FaFilter className="me-2" />
+              {t('filterOrders')}
+            </h5>
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+            >
+              <FaTimes className="me-1" />
+              {t('clearFilters')}
+            </Button>
+          </div>
+          <Row className="g-3">
             <Col md={6}>
-              <Form.Label>{t("filterByStatus")}</Form.Label>
-              <Select
-                options={statusOptions}
-                onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
-                placeholder={t("filterByStatus")}
-                className="mb-2 mb-md-0"
-              />
+              <Form.Label className="fw-semibold">{t('filterByStatus')}</Form.Label>
+              <Form.Group>
+                <Select
+                  options={statusOptions}
+                  value={selectedStatus}
+                  onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
+                  placeholder={t('filterByStatus')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isClearable
+                />
+              </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Label>{t("filterByClient")}</Form.Label>
-              <Select
-                options={clientOptions}
-                onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
-                placeholder={t("filterByClient")}
-              />
+              <Form.Label className="fw-semibold">{t('filterByClient')}</Form.Label>
+              <Form.Group>
+                <Select
+                  options={clientOptions}
+                  value={selectedClientFilter}
+                  onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
+                  placeholder={t('filterByClient')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isClearable
+                />
+              </Form.Group>
             </Col>
           </Row>
         </div>

@@ -7,7 +7,7 @@ import { useAuth, withAuth } from '../utils/authContext';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import Select, { SingleValue } from 'react-select';
 import ProductModal from '../components/modal/Products/ProductModal';
-import { FaPlus, FaFilter } from 'react-icons/fa';
+import { FaPlus, FaFilter, FaTag, FaUtensils, FaBoxOpen, FaTimes } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import ErrorState from '../components/ErrorState';
@@ -162,8 +162,18 @@ const Products = () => {
         return;
       }
   
-      if (!name || !description || !price || !cost || !packageId || selectedRecipes.length === 0) {
-        alert(t('fillRequiredFields'));
+      // Improved validation with specific error messages
+      const errors = [];
+      
+      if (!name) errors.push(t('productNameRequired'));
+      if (!description) errors.push(t('productDescriptionRequired'));
+      if (!price || parseFloat(price) <= 0) errors.push(t('validPriceRequired'));
+      if (!cost || parseFloat(cost) <= 0) errors.push(t('validCostRequired'));
+      if (!packageId) errors.push(t('packageRequired'));
+      if (selectedRecipes.length === 0) errors.push(t('atLeastOneRecipeRequired'));
+      
+      if (errors.length > 0) {
+        alert(errors.join('\n'));
         return;
       }
   
@@ -291,64 +301,58 @@ const Products = () => {
 
   return (
     <div className="p-0">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom">
-        <h1 className="mb-3 mb-md-0">{t('products')}</h1>
-        <div className="d-flex flex-wrap">
+      <div className="products-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaTag className="me-2" />
+            {t('products')}
+          </h1>
+          {!isLoading && (
+            <div className="stats-summary d-flex flex-wrap gap-3 mb-2 mb-md-0">
+              <span className="badge bg-primary">
+                {t('totalProducts')}: {products?.length || 0}
+              </span>
+              {Object.keys(groupedProducts).length > 0 && (
+                <span className="badge bg-success">
+                  {t('recipes')}: {Object.keys(groupedProducts).length}
+                </span>
+              )}
+              {filteredProducts.length !== products?.length && (
+                <span className="badge bg-warning">
+                  {t('filtered')}: {filteredProducts.length}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="action-buttons d-flex flex-wrap gap-2">
           <Button 
             variant="outline-primary" 
-            className="me-2 mb-2 mb-md-0" 
+            className="filter-toggle-btn" 
             onClick={() => setShowFilters(!showFilters)}
           >
-            <FaFilter className="me-2" /> {t('filter')}
+            <FaFilter className="me-2" /> 
+            {t('filter')}
+            {showFilters && <span className="ms-1">✕</span>}
           </Button>
           <Button 
             variant="primary" 
+            className="add-product-btn"
             onClick={() => setShowProductModal(true)}
           >
             <FaPlus className="me-2" /> {t('addProduct')}
           </Button>
         </div>
       </div>
-      <div className="p-3 p-md-4">
+      <div className="products-content p-3 p-md-4">
 
       {showFilters && (
-        <div className="mb-4 filter-container p-3 rounded shadow-sm bg-light">
-          <Row className="g-2">
-            <Col md={4} className="mb-3 mb-md-0">
-              <label className="form-label">{t('recipe')}</label>
-              <Select
-                options={recipeOptions}
-                onChange={setSelectedRecipe}
-                placeholder={t('chooseRecipe')}
-                isClearable
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </Col>
-            <Col md={4} className="mb-3 mb-md-0">
-              <label className="form-label">{t('package')}</label>
-              <Select
-                options={packageOptions}
-                onChange={setSelectedPackage}
-                placeholder={t('choosePackage')}
-                isClearable
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </Col>
-            <Col md={4}>
-              <label className="form-label">{t('product')}</label>
-              <Select
-                options={productOptions}
-                onChange={setSelectedProduct}
-                placeholder={t('chooseProduct')}
-                isClearable
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </Col>
-          </Row>
-          <div className="d-flex justify-content-end mt-3">
+        <div className="filters-section mb-4 p-4 rounded shadow-sm bg-light border">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0 text-primary">
+              <FaFilter className="me-2" />
+              {t('filterProducts')}
+            </h5>
             <Button 
               variant="outline-secondary" 
               size="sm"
@@ -358,48 +362,112 @@ const Products = () => {
                 setSelectedProduct(null);
                 setFilteredProducts(products || []);
               }}
-              className="me-2"
+              disabled={!selectedRecipe && !selectedPackage && !selectedProduct}
             >
+              <FaTimes className="me-1" />
               {t('clearFilters')}
             </Button>
           </div>
+          <Row className="g-3">
+            <Col md={4} className="mb-3 mb-md-0">
+              <label className="form-label fw-semibold">
+                <FaUtensils className="me-1 text-primary" />
+                {t('recipe')}
+              </label>
+              <Select
+                options={recipeOptions}
+                onChange={setSelectedRecipe}
+                value={selectedRecipe}
+                placeholder={t('chooseRecipe')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+            <Col md={4} className="mb-3 mb-md-0">
+              <label className="form-label fw-semibold">
+                <FaBoxOpen className="me-1 text-primary" />
+                {t('package')}
+              </label>
+              <Select
+                options={packageOptions}
+                onChange={setSelectedPackage}
+                value={selectedPackage}
+                placeholder={t('choosePackage')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+            <Col md={4}>
+              <label className="form-label fw-semibold">
+                <FaTag className="me-1 text-primary" />
+                {t('product')}
+              </label>
+              <Select
+                options={productOptions}
+                onChange={setSelectedProduct}
+                value={selectedProduct}
+                placeholder={t('chooseProduct')}
+                isClearable
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </Col>
+          </Row>
         </div>
       )}
 
       {isLoading ? (
-        <Row>
-          <ProductSkeleton count={8} />
-        </Row>
+        <div className="products-loading">
+          <Row className="g-3">
+            <ProductSkeleton count={8} />
+          </Row>
+        </div>
       ) : (
         <>
           {Object.entries(groupedProducts).length === 0 ? (
-            <div className="text-center py-5 bg-light rounded shadow-sm">
-              <p className="text-muted mb-3">{t('noProductsFound')}</p>
+            <div className="empty-state-products text-center py-5 bg-light rounded shadow-sm">
+              <FaBoxOpen size={64} className="text-muted mb-3" />
+              <h3 className="text-muted mb-3">{t('noProductsFound')}</h3>
+              <p className="text-muted mb-4">{t('noProductsFoundDescription')}</p>
               <Button 
                 variant="primary" 
+                size="lg"
                 onClick={() => setShowProductModal(true)}
               >
                 <FaPlus className="me-2" /> {t('addProduct')}
               </Button>
             </div>
           ) : (
-            Object.entries(groupedProducts).map(([recipeNames, products]) => (
-              <div key={recipeNames} className="mb-4">
-                <h2 className="mb-3 px-2">{recipeNames}</h2>
-                <div className="product-list-container">
-                  {Array.isArray(products) && products.map((product: Product) => (
-                    <div key={product.id} className="product-list-item">
-                      <ProductCard 
-                        product={product} 
-                        recipes={recipes || []} 
-                        packages={packages || []} 
-                        onEdit={handleEditProduct} 
-                      />
+            <div className="products-sections">
+              {Object.entries(groupedProducts).map(([recipeNames, products]) => (
+                <div key={recipeNames} className="recipe-section mb-5">
+                  <div className="recipe-section-header d-flex align-items-center justify-content-between mb-3 p-3 bg-primary bg-opacity-10 rounded">
+                    <div className="d-flex align-items-center">
+                      <FaUtensils className="me-2 text-primary" />
+                      <h3 className="mb-0 text-primary fw-semibold">{recipeNames}</h3>
+                      <span className="badge bg-primary ms-2">{products.length}</span>
                     </div>
-                  ))}
+                    <div className="section-stats text-muted small">
+                      {products.length} {products.length === 1 ? t('product') : t('products')}
+                    </div>
+                  </div>
+                  <div className="products-grid">
+                    {Array.isArray(products) && products.map((product: Product) => (
+                      <div key={product.id} className="product-grid-item">
+                        <ProductCard 
+                          product={product} 
+                          recipes={recipes || []} 
+                          packages={packages || []} 
+                          onEdit={handleEditProduct} 
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </>
       )}

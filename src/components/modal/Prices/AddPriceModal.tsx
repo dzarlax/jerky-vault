@@ -1,0 +1,278 @@
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Button, Row, Col, Alert, InputGroup } from 'react-bootstrap';
+import Select from 'react-select';
+import useTranslation from 'next-translate/useTranslation';
+import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaTag } from 'react-icons/fa';
+
+interface AddPriceModalProps {
+  show: boolean;
+  onClose: () => void;
+  onSave: (priceData: {
+    ingredient_id: string;
+    price: string;
+    quantity: string;
+    unit: string;
+  }) => Promise<void>;
+  ingredients: any[];
+}
+
+const AddPriceModal: React.FC<AddPriceModalProps> = ({ 
+  show, 
+  onClose, 
+  onSave, 
+  ingredients = [] 
+}) => {
+  const { t } = useTranslation('common');
+  const [ingredientId, setIngredientId] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('');
+  const [units, setUnits] = useState<string[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    updateUnits();
+  }, [ingredientId]);
+
+  useEffect(() => {
+    if (!show) {
+      // Сброс формы при закрытии модального окна
+      setIngredientId('');
+      setPrice('');
+      setQuantity('');
+      setUnit('');
+      setErrors([]);
+    }
+  }, [show]);
+
+  const updateUnits = () => {
+    const selectedIngredient = ingredients?.find((ingredient: any) => 
+      ingredient.id === parseInt(ingredientId, 10)
+    );
+    if (!selectedIngredient) {
+      setUnits([]);
+      setUnit('');
+      return;
+    }
+
+    let availableUnits: string[] = [];
+    switch (selectedIngredient.type) {
+      case 'base':
+        availableUnits = ['kg', 'g'];
+        break;
+      case 'spice':
+        availableUnits = ['g'];
+        break;
+      case 'sauce':
+        availableUnits = ['ml'];
+        break;
+      case 'electricity':
+        availableUnits = ['hh'];
+        break;
+      case 'packing':
+        availableUnits = ['pieces'];
+        break;
+      default:
+        availableUnits = [];
+    }
+    setUnits(availableUnits);
+    setUnit(availableUnits[0] || '');
+  };
+
+  const validateForm = () => {
+    const validationErrors = [];
+    
+    if (!ingredientId) validationErrors.push(t('ingredientRequired'));
+    if (!price || parseFloat(price) <= 0) validationErrors.push(t('validPriceRequired'));
+    if (!quantity || parseFloat(quantity) <= 0) validationErrors.push(t('validQuantityRequired'));
+    if (!unit) validationErrors.push(t('unitRequired'));
+    
+    setErrors(validationErrors);
+    return validationErrors.length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onSave({
+        ingredient_id: ingredientId,
+        price,
+        quantity,
+        unit
+      });
+      
+      // Сброс формы после успешного сохранения
+      setIngredientId('');
+      setPrice('');
+      setQuantity('');
+      setUnit('');
+      setErrors([]);
+      onClose();
+    } catch (error: any) {
+      console.error('Failed to add price', error);
+      
+      // Обработка структурированной ошибки от сервера
+      if (error?.field) {
+        const fieldErrors = [];
+        switch (error.field) {
+          case 'ingredient_id':
+            fieldErrors.push(error.error || t('ingredientRequired'));
+            break;
+          case 'price':
+            fieldErrors.push(error.error || t('validPriceRequired'));
+            break;
+          case 'quantity':
+            fieldErrors.push(error.error || t('validQuantityRequired'));
+            break;
+          case 'unit':
+            fieldErrors.push(error.error || t('unitRequired'));
+            break;
+          default:
+            fieldErrors.push(error.error || t('failedToAddPrice'));
+        }
+        setErrors(fieldErrors);
+      } else {
+        setErrors([error?.error || t('failedToAddPrice')]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ 
+    value: ingredient.id, 
+    label: ingredient.name 
+  })) : [];
+  
+  const unitOptions = units.map((unit: string) => ({ 
+    value: unit, 
+    label: t(unit) 
+  }));
+
+  return (
+    <Modal show={show} onHide={onClose} size="lg" className="add-price-modal">
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <FaPlus className="me-2 text-primary" />
+          {t('addPrice')}
+        </Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body>
+          {errors.length > 0 && (
+            <Alert variant="danger" className="mb-4">
+              <strong>{t('pleaseFixErrors')}:</strong>
+              <ul className="mb-0 mt-2">
+                {errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </Alert>
+          )}
+
+          <Row className="g-3">
+            <Col md={6}>
+              <Form.Group controlId="ingredientSelect">
+                <Form.Label className="fw-semibold">
+                  <FaTag className="me-1 text-primary" />
+                  {t('ingredient')} <span className="text-danger">*</span>
+                </Form.Label>
+                <Select
+                  value={ingredientOptions.find(option => option.value === parseInt(ingredientId)) || null}
+                  onChange={(option) => setIngredientId(option ? option.value.toString() : '')}
+                  options={ingredientOptions}
+                  isClearable
+                  placeholder={t('chooseIngredient')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group controlId="unitSelect">
+                <Form.Label className="fw-semibold">
+                  <FaRulerCombined className="me-1 text-primary" />
+                  {t('unit')} <span className="text-danger">*</span>
+                </Form.Label>
+                <Select
+                  value={unitOptions.find(option => option.value === unit) || null}
+                  onChange={(option) => setUnit(option ? option.value : '')}
+                  options={unitOptions}
+                  placeholder={t('chooseUnit')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  isDisabled={!ingredientId}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row className="g-3 mt-2">
+            <Col md={6}>
+              <Form.Group controlId="priceInput">
+                <Form.Label className="fw-semibold">
+                  <FaDollarSign className="me-1 text-primary" />
+                  {t('price')} <span className="text-danger">*</span>
+                </Form.Label>
+                <InputGroup>
+                  <InputGroup.Text>₽</InputGroup.Text>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                  />
+                </InputGroup>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group controlId="quantityInput">
+                <Form.Label className="fw-semibold">
+                  <FaWeight className="me-1 text-primary" />
+                  {t('quantity')} <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={onClose} disabled={isLoading}>
+            {t('cancel')}
+          </Button>
+          <Button variant="primary" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {t('loading')}...
+              </>
+            ) : (
+              <>
+                <FaPlus className="me-2" />
+                {t('addPrice')}
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Form>
+    </Modal>
+  );
+};
+
+export default AddPriceModal; 

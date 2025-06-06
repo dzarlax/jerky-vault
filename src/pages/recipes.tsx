@@ -8,6 +8,7 @@ import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
 import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
+import { FaPlus, FaUtensils, FaFilter, FaTimes } from 'react-icons/fa';
 
 const Recipes: React.FC = () => {
   const { auth } = useAuth();
@@ -214,63 +215,113 @@ const Recipes: React.FC = () => {
     }
   };
 
+  const clearFilters = () => {
+    setFilterName('');
+    setFilterIngredient('');
+  };
+
+  const hasActiveFilters = filterName || filterIngredient;
+
   return (
     <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t("recipes")}</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
-          {t("addRecipe")}
-        </Button>
+      <div className="recipes-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
+        <div className="header-content">
+          <h1 className="mb-2 text-primary">
+            <FaUtensils className="me-2" />
+            {t('recipes')}
+          </h1>
+          <div className="stats-summary d-flex flex-wrap gap-2">
+            <span className="badge bg-primary">
+              {t('total')}: {recipes?.length || 0}
+            </span>
+            {hasActiveFilters && (
+              <span className="badge bg-warning">
+                {t('filtered')}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="action-buttons d-flex gap-2">
+          <Button 
+            variant="primary" 
+            onClick={() => setShowCreateModal(true)}
+          >
+            <FaPlus className="me-2" /> 
+            {t('addRecipe')}
+          </Button>
+        </div>
       </div>
-      <div className="p-4">
-          <Row className="mb-3">
+      <div className="recipes-content p-3 p-md-4">
+
+        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0 text-primary">
+              <FaFilter className="me-2" />
+              {t('filterRecipes')}
+            </h5>
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+            >
+              <FaTimes className="me-1" />
+              {t('clearFilters')}
+            </Button>
+          </div>
+          <Row className="g-3">
             <Col md={6}>
+              <Form.Label className="fw-semibold">{t('filterByRecipe')}</Form.Label>
               <Form.Group>
-                <Form.Label>{t("filterByRecipe")}</Form.Label>
                 <Select
                   value={
                     filterName
-                      ? { value: filterName, label: recipeNames.find((recipe: any) => recipe.id === parseInt(filterName))?.name }
+                      ? { value: filterName, label: recipeNames?.find((recipe: any) => recipe.id === parseInt(filterName))?.name }
                       : null
                   }
                   onChange={(selectedOption: any) => setFilterName(selectedOption ? selectedOption.value : '')}
                   options={
                     recipeNames
                       ? recipeNames.map((recipeName: any) => ({
-                          value: recipeName.id,  // Используем ID
-                          label: recipeName.name, // Отображаем имя
+                          value: recipeName.id,
+                          label: recipeName.name,
                         }))
                       : []
                   }
                   isClearable
-                  placeholder={t("recipeName")}
+                  placeholder={t('recipeName')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
+              <Form.Label className="fw-semibold">{t('filterByIngredient')}</Form.Label>
               <Form.Group>
-                <Form.Label>{t("filterByIngredient")}</Form.Label>
                 <Select
                   value={
                     filterIngredient
-                      ? { value: filterIngredient, label: ingredients.find((ingredient: any) => ingredient.id === parseInt(filterIngredient))?.name }
+                      ? { value: filterIngredient, label: ingredients?.find((ingredient: any) => ingredient.id === parseInt(filterIngredient))?.name }
                       : null
                   }
                   onChange={(selectedOption: any) => setFilterIngredient(selectedOption ? selectedOption.value : '')}
                   options={
                     ingredients
                       ? ingredients.map((ingredient: any) => ({
-                          value: ingredient.id,  // Используем ID
-                          label: ingredient.name, // Отображаем имя
+                          value: ingredient.id,
+                          label: ingredient.name,
                         }))
                       : []
                   }
                   isClearable
-                  placeholder={t("ingredientName")}
+                  placeholder={t('ingredientName')}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
                 />
               </Form.Group>
             </Col>
           </Row>
+        </div>
           {isLoading ? (
             <p>{t("loading")}</p>
           ) : (
