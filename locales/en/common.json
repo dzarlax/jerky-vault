@@ -198,7 +198,6 @@
   "addressInformation": "Address Information",
   "nameRequired": "Name is required",
   "surnameRequired": "Surname is required",
-  "addressRequired": "Address is required",
   "invalidPhoneFormat": "Invalid phone number format",
   "invalidTelegramFormat": "Invalid Telegram format (5-32 characters, letters, numbers and _ only)",
   "invalidInstagramFormat": "Invalid Instagram format (1-30 characters, letters, numbers, . and _ only)",

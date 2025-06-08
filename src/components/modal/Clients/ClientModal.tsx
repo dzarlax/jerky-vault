@@ -95,11 +95,8 @@ const ClientModal = ({
         }
         break;
       case 'address':
-        if (!value.trim()) {
-          newErrors.address = t('addressRequired');
-        } else {
-          delete newErrors.address;
-        }
+        // Address is no longer required
+        delete newErrors.address;
         break;
     }
     
@@ -116,7 +113,6 @@ const ClientModal = ({
   const isFormValid = () => {
     return name.trim() && 
            surname.trim() && 
-           address.trim() && 
            Object.keys(errors).length === 0 &&
            (!phone || validatePhone(phone)) &&
            (!telegram || validateTelegram(telegram)) &&
@@ -347,7 +343,6 @@ const ClientModal = ({
             </h6>
             <Form.Group className="mb-3">
               <Form.Label className="d-flex align-items-center">
-                <span className="text-danger me-1">*</span>
                 {t('address')}
               </Form.Label>
               <div className="position-relative">

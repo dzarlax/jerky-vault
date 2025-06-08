@@ -198,7 +198,6 @@
   "addressInformation": "Адресне информације",
   "nameRequired": "Име је обавезно",
   "surnameRequired": "Презиме је обавезно",
-  "addressRequired": "Адреса је обавезна",
   "invalidPhoneFormat": "Неважећи формат броја телефона",
   "invalidTelegramFormat": "Неважећи формат Telegram-а (5-32 карактера, само слова, бројеви и _)",
   "invalidInstagramFormat": "Неважећи формат Instagram-а (1-30 карактера, само слова, бројеви, . и _)",

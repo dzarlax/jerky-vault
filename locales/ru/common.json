@@ -198,7 +198,6 @@
   "addressInformation": "Адресная информация",
   "nameRequired": "Имя обязательно для заполнения",
   "surnameRequired": "Фамилия обязательна для заполнения",
-  "addressRequired": "Адрес обязателен для заполнения",
   "invalidPhoneFormat": "Неверный формат номера телефона",
   "invalidTelegramFormat": "Неверный формат Telegram (5-32 символа, только буквы, цифры и _)",
   "invalidInstagramFormat": "Неверный формат Instagram (1-30 символов, только буквы, цифры, . и _)",
