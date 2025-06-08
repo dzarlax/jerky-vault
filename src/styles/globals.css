@@ -1094,6 +1094,44 @@ button:focus:not(:active)::after, .btn:focus:not(:active)::after {
   position: relative;
 }
 
+/* Enhanced Dashboard Styles */
+.bg-success-light {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+}
+
+.bg-warning-light {
+  background-color: rgba(255, 152, 0, 0.1) !important;
+}
+
+.bg-info-light {
+  background-color: rgba(33, 150, 243, 0.1) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-change {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.metric-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
 /* Мобильная навигация */
 .mobile-nav {
   position: fixed;

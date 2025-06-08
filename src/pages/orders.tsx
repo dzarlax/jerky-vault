@@ -65,8 +65,9 @@ const Orders = () => {
   const statusOptions = [
     { value: "new", label: t("new") },
     { value: "in_progress", label: t("in_progress") },
-    { value: "delivery", label: t("delivery") },
+    { value: "ready", label: t("ready") },
     { value: "finished", label: t("finished") },
+    { value: "canceled", label: t("canceled") },
   ];
 
   useEffect(() => {

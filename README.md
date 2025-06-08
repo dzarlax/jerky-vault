@@ -1,215 +1,303 @@
 # JerkyVault
 
-JerkyVault is a web application designed for managing recipes and orders for the production and sale of jerky. The project is built using modern web technologies such as **Next.js**, **Bootstrap**, and **MySQL**. The application is focused on ease of use, scalability, and user-friendliness, supporting multilingual functionality and secure authentication.
+**JerkyVault** is a modern, full-stack web application designed for comprehensive management of jerky production operations. Built with cutting-edge technologies including **Next.js 14**, **TypeScript**, and **Bootstrap**, the application provides a scalable, secure, and user-friendly platform for managing recipes, orders, clients, products, and production workflows.
 
-## Table of Contents
+## 🚀 Key Features
 
-- [JerkyVault](#jerkyvault)
-  - [Table of Contents](#table-of-contents)
-  - [Key Features](#key-features)
-    - [1. **User Registration and Authentication**](#1-user-registration-and-authentication)
-    - [2. **Dashboard**](#2-dashboard)
-    - [3. **Multilingual Support**](#3-multilingual-support)
-    - [4. **User Interface**](#4-user-interface)
-    - [5. **DevOps and CI/CD**](#5-devops-and-cicd)
-  - [Website Sections](#website-sections)
-    - [1. **Dashboard**](#1-dashboard)
-    - [2. **Registration and Sign-In**](#2-registration-and-sign-in)
-    - [3. **Recipes**](#3-recipes)
-    - [4. **Orders**](#4-orders)
-    - [5. **Clients**](#5-clients)
-    - [6. **Products**](#6-products)
-    - [7. **User Profile**](#7-user-profile)
-  - [Technology Stack](#technology-stack)
-  - [Installation and Setup](#installation-and-setup)
-    - [1. Clone the Repository](#1-clone-the-repository)
-    - [2. Install Dependencies](#2-install-dependencies)
-    - [3. Set Up Environment Variables](#3-set-up-environment-variables)
-    - [4. Localization Setup](#4-localization-setup)
-    - [5. Run the Application](#5-run-the-application)
-  - [Running the Application in Docker](#running-the-application-in-docker)
-    - [1. Set Up Docker Environment](#1-set-up-docker-environment)
-    - [2. Start the Docker Container](#2-start-the-docker-container)
-  - [Development Commands](#development-commands)
-  - [License](#license)
+### **Production Management**
+- **Recipe Management**: Create, edit, and organize jerky recipes with detailed ingredient lists and instructions
+- **Order Tracking**: Complete order lifecycle management from creation to fulfillment
+- **Client Database**: Comprehensive client management with contact information and order history
+- **Product Catalog**: Manage your jerky product lineup with pricing and descriptions
+- **Inventory Control**: Track ingredients and manage stock levels
+- **Price Management**: Dynamic pricing system for products and services
 
-## Key Features
+### **Advanced Authentication & Security**
+- **JWT-based Authentication**: Secure token-based authentication system
+- **Automatic Session Management**: Smart token validation with automatic logout on expiration
+- **Cross-tab Synchronization**: Consistent auth state across multiple browser tabs
+- **Protected Routes**: Role-based access control for sensitive operations
+- **CSRF Protection**: Built-in protection against cross-site request forgery attacks
 
-### 1. **User Registration and Authentication**
+### **Modern User Experience**
+- **Responsive Design**: Fully responsive interface built with Bootstrap 5.3
+- **Real-time Updates**: Live data updates using SWR for optimal performance
+- **Multilingual Support**: Complete i18n support for English, Russian, and Serbian
+- **Interactive Charts**: Beautiful data visualization with Chart.js
+- **Progressive Loading**: Smart loading states and error handling
+- **Toast Notifications**: User-friendly feedback system
 
-- **Registration**: The application provides users with the ability to register using a form that includes password confirmation. Data validation occurs on both the client and server sides, ensuring a high level of security.
-- **Sign-In**: The sign-in functionality is implemented using NextAuth, which supports multiple authentication methods. Users can sign in using standard username and password.
-- **Data Protection**: The use of CSRF tokens ensures protection against attacks at the form submission level for sign-in and registration.
+### **Developer Experience**
+- **TypeScript**: Full type safety throughout the application
+- **Modern Architecture**: Clean separation of concerns with proper component structure
+- **Environment Validation**: Strict environment variable validation with Zod
+- **Docker Support**: Complete containerization for easy deployment
+- **CI/CD Pipeline**: Automated build and deployment with GitHub Actions
 
-### 2. **Dashboard**
+## 🏗️ Technology Stack
 
-- **Statistics**: The dashboard displays various statistical data, such as the total number of recipes, ingredients, products, and orders. Data visualization is implemented using **Chart.js**.
-- **Charts**: The dashboard also features charts that show the distribution of product types (e.g., different types of jerky).
-- **Order Tables**: The application allows viewing of pending orders, sorting them by various parameters, and tracking the status of orders.
+### **Frontend**
+- **Next.js 14** - React framework with App Router and SSG/SSR capabilities
+- **TypeScript** - Type-safe development environment
+- **React 18** - Latest React features with concurrent rendering
+- **Bootstrap 5.3** - Modern CSS framework for responsive design
+- **React Bootstrap** - Bootstrap components for React
+- **Chart.js** - Data visualization and analytics
+- **React Icons** - Comprehensive icon library
 
-### 3. **Multilingual Support**
+### **State Management & Data Fetching**
+- **SWR** - Smart data fetching with caching and revalidation
+- **React Context** - Global state management for authentication
 
-- **Multiple Language Support**: The application supports English, Russian, and Serbian languages. Multilingual functionality is implemented using `next-translate`, making it easy to add and manage new translations.
-- **Localized Interfaces**: All interfaces in the application, including forms, error messages, notifications, and tables, support language switching on the fly.
+### **Backend & Database**
+- **TypeORM** - Modern ORM with TypeScript support
+- **JWT** - JSON Web Tokens for secure authentication
+- **Zod** - Schema validation for API endpoints
 
-### 4. **User Interface**
+### **Development & DevOps**
+- **ESLint** - Code linting and formatting
+- **Docker** - Containerization for consistent deployments
+- **GitHub Actions** - Automated CI/CD pipeline
+- **T3 Env** - Type-safe environment variable management
 
-- **Responsive Design**: The entire application interface is built using **Bootstrap** and **React Bootstrap**, ensuring responsiveness and a modern appearance across all device types.
-- **Form Styling**: Registration, sign-in, and other forms used in the application are styled and include client-side data validation.
+## 📁 Project Structure
 
-### 5. **DevOps and CI/CD**
+```
+jerky-vault/
+├── src/
+│   ├── components/         # Reusable UI components
+│   │   ├── auth/          # Authentication pages
+│   │   ├── api/           # API endpoints
+│   │   └── ...            # Application pages
+│   ├── styles/            # Global styles and themes
+│   ├── types/             # TypeScript type definitions
+│   ├── utils/             # Utility functions and helpers
+│   └── env.js             # Environment validation
+├── locales/               # Internationalization files
+├── public/                # Static assets
+├── screenshots/           # Application screenshots
+└── docker-compose.yml.example
+```
 
-- **Docker**: The application is packaged in Docker containers for easy deployment in various environments. `Docker Compose` support allows for local development and deployment in production environments.
-- **GitHub Actions**: A CI/CD system is configured for automatic build and deployment of the project using GitHub Actions. This automates the process of testing and deploying the application.
+## 🔧 Installation & Setup
 
-## Website Sections
-
-### 1. **Dashboard**
-
-- **General Statistics**: A section with a summary of the number of recipes, ingredients, products, and orders.
-- **Charts and Graphs**: A section displaying charts and graphs with data on product distribution, order statuses, and other important information.
-- **Order Tables**: A section with tables showing all orders, with the ability to filter and sort by status, date, client, and other parameters.
-![alt text](screenshots/dashboard.png "Dashboard")
-
-### 2. **Registration and Sign-In**
-
-- **Registration**: A page with a form for registering new users. Includes fields for username, password, and password confirmation. Localized success and error messages.
-- **Sign-In**: A page for signing in existing users using username and password.
-
-### 3. **Recipes**
-
-- **View Recipes**: A list of all available recipes with sorting and filtering options by categories.
-- **Add Recipe**: A form for adding new recipes, specifying ingredients, instructions, and other details.
-- **Edit Recipes**: The ability to edit existing recipes, changing ingredients and other parameters.
-![alt text](screenshots/recipes.png "Recipes")
-![alt text](screenshots/editrecipe.png "Edit recipe")
-
-### 4. **Orders**
-
-- **View Orders**: A list of all orders with filtering options by status, creation date, and client.
-- **Order Details**: View detailed information about each order, including products, quantities, status, and other details.
-- **Manage Orders**: A section for changing order statuses and managing them.
-
-![alt text](screenshots/orders.png "Orders")
-![alt text](screenshots/orderedit.png "Edit order")
-
-### 5. **Clients**
-
-- **View Clients**: A section displaying information about clients, including name, contact details, and order history.
-- **Add and Edit Clients**: A form for adding new clients or editing information about existing clients.
-- **Filtering and Sorting**: The ability to filter the list of clients by name, registration date, and other parameters.
-
-![alt text](screenshots/clients.png "Clients")
-![alt text](screenshots/addclient.png "Add client")
-
-### 6. **Products**
-
-- **View Products**: A section where all available products are displayed, including types of jerky and other items.
-- **Add Product**: A form for adding new products, specifying name, description, price, and other parameters.
-- **Edit and Delete Products**: The ability to edit information about existing products or delete them.
-![alt text](screenshots/products.png "Products")
-![alt text](screenshots/editproduct.png "Edit product")
-
-### 7. **User Profile**
-
-- **View Profile**: A section where users can view and edit their password.
-
-## Technology Stack
-
-- **Next.js**: A framework for React that provides server-side rendering and static site generation capabilities.
-- **MySQL**: A relational database used for storing data about users, recipes, and orders.
-- **Bootstrap and React Bootstrap**: A component library for creating a responsive and stylish interface.
-- **NextAuth**: A library for user authentication and authorization.
-- **Chart.js**: A library for creating charts and graphs, used in the dashboard.
-- **Docker**: A platform for containerizing applications, ensuring portability and ease of deployment.
-- **next-translate**: A library for adding multilingual support to Next.js projects.
-
-## Installation and Setup
+### Prerequisites
+- **Node.js** 18.0 or higher
+- **npm** 10.0 or higher
+- **MySQL** database (local or remote)
 
 ### 1. Clone the Repository
-
 ```bash
-git clone https://github.com/username/JerkyVault.git
-cd JerkyVault
+git clone https://github.com/dzarlax/jerky-vault.git
+cd jerky-vault
 ```
 
 ### 2. Install Dependencies
-
 ```bash
 npm install
 ```
 
-### 3. Set Up Environment Variables
+### 3. Environment Configuration
 
-Create a `.env.local` file in the root of the project and add the necessary environment variables:
+Create a `.env.local` file in the project root:
 
 ```env
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_secret_key
-DATABASE_URL=your_database_url
+# Database Configuration
+DATABASE_HOST=localhost
+DATABASE_USER=your_database_user
+DATABASE_PASSWORD=your_database_password
+DATABASE_NAME=jerky_vault
+
+# Authentication
+JWT_SECRET=your_jwt_secret_key
+SECRET=your_general_secret_key
+
+# Application URLs
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
+
+# Optional Features
+MAPBOX_ACCESS_TOKEN=your_mapbox_token
+NEXT_PUBLIC_AUTH_ENABLED=true
+
+# Development Flags
+NODE_ENV=development
+SKIP_ENV_VALIDATION=false
 ```
 
-### 4. Localization Setup
+### 4. Database Setup
 
-Translation files are located in the `locales` directory. To add a new language, create the corresponding JSON file inside `locales/[language]/common.json`.
+Ensure your MySQL database is running and accessible with the credentials provided in your environment file.
 
 ### 5. Run the Application
 
+#### Development Mode
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
-
-## Running the Application in Docker
-
-### 1. Set Up Docker Environment
-
-The project includes a `docker-compose.yml.example` file to facilitate running the application in Docker. Follow these steps to get started:
-
-1. Rename `docker-compose.yml.example` to `docker-compose.yml`.
-
-2. Update the environment variables in the `docker-compose.yml` file:
-
-    ```yaml
-    version: '3.8'
-
-    services:
-      app:
-        image: dzarlax/jerky_vault:latest
-        ports:
-          - "3000:3000"
-        network_mode: "host"
-        environment:
-          DATABASE_HOST: 'your_database_host'
-          DATABASE_USER: 'your_database_user'
-          DATABASE_PASSWORD: 'your_database_password'
-          DATABASE_NAME: 'your_database_name'
-          SECRET: 'your_secret_key'
-          NEXTAUTH_URL: 'http://localhost:3000'
-          NEXTAUTH_SECRET: 'your_nextauth_secret'
-          JWT_SECRET: 'your_jwt_secret'
-          MAPBOX_ACCESS_TOKEN: 'your_mapbox_access_token'
-        command: /bin/sh -c "npm install && npm start"
-    ```
-
-### 2. Start the Docker Container
-
-Run the following command to start the application using Docker:
-
+#### Production Build
 ```bash
-docker-compose up
+npm run build
+npm start
 ```
 
-The application will be available at `http://localhost:3000` once the container is up and running.
+The application will be available at `http://localhost:3000`
 
-## Development Commands
+## 🐳 Docker Deployment
 
-- `npm run dev` — Start the application in development mode.
-- `npm run build` — Build the application for production.
-- `npm run start` — Run the built application.
-- `docker-compose up` — Start the project in Docker using Docker Compose.
+### Quick Start with Docker
 
-## License
+1. **Prepare Docker Configuration**
+   ```bash
+   cp docker-compose.yml.example docker-compose.yml
+   ```
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+2. **Update Environment Variables**
+   Edit the `docker-compose.yml` file with your configuration:
+   ```yaml
+   environment:
+     DATABASE_HOST: 'your_database_host'
+     DATABASE_USER: 'your_database_user'
+     DATABASE_PASSWORD: 'your_database_password'
+     DATABASE_NAME: 'jerky_vault'
+     JWT_SECRET: 'your_jwt_secret'
+     SECRET: 'your_secret_key'
+     NEXT_PUBLIC_API_URL: 'http://localhost:3000/api'
+     NEXT_PUBLIC_FRONTEND_URL: 'http://localhost:3000'
+   ```
+
+3. **Launch the Application**
+   ```bash
+   docker-compose up -d
+   ```
+
+### Production Docker Build
+```bash
+npm run build:docker
+docker build -t jerky-vault .
+```
+
+## 🌐 Internationalization
+
+JerkyVault supports multiple languages out of the box:
+
+- **English** (en)
+- **Russian** (ru)
+- **Serbian** (sr)
+
+### Adding a New Language
+
+1. Create a new locale directory: `locales/[language-code]/`
+2. Add `common.json` with translated strings
+3. Update `i18n.json` configuration
+4. Restart the application
+
+### Translation Keys
+All user-facing text is managed through translation keys. Key categories include:
+- Authentication and security messages
+- Form labels and validation
+- Navigation and UI elements
+- Business domain terminology
+
+## 📊 Application Sections
+
+### **Dashboard**
+- Real-time business metrics and KPIs
+- Order status distribution charts
+- Product performance analytics
+- Recent activity timeline
+- Quick action buttons for common tasks
+
+### **Recipe Management**
+- Complete recipe CRUD operations
+- Ingredient quantity tracking
+- Step-by-step instructions
+- Recipe categorization and search
+- Cost calculation per recipe
+
+### **Order System**
+- Full order lifecycle management
+- Status tracking (pending, processing, completed)
+- Client assignment and communication
+- Order history and reporting
+- Batch processing capabilities
+
+### **Client Management**
+- Comprehensive client database
+- Contact information management
+- Order history per client
+- Client communication tools
+- Search and filtering options
+
+### **Product Catalog**
+- Product information management
+- Pricing and cost tracking
+- Category organization
+- Stock level monitoring
+- Product performance metrics
+
+### **User Management**
+- Secure user authentication
+- Profile management
+- Password security features
+- Session management
+- Access control
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Token Validation**: Automatic token expiration handling
+- **Protected Routes**: Authentication middleware for sensitive pages
+- **CSRF Protection**: Built-in request validation
+- **Input Validation**: Comprehensive data validation with Zod
+- **Error Handling**: Secure error messages without sensitive data exposure
+
+## ⚡ Performance Optimizations
+
+- **SWR Caching**: Intelligent data caching and revalidation
+- **Static Generation**: Optimized build process for faster loading
+- **Image Optimization**: Next.js built-in image optimization
+- **Code Splitting**: Automatic code splitting for reduced bundle sizes
+- **Lazy Loading**: Component-level lazy loading
+- **Database Optimization**: Efficient database queries with TypeORM
+
+## 🛠️ Development Commands
+
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+npm run lint             # Run ESLint
+
+# Docker
+npm run build:docker     # Build with Docker optimizations
+npm run build:no-ssg     # Build without static generation
+docker-compose up        # Start with Docker Compose
+
+# Utilities
+npm run depcheck         # Check for unused dependencies
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature-name`
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- **Repository**: [GitHub](https://github.com/dzarlax/jerky-vault)
+- **Issues**: [Bug Reports & Feature Requests](https://github.com/dzarlax/jerky-vault/issues)
+- **Docker Hub**: [jerky-vault](https://hub.docker.com/r/dzarlax/jerky_vault)
+
+---
+
+**JerkyVault** - Streamlining jerky production management with modern web technologies.
