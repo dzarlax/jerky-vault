@@ -361,7 +361,7 @@ const Recipes: React.FC = () => {
                       </div>
                     </div>
                     <div className="recipe-card-footer">
-                      <div className="d-flex justify-content-between">
+                      <div className="d-flex justify-content-start gap-2">
                         <Button 
                           variant="outline-success" 
                           size="sm" 
@@ -373,16 +373,18 @@ const Recipes: React.FC = () => {
                         >
                           <FaCalculator />
                         </Button>
-                        <Button 
-                          variant="primary" 
-                          size="sm" 
-                          onClick={() => {
-                            setEditingRecipe(recipe);
-                            setShowModal(true);
-                          }}
-                        >
-                          {t("edit")}
-                        </Button>
+                        <div className="ms-auto">
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            onClick={() => {
+                              setEditingRecipe(recipe);
+                              setShowModal(true);
+                            }}
+                          >
+                            {t("edit")}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
