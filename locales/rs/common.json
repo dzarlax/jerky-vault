@@ -306,5 +306,9 @@
   "viewAll": "Prikaži sve",
   "amount": "Iznos",
   "cancelled": "Otkazano",
-  "inProgress": "U toku"
+  "inProgress": "U toku",
+  "calculate": "Izračunaj",
+  "recipeCalculator": "Kalkulator recepta",
+  "baseIngredient": "Osnovni sastojak",
+  "enterNewWeight": "Unesite novu težinu"
 }

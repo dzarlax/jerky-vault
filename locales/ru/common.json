@@ -306,5 +306,9 @@
   "viewAll": "Смотреть все",
   "amount": "Сумма",
   "cancelled": "Отменен",
-  "inProgress": "В процессе"
+  "inProgress": "В процессе",
+  "calculate": "Рассчитать",
+  "recipeCalculator": "Калькулятор рецепта",
+  "baseIngredient": "Базовый ингредиент",
+  "enterNewWeight": "Введите новый вес"
 }

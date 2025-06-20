@@ -306,5 +306,9 @@
   "viewAll": "View All",
   "amount": "Amount",
   "cancelled": "Cancelled",
-  "inProgress": "In Progress"
+  "inProgress": "In Progress",
+  "calculate": "Calculate",
+  "recipeCalculator": "Recipe Calculator",
+  "baseIngredient": "Base Ingredient",
+  "enterNewWeight": "Enter new weight"
 }

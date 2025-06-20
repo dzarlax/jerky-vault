@@ -6,9 +6,10 @@ import { Container, Row, Col, Button, ListGroup, Form } from 'react-bootstrap';
 import Select from 'react-select';
 import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
 import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
+import RecipeCalculator from '../components/calculator/RecipeCalculator';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
-import { FaPlus, FaUtensils, FaFilter, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaUtensils, FaFilter, FaTimes, FaCalculator } from 'react-icons/fa';
 
 const Recipes: React.FC = () => {
   const { auth } = useAuth();
@@ -22,6 +23,8 @@ const Recipes: React.FC = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showCalculator, setShowCalculator] = useState<boolean>(false);
+  const [calculatorRecipe, setCalculatorRecipe] = useState<any>(null);
 
   // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
   useEffect(() => {
@@ -358,16 +361,29 @@ const Recipes: React.FC = () => {
                       </div>
                     </div>
                     <div className="recipe-card-footer">
-                      <Button 
-                        variant="primary" 
-                        size="sm" 
-                        onClick={() => {
-                          setEditingRecipe(recipe);
-                          setShowModal(true);
-                        }}
-                      >
-                        {t("edit")}
-                      </Button>
+                      <div className="d-flex justify-content-between">
+                        <Button 
+                          variant="outline-success" 
+                          size="sm" 
+                          onClick={() => {
+                            setCalculatorRecipe(recipe);
+                            setShowCalculator(true);
+                          }}
+                          title={t("calculate")}
+                        >
+                          <FaCalculator />
+                        </Button>
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => {
+                            setEditingRecipe(recipe);
+                            setShowModal(true);
+                          }}
+                        >
+                          {t("edit")}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -397,6 +413,13 @@ const Recipes: React.FC = () => {
         ingredients={ingredients}
         t={t}
         onCreateRecipe={handleCreateRecipe}
+      />
+
+      <RecipeCalculator
+        show={showCalculator}
+        onHide={() => setShowCalculator(false)}
+        recipe={calculatorRecipe}
+        t={t}
       />
     </div>
   );
