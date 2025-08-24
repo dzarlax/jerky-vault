@@ -290,5 +290,7 @@
   "calculate": "Рассчитать",
   "recipeCalculator": "Калькулятор рецепта",
   "baseIngredient": "Базовый ингредиент",
-  "enterNewWeight": "Введите новый вес"
+  "enterNewWeight": "Введите новый вес",
+  "comment": "Комментарий",
+  "orderCommentPlaceholder": "Особые пожелания по заказу..."
 }

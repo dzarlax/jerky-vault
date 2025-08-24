@@ -33,9 +33,11 @@ interface OrderModalProps {
   statusOptions: { value: string, label: string }[];
   clientId: number | null;
   status: string;
+  comment: string;
   items: OrderItem[];
   setClientId: (clientId: number | null) => void;
   setStatus: (status: string) => void;
+  setComment: (comment: string) => void;
   handleProductChange: (index: number, product_id: number) => void;
   handleQuantityChange: (index: number, quantity: number) => void;
   handleItemChange: (index: number, field: keyof OrderItem, value: any) => void;
@@ -52,9 +54,11 @@ const OrderModal: React.FC<OrderModalProps> = ({
   statusOptions,
   clientId,
   status,
+  comment,
   items,
   setClientId,
   setStatus,
+  setComment,
   handleProductChange,
   handleQuantityChange,
   handleItemChange,
@@ -118,6 +122,17 @@ const OrderModal: React.FC<OrderModalProps> = ({
               />
             </Form.Group>
           )}
+
+          <Form.Group controlId="commentTextarea" className="mt-3">
+            <Form.Label>{t('comment')}</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder={t('orderCommentPlaceholder')}
+            />
+          </Form.Group>
 
           <div className="mt-4">
             <div className="d-flex justify-content-between align-items-center mb-3">

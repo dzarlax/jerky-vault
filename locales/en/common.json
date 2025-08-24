@@ -290,5 +290,7 @@
   "calculate": "Calculate",
   "recipeCalculator": "Recipe Calculator",
   "baseIngredient": "Base Ingredient",
-  "enterNewWeight": "Enter new weight"
+  "enterNewWeight": "Enter new weight",
+  "comment": "Comment",
+  "orderCommentPlaceholder": "Special order requests..."
 }

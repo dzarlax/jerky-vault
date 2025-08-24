@@ -25,6 +25,7 @@ interface Order {
   id: number;
   client_id: number;
   status: string;
+  comment?: string;
   created_at: string;
   items: OrderItem[];
 }
@@ -48,6 +49,7 @@ const Orders = () => {
   const router = useRouter();
   const [clientId, setClientId] = useState<number | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [comment, setComment] = useState<string>("");
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false);
   const [showClientModal, setShowClientModal] = useState<boolean>(false);
   const [showStatusModal, setShowStatusModal] = useState<boolean>(false);
@@ -88,6 +90,7 @@ const Orders = () => {
     setEditingOrder(order);
     setClientId(order.client_id);
     setStatus(order.status);
+    setComment(order.comment || "");
     setItems(
       order.items
         ? order.items.map((item) => ({
@@ -105,6 +108,7 @@ const Orders = () => {
     setEditingOrder(null);
     setClientId(null);
     setStatus("");
+    setComment("");
     setItems([]);
     setShowOrderModal(false);
     setShowCreateOrderModal(false);
@@ -117,7 +121,7 @@ const Orders = () => {
           router.push('/auth/signin');
           return;
       }
-      const order = { client_id: clientId, status, items };
+      const order = { client_id: clientId, status, comment, items };
 
       if (editingOrder) {
         await fetcher(`/api/orders/${editingOrder.id}`, {
@@ -154,7 +158,7 @@ const Orders = () => {
           router.push('/auth/signin');
           return;
       }
-      const order = { client_id: clientId, status: "new", items };
+      const order = { client_id: clientId, status: "new", comment, items };
 
       await fetcher("/api/orders", {
         method: "POST",
@@ -165,6 +169,7 @@ const Orders = () => {
         body: JSON.stringify(order),
       });
       setClientId(null);
+      setComment("");
       setItems([]);
       mutateOrders();
       setShowCreateOrderModal(false);
@@ -364,6 +369,7 @@ const Orders = () => {
             onClick={() => {
               setClientId(null);
               setStatus("new");
+              setComment("");
               setItems([{ product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
               setShowCreateOrderModal(true);
             }}
@@ -432,6 +438,7 @@ const Orders = () => {
                 <th>{t("status")}</th>
                 <th>{t("date")}</th>
                 <th>{t("products")}</th>
+                <th>{t("comment")}</th>
                 <th>{t("totalCost")}</th>
                 <th>{t("totalCostPrice")}</th>
                 <th>{t("profit")}</th>
@@ -470,6 +477,17 @@ const Orders = () => {
                         </div>
                       );
                     })}
+                  </td>
+                  <td>
+                    <div className="comment-cell" style={{ maxWidth: '200px', wordWrap: 'break-word' }}>
+                      {order.comment && order.comment.trim() !== '' ? (
+                        <span title={order.comment}>
+                          {order.comment.length > 50 ? `${order.comment.substring(0, 47)}...` : order.comment}
+                        </span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </div>
                   </td>
                   <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
                   <td>
@@ -519,9 +537,11 @@ const Orders = () => {
         statusOptions={statusOptions}
         clientId={clientId}
         status={status}
+        comment={comment}
         items={items}
         setClientId={setClientId}
         setStatus={setStatus}
+        setComment={setComment}
         handleProductChange={handleProductChange}
         handleQuantityChange={handleQuantityChange}
         handleItemChange={handleItemChange}

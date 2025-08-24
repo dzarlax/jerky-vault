@@ -290,5 +290,7 @@
   "calculate": "Izračunaj",
   "recipeCalculator": "Kalkulator recepta",
   "baseIngredient": "Osnovni sastojak",
-  "enterNewWeight": "Unesite novu težinu"
+  "enterNewWeight": "Unesite novu težinu",
+  "comment": "Komentar",
+  "orderCommentPlaceholder": "Posebni zahtevi za narudžbinu..."
 }

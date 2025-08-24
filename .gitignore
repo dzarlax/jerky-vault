@@ -50,3 +50,4 @@ yarn-error.log*
 .vscode
 nextjs-app.tar
 docker-compose.yml
+screenshots/
