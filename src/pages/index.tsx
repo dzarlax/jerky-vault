@@ -83,6 +83,13 @@ interface DashboardData {
   }>;
 }
 
+interface ProfitData {
+  total_revenue: number;
+  total_costs: number;
+  total_profit: number;
+  order_count: number;
+}
+
 const Dashboard = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
@@ -120,6 +127,20 @@ const Dashboard = () => {
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/orders' : null,
     fetcher,
     swrConfigs.list
+  );
+
+  const { data: profitData, error: profitError } = useSWR<ProfitData>(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard/profit' : null,
+    fetcher,
+    {
+      ...swrConfigs.dashboard,
+      fallbackData: {
+        total_revenue: 0,
+        total_costs: 0,
+        total_profit: 0,
+        order_count: 0
+      }
+    }
   );
 
   // Calculate real order statistics from actual orders data
@@ -194,6 +215,23 @@ const Dashboard = () => {
       ],
     };
   }, [dashboardStats?.typeDistribution, t]);
+
+  const profitChartData = useMemo(() => {
+    if (!profitData || profitData.total_revenue === 0) return null;
+    
+    return {
+      labels: [t('totalRevenue'), t('totalCosts'), t('totalProfit')],
+      datasets: [
+        {
+          data: [profitData.total_revenue, profitData.total_costs, profitData.total_profit],
+          backgroundColor: ['#4caf50', '#ff9800', profitData.total_profit >= 0 ? '#2196f3' : '#f44336'],
+          hoverBackgroundColor: ['#388e3c', '#f57c00', profitData.total_profit >= 0 ? '#1976d2' : '#d32f2f'],
+          borderWidth: 2,
+          borderColor: '#ffffff',
+        },
+      ],
+    };
+  }, [profitData, t]);
 
   const chartOptions = {
     responsive: true,
@@ -352,9 +390,107 @@ const Dashboard = () => {
           </Col>
         </Row>
 
+        {/* Profit Analytics Section */}
+        {profitData && (
+          <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h4 className="mb-0 text-primary">
+                <FaChartLine className="me-2" />
+                {t('profitAnalytics')}
+              </h4>
+            </div>
+            
+            <Row className="g-3 mb-4">
+              <Col md={3} sm={6}>
+                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div className="flex-grow-1">
+                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
+                        <FaArrowUp className="text-success" size={16} />
+                      </div>
+                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
+                        {profitData.total_revenue?.toFixed(0) || '0'} {t('currency')}
+                      </div>
+                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
+                        {t('totalRevenue')}
+                      </div>
+                      <div className="stat-change text-muted small">
+                        {profitData.order_count || 0} {t('finishedOrders')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col md={3} sm={6}>
+                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div className="flex-grow-1">
+                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(255, 152, 0, 0.1)'}}>
+                        <FaDollarSign className="text-warning" size={16} />
+                      </div>
+                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
+                        {profitData.total_costs?.toFixed(0) || '0'} {t('currency')}
+                      </div>
+                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
+                        {t('totalCosts')}
+                      </div>
+                      <div className="stat-change text-muted small">
+                        {profitData.total_revenue > 0 ? ((profitData.total_costs / profitData.total_revenue) * 100).toFixed(1) : 0}% {t('of')} {t('totalRevenue').toLowerCase()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col md={3} sm={6}>
+                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div className="flex-grow-1">
+                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
+                        <FaChartLine className="text-success" size={16} />
+                      </div>
+                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: profitData.total_profit >= 0 ? '#4caf50' : '#f44336' }}>
+                        {profitData.total_profit?.toFixed(0) || '0'} {t('currency')}
+                      </div>
+                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
+                        {t('totalProfit')}
+                      </div>
+                      <div className="stat-change text-muted small">
+                        {profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(1) : 0}% {t('profitMargin')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col md={3} sm={6}>
+                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div className="flex-grow-1">
+                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(33, 150, 243, 0.1)'}}>
+                        <FaCheckCircle className="text-info" size={16} />
+                      </div>
+                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
+                        {profitData.order_count > 0 ? (profitData.total_profit / profitData.order_count).toFixed(0) : '0'} {t('currency')}
+                      </div>
+                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
+                        {t('profit')} / {t('order').toLowerCase()}
+                      </div>
+                      <div className="stat-change text-muted small">
+                        {profitData.order_count > 0 ? (profitData.total_revenue / profitData.order_count).toFixed(0) : '0'} {t('currency')} {t('averageOrder')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </>
+        )}
+
         {/* Performance Metrics */}
         <Row className="mb-4">
-          <Col lg={4}>
+          <Col lg={3}>
             <Card className="border-0 h-100 shadow-sm">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -379,7 +515,7 @@ const Dashboard = () => {
             </Card>
           </Col>
           
-          <Col lg={4}>
+          <Col lg={3}>
             <Card className="border-0 h-100 shadow-sm">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -395,7 +531,7 @@ const Dashboard = () => {
             </Card>
           </Col>
           
-          <Col lg={4}>
+          <Col lg={3}>
             <Card className="border-0 h-100 shadow-sm">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -405,6 +541,26 @@ const Dashboard = () => {
                 {typeDistributionData && (
                   <div style={{ height: '120px' }}>
                     <Doughnut data={typeDistributionData} options={chartOptions} />
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+
+          <Col lg={3}>
+            <Card className="border-0 h-100 shadow-sm">
+              <Card.Body className="p-3">
+                <Card.Title className="mb-3 fs-6 d-flex align-items-center">
+                  <FaDollarSign className="me-2 text-warning" />
+                  {t('revenueVsCosts')}
+                </Card.Title>
+                {profitChartData ? (
+                  <div style={{ height: '120px' }}>
+                    <Doughnut data={profitChartData} options={chartOptions} />
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <small className="text-muted">{t('noPendingOrders')}</small>
                   </div>
                 )}
               </Card.Body>

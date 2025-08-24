@@ -292,5 +292,12 @@
   "baseIngredient": "Osnovni sastojak",
   "enterNewWeight": "Unesite novu težinu",
   "comment": "Komentar",
-  "orderCommentPlaceholder": "Posebni zahtevi za narudžbinu..."
+  "orderCommentPlaceholder": "Posebni zahtevi za narudžbinu...",
+  "totalRevenue": "Ukupan prihod",
+  "totalCosts": "Ukupni troškovi",
+  "totalProfit": "Ukupan profit",
+  "profitMargin": "Marža profita",
+  "finishedOrders": "Završenih narudžbina",
+  "revenueVsCosts": "Prihod vs Troškovi",
+  "profitAnalytics": "Analitika profita"
 }

@@ -292,5 +292,12 @@
   "baseIngredient": "Базовый ингредиент",
   "enterNewWeight": "Введите новый вес",
   "comment": "Комментарий",
-  "orderCommentPlaceholder": "Особые пожелания по заказу..."
+  "orderCommentPlaceholder": "Особые пожелания по заказу...",
+  "totalRevenue": "Общая выручка",
+  "totalCosts": "Общие расходы",
+  "totalProfit": "Общая прибыль",
+  "profitMargin": "Маржа прибыли",
+  "finishedOrders": "Завершенных заказов",
+  "revenueVsCosts": "Выручка vs Расходы",
+  "profitAnalytics": "Аналитика прибыли"
 }

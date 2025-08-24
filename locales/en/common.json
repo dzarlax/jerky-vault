@@ -292,5 +292,12 @@
   "baseIngredient": "Base Ingredient",
   "enterNewWeight": "Enter new weight",
   "comment": "Comment",
-  "orderCommentPlaceholder": "Special order requests..."
+  "orderCommentPlaceholder": "Special order requests...",
+  "totalRevenue": "Total Revenue",
+  "totalCosts": "Total Costs",
+  "totalProfit": "Total Profit",
+  "profitMargin": "Profit Margin",
+  "finishedOrders": "Finished Orders",
+  "revenueVsCosts": "Revenue vs Costs",
+  "profitAnalytics": "Profit Analytics"
 }
