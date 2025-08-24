@@ -19,6 +19,9 @@ import fetcher from '../utils/fetcher';
 import { useAuth, withAuth } from '../utils/authContext';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+import OrderModal from '../components/modal/Orders/OrderModal';
+import StatusModal from '../components/modal/Orders/StatusModal';
+import DeleteModal from '../components/modal/Orders/DeleteModal';
 import { swrConfigs } from '../utils/swrConfig';
 import { 
   FaBook, 
@@ -35,7 +38,10 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
   FaUsers,
-  FaChartLine
+  FaChartLine,
+  FaSync,
+  FaPencilAlt,
+  FaTrash
 } from 'react-icons/fa';
 
 Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
@@ -53,6 +59,7 @@ interface Order {
   id: number;
   client_id: number;
   status: string;
+  comment?: string;
   created_at: string;
   items: Array<{
     product_id: number;
@@ -63,24 +70,18 @@ interface Order {
 }
 
 interface DashboardData {
-  totalRecipes: number;
-  totalIngredients: number;
-  totalProducts: number;
-  totalOrders: number;
-  totalClients: number;
-  typeDistribution: Array<{ type: string; count: number }>;
-  orderStats: OrderStats;
-  recentRevenue: number;
-  monthlyRevenue: number;
-  averageOrderValue: number;
-  topProducts: Array<{ name: string; orders: number; revenue: number }>;
-  recentOrders: Array<{
+  total_recipes: number;
+  total_products: number;
+  total_orders: number;
+  pending_orders: number;
+  recent_orders: Array<{
     id: number;
-    client_id: number;
-    status: string;
+    client_name: string;
     total_amount: number;
-    created_at: string;
+    status: string;
+    order_date: string;
   }>;
+  order_type_distribution: Array<{ type: string; count: number }>;
 }
 
 interface ProfitData {
@@ -101,18 +102,12 @@ const Dashboard = () => {
     {
       ...swrConfigs.dashboard,
       fallbackData: {
-        totalRecipes: 0,
-        totalIngredients: 0,
-        totalProducts: 0,
-        totalOrders: 0,
-        totalClients: 0,
-        typeDistribution: [],
-        orderStats: { total: 0, new: 0, in_progress: 0, ready: 0, finished: 0, canceled: 0 },
-        recentRevenue: 0,
-        monthlyRevenue: 0,
-        averageOrderValue: 0,
-        topProducts: [],
-        recentOrders: []
+        total_recipes: 0,
+        total_products: 0,
+        total_orders: 0,
+        pending_orders: 0,
+        recent_orders: [],
+        order_type_distribution: []
       }
     }
   );
@@ -123,11 +118,48 @@ const Dashboard = () => {
     swrConfigs.static
   );
 
-  const { data: orders = [] } = useSWR<Order[]>(
+  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/orders' : null,
     fetcher,
     swrConfigs.list
   );
+
+  const { data: ingredients = [] } = useSWR(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/ingredients' : null,
+    fetcher,
+    swrConfigs.static
+  );
+
+  const { data: recipes = [] } = useSWR(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/recipes' : null,
+    fetcher,
+    swrConfigs.static
+  );
+
+  const { data: products = [] } = useSWR(
+    auth.isAuthenticated || typeof window === 'undefined' ? '/api/products' : null,
+    fetcher,
+    swrConfigs.static
+  );
+
+    // State for order modal
+  const [showOrderModal, setShowOrderModal] = React.useState(false);
+  const [editingOrder, setEditingOrder] = React.useState<Order | null>(null);
+  const [clientId, setClientId] = React.useState<number | null>(null);
+  const [status, setStatus] = React.useState<string>("");
+  const [comment, setComment] = React.useState<string>("");
+  const [items, setItems] = React.useState<Array<{
+    product_id: number;
+    quantity: number;
+    price: number;
+    cost_price: number;
+  }>>([]); 
+
+  // State for status and delete modals
+  const [showStatusModal, setShowStatusModal] = React.useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState<boolean>(false);
+  const [statusOrderId, setStatusOrderId] = React.useState<number | null>(null);
+  const [deleteOrderId, setDeleteOrderId] = React.useState<number | null>(null);
 
   const { data: profitData, error: profitError } = useSWR<ProfitData>(
     auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard/profit' : null,
@@ -200,21 +232,46 @@ const Dashboard = () => {
     };
   }, [orderStats, t]);
 
-  const typeDistributionData = useMemo(() => {
-    if (!dashboardStats?.typeDistribution?.length) return null;
+  const orderStatusData = useMemo(() => {
+    if (!dashboardStats?.order_type_distribution?.length) return null;
     
     return {
-      labels: dashboardStats.typeDistribution?.map((item) => t(item.type.toLowerCase())) || [],
+      labels: dashboardStats.order_type_distribution?.map((item) => t(item.type.toLowerCase())) || [],
       datasets: [
         {
-          data: dashboardStats.typeDistribution?.map((item) => item.count) || [],
-          backgroundColor: ['#3f51b5', '#ff4081', '#4caf50', '#ff9800', '#673ab7', '#e91e63'],
-          hoverBackgroundColor: ['#303f9f', '#f50057', '#388e3c', '#f57c00', '#512da8', '#c2185b'],
+          data: dashboardStats.order_type_distribution?.map((item) => item.count) || [],
+          backgroundColor: ['#3f51b5', '#ff4081', '#4caf50', '#ff9800', '#673ab7'],
+          hoverBackgroundColor: ['#303f9f', '#f50057', '#388e3c', '#f57c00', '#512da8'],
           borderWidth: 0,
         },
       ],
     };
-  }, [dashboardStats?.typeDistribution, t]);
+  }, [dashboardStats?.order_type_distribution, t]);
+
+  const ingredientTypesData = useMemo(() => {
+    if (!ingredients.length) return null;
+    
+    const typeCount: { [key: string]: number } = {};
+    ingredients.forEach((ingredient: any) => {
+      const type = ingredient.type || 'Unknown';
+      typeCount[type] = (typeCount[type] || 0) + 1;
+    });
+
+    const types = Object.keys(typeCount);
+    const counts = Object.values(typeCount);
+    
+    return {
+      labels: types,
+      datasets: [
+        {
+          data: counts,
+          backgroundColor: ['#3f51b5', '#ff4081', '#4caf50', '#ff9800', '#673ab7', '#e91e63', '#9c27b0', '#607d8b'],
+          hoverBackgroundColor: ['#303f9f', '#f50057', '#388e3c', '#f57c00', '#512da8', '#c2185b', '#7b1fa2', '#455a64'],
+          borderWidth: 0,
+        },
+      ],
+    };
+  }, [ingredients]);
 
   const profitChartData = useMemo(() => {
     if (!profitData || profitData.total_revenue === 0) return null;
@@ -260,6 +317,183 @@ const Dashboard = () => {
       }
     }
   };
+
+  // Handle order editing (copied from orders.tsx)
+  const handleEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setClientId(order.client_id);
+    setStatus(order.status);
+    setComment(order.comment || "");
+    setItems(
+      order.items
+        ? order.items.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            cost_price: item.cost_price,
+          }))
+        : []
+    );
+    setShowOrderModal(true);
+  };
+
+  const handleCloseOrderModal = () => {
+    setEditingOrder(null);
+    setClientId(null);
+    setStatus("");
+    setComment("");
+    setItems([]);
+    setShowOrderModal(false);
+  };
+
+  const handleSaveOrderChanges = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      const order = { client_id: clientId, status, comment, items };
+
+      if (editingOrder) {
+        await fetcher(`/api/orders/${editingOrder.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(order),
+        });
+        // Refresh orders data
+        mutateOrders();
+      }
+      handleCloseOrderModal();
+    } catch (error) {
+      console.error('Failed to save order changes', error);
+    }
+  };
+
+  // Handle product changes in order modal
+  const handleProductChange = (index: number, product_id: number) => {
+    const updatedItems = [...items];
+    const product = products.find((p) => p.id === product_id);
+    updatedItems[index] = {
+      product_id,
+      quantity: 1,
+      price: product?.price ?? 0,
+      cost_price: product?.cost ?? 0,
+    };
+    setItems(updatedItems);
+  };
+
+  const handleQuantityChange = (index: number, quantity: number) => {
+    const updatedItems = [...items];
+    updatedItems[index] = { ...updatedItems[index], quantity };
+    setItems(updatedItems);
+  };
+
+  const handleItemChange = (index: number, field: keyof typeof items[0], value: any) => {
+    const updatedItems = [...items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setItems(updatedItems);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updatedItems = [...items];
+    updatedItems.splice(index, 1);
+    setItems(updatedItems);
+  };
+
+  const handleAddItem = () => {
+    setItems([
+      ...items,
+      { product_id: 0, quantity: 1, price: 0, cost_price: 0 },
+    ]);
+  };
+
+  // Handle status change (copied from orders.tsx)
+  const handleChangeStatus = (orderId: number) => {
+    const order = orders.find((order) => order.id === orderId);
+    if (order) {
+      setStatus(order.status);
+    }
+    setStatusOrderId(orderId);
+    setShowStatusModal(true);
+  };
+
+  const handleSaveStatusChange = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      if (!statusOrderId || !status) return;
+
+      await fetcher(`/api/orders/${statusOrderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      mutateOrders(); // Refresh orders data
+      setStatusOrderId(null);
+      setShowStatusModal(false);
+    } catch (error) {
+      console.error('Failed to update order status', error);
+    }
+  };
+
+  // Handle delete order (copied from orders.tsx)
+  const handleDeleteOrder = (orderId: number) => {
+    setDeleteOrderId(orderId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          router.push('/auth/signin');
+          return;
+      }
+      if (!deleteOrderId) return;
+
+      await fetcher(`/api/orders/${deleteOrderId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      mutateOrders(); // Refresh orders data
+      setDeleteOrderId(null);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete order', error);
+    }
+  };
+
+  // Options for modals (copied from orders.tsx)
+  const statusOptions = [
+    { value: "new", label: t("new") },
+    { value: "in_progress", label: t("in_progress") },
+    { value: "ready", label: t("ready") },
+    { value: "finished", label: t("finished") },
+    { value: "canceled", label: t("canceled") },
+  ];
+
+  const clientOptions = clients.map((client) => ({
+    value: client.id,
+    label: `${client.name} ${client.surname}`,
+  }));
+
+  const productOptions = products.map((product) => ({
+    value: product.id,
+    label: product.name,
+  }));
 
   if (!auth.isAuthenticated) {
     return (
@@ -331,16 +565,16 @@ const Dashboard = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <div className="flex-grow-1">
                   <div className="stat-icon mb-2 rounded-circle bg-success-light p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
-                    <FaDollarSign className="text-success" size={16} />
+                    <FaLeaf className="text-success" size={16} />
                   </div>
                   <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {dashboardStats.monthlyRevenue?.toFixed(0) || '0'} {t('currency')}
+                    {ingredients.length || 0}
                   </div>
                   <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                    {t('monthlyRevenue')}
+                    {t('totalIngredients')}
                   </div>
                   <div className="stat-change text-muted small">
-                    {dashboardStats.averageOrderValue?.toFixed(0) || '0'} {t('currency')} {t('averageOrder')}
+                    {recipes.length || 0} {t('recipes')}
                   </div>
                 </div>
               </div>
@@ -355,7 +589,7 @@ const Dashboard = () => {
                     <FaUsers className="text-warning" size={16} />
                   </div>
                   <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {dashboardStats?.totalClients || clients.length}
+                    {clients.length}
                   </div>
                   <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
                     {t('totalClients')}
@@ -376,13 +610,13 @@ const Dashboard = () => {
                     <FaBoxOpen className="text-info" size={16} />
                   </div>
                   <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {dashboardStats?.totalProducts || 0}
+                    {dashboardStats?.total_products || 0}
                   </div>
                   <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
                     {t('totalProducts')}
                   </div>
                   <div className="stat-change text-muted small">
-                    {dashboardStats?.totalRecipes || 0} {t('recipes')}
+                    {dashboardStats?.pending_orders || 0} {t('pendingOrders')}
                   </div>
                 </div>
               </div>
@@ -538,9 +772,13 @@ const Dashboard = () => {
                   <FaLeaf className="me-2 text-success" />
                   {t('ingredientTypes')}
                 </Card.Title>
-                {typeDistributionData && (
+                {ingredientTypesData ? (
                   <div style={{ height: '120px' }}>
-                    <Doughnut data={typeDistributionData} options={chartOptions} />
+                    <Doughnut data={ingredientTypesData} options={chartOptions} />
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <small className="text-muted">{t('noIngredientsFound')}</small>
                   </div>
                 )}
               </Card.Body>
@@ -588,7 +826,7 @@ const Dashboard = () => {
                   </Button>
                 </div>
                 
-                {pendingOrders.length > 0 ? (
+                {(dashboardStats?.recent_orders?.length || pendingOrders.length) > 0 ? (
                   <div className="table-responsive">
                     <Table hover size="sm" className="mb-0">
                       <thead className="table-light">
@@ -602,17 +840,24 @@ const Dashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {pendingOrders.map((order) => {
-                          const client = clients.find(c => c.id === order.client_id) || {};
+                        {(dashboardStats?.recent_orders?.length ? dashboardStats.recent_orders : pendingOrders).map((order) => {
+                          const isApiOrder = 'client_name' in order;
                           const statusVariant = order.status === 'new' ? 'primary' : 
                                                 order.status === 'in_progress' ? 'warning' : 
+                                                order.status === 'ready' ? 'info' : 
                                                 order.status === 'completed' ? 'success' : 'danger';
                           
                           return (
                             <tr key={order.id}>
                               <td className="fw-bold">#{order.id}</td>
                               <td>
-                                {client.name ? `${client.name} ${client.surname || ''}`.trim() : t('unknownClient')}
+                                {isApiOrder 
+                                  ? (order as any).client_name || t('unknownClient')
+                                  : (() => {
+                                      const client = clients.find(c => c.id === (order as any).client_id) || {};
+                                      return client.name ? `${client.name} ${(client as any).surname || ''}`.trim() : t('unknownClient');
+                                    })()
+                                }
                               </td>
                               <td>
                                 <Badge bg={statusVariant} className="px-2 py-1">
@@ -620,20 +865,41 @@ const Dashboard = () => {
                                 </Badge>
                               </td>
                               <td className="fw-bold text-success">
-                                {order.items?.reduce((total, item) => total + (item.quantity * item.price), 0).toFixed(2) || '0.00'} {t('currency')}
+                                {isApiOrder 
+                                  ? order.total_amount.toFixed(2)
+                                  : ((order as any).items?.reduce((total: number, item: any) => total + (item.quantity * item.price), 0).toFixed(2) || '0.00')
+                                } {t('currency')}
                               </td>
                               <td className="text-muted">
-                                {new Date(order.created_at).toLocaleDateString()}
+                                {new Date(isApiOrder ? (order as any).order_date : (order as any).created_at).toLocaleDateString()}
                               </td>
                               <td className="text-center">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => router.push(`/orders?id=${order.id}`)}
-                                  className="py-1 px-2"
-                                >
-                                  <FaEye size={12} />
-                                </Button>
+                                <div className="d-flex gap-1 align-items-center justify-content-center">
+                                  <button 
+                                    onClick={() => handleChangeStatus(order.id)}
+                                    className="action-icon-btn"
+                                    title={t("changeStatus")}
+                                  >
+                                    <FaSync size={12} />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      const fullOrder = orders.find(o => o.id === order.id);
+                                      if (fullOrder) handleEditOrder(fullOrder);
+                                    }}
+                                    className="action-icon-btn"
+                                    title={t("edit")}
+                                  >
+                                    <FaPencilAlt size={12} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteOrder(order.id)}
+                                    className="action-icon-btn text-danger"
+                                    title={t("delete")}
+                                  >
+                                    <FaTrash size={12} />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -652,6 +918,45 @@ const Dashboard = () => {
           </Col>
         </Row>
       </div>
+
+      {/* Order Modal */}
+      <OrderModal
+        show={showOrderModal}
+        onClose={handleCloseOrderModal}
+        onSave={handleSaveOrderChanges}
+        clientOptions={clientOptions}
+        productOptions={productOptions}
+        statusOptions={statusOptions}
+        clientId={clientId}
+        status={status}
+        comment={comment}
+        items={items}
+        setClientId={setClientId}
+        setStatus={setStatus}
+        setComment={setComment}
+        handleProductChange={handleProductChange}
+        handleQuantityChange={handleQuantityChange}
+        handleItemChange={handleItemChange}
+        handleRemoveItem={handleRemoveItem}
+        handleAddItem={handleAddItem}
+      />
+
+      {/* Status Modal */}
+      <StatusModal
+        show={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        onSave={handleSaveStatusChange}
+        statusOptions={statusOptions}
+        status={status}
+        setStatus={setStatus}
+      />
+
+      {/* Delete Modal */}
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={handleConfirmDelete}
+      />
     </div>
   );
 };
