@@ -115,6 +115,8 @@ function AppContent({ Component, pageProps }: AppProps) {
       <NotificationProvider>
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          {/* Load runtime config */}
+          <script src="/config.js" async />
         </Head>
         {content}
       </NotificationProvider>

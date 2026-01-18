@@ -11,6 +11,7 @@ import { FaPlus, FaUsers, FaSearch, FaTimes, FaEdit } from 'react-icons/fa';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Client } from '../types/api';
+import { getMapboxToken } from '../utils/runtimeConfig';
 
 const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
@@ -301,9 +302,10 @@ const Clients = ({ mapboxToken }) => {
 };
 
 export async function getServerSideProps(context) {
-  const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN;
+  // Server-side: use process.env for SSR
+  const mapboxToken = process.env.MAPBOX_ACCESS_TOKEN || '';
   return {
-    props: {mapboxToken },
+    props: { mapboxToken },
   };
 }
 

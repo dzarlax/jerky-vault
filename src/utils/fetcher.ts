@@ -1,3 +1,5 @@
+import { getApiUrl } from './runtimeConfig';
+
 // Global auth handler for automatic logout on auth errors
 let authErrorHandler: (() => void) | null = null;
 
@@ -27,10 +29,7 @@ class FetchError extends Error {
 }
 
 export default async function fetcher(endpoint, options = {}) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL; 
-  if (!baseUrl) {
-    throw new Error('Базовый URL API не установлен. Проверьте переменные окружения.');
-  }
+  const baseUrl = getApiUrl();
 
   const url = `${baseUrl}${endpoint}`;
   

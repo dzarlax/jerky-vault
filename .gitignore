@@ -18,6 +18,9 @@ db.sqlite
 /out/
 next-env.d.ts
 
+# runtime config (generated at container start)
+/public/config.js
+
 # production
 /build
 
