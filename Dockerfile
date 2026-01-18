@@ -34,23 +34,15 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy Next.js standalone output (minimal bundle)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# Install production dependencies only
-RUN npm ci --production
-
-# Copy built files from builder stage
-COPY --from=builder /app/.next ./.next
+# Copy public files
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/server.js ./
-COPY --from=builder /app/src ./src
+
+# Copy locales
 COPY --from=builder /app/locales ./locales
-COPY --from=builder /app/i18n.cjs ./i18n.cjs
-COPY --from=builder /app/i18n.json ./i18n.json
-COPY --from=builder /app/postcss.config.js ./postcss.config.js
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
@@ -60,6 +52,7 @@ RUN chmod +x entrypoint.sh
 
 # Set environment variables
 ENV NODE_ENV=production
+ENV PORT=3000
 
 # Expose port
 EXPOSE 3000
