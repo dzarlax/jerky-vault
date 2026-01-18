@@ -319,6 +319,7 @@ const Dashboard = () => {
         });
         // Refresh orders data
         mutateOrders();
+        mutateDashboardStats(); // Refresh dashboard stats (including recent_orders table)
         success(editingOrder ? t('orderUpdated') : t('orderCreated'));
       }
       handleCloseOrderModal();
@@ -381,6 +382,7 @@ const Dashboard = () => {
         body: JSON.stringify({ status }),
       });
       mutateOrders(); // Refresh orders data
+      mutateDashboardStats(); // Refresh dashboard stats (including recent_orders table)
       setStatusOrderId(null);
       setShowStatusModal(false);
       success(t('statusUpdated'));
@@ -412,6 +414,7 @@ const Dashboard = () => {
         },
       });
       mutateOrders(); // Refresh orders data
+      mutateDashboardStats(); // Refresh dashboard stats (including recent_orders table)
       setDeleteOrderId(null);
       setShowDeleteModal(false);
       success(t('orderDeleted'));
