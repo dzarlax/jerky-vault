@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
-import Select from 'react-select';
 import { useAuth } from '../../../utils/authContext';
+import { Ingredient } from '../../../types/api';
+import SelectDropdown from '../../../components/SelectDropdown';
 
 const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => {
   const { auth } = useAuth();
   const [newRecipeName, setNewRecipeName] = useState<string>('');
-  const [newIngredients, setNewIngredients] = useState<any[]>([]);
+  const [newIngredients, setNewIngredients] = useState<Array<{
+    id: number;
+    name: string;
+    quantity: string;
+    unit: { value: string; label: string };
+  }>>([]);
   const [newIngredientId, setNewIngredientId] = useState<string>('');
   const [newQuantity, setNewQuantity] = useState<string>('');
   const [newUnit, setNewUnit] = useState<{ value: string, label: string } | null>(null);
@@ -19,7 +25,7 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
   }, [newIngredientId]);
 
   const updateNewUnits = () => {
-    const selectedIngredient = ingredients.find((ingredient: any) => ingredient.id === parseInt(newIngredientId));
+    const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(newIngredientId));
     if (!selectedIngredient) return;
 
     let units = [];
@@ -46,12 +52,12 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
     setNewUnit(units[0] ? { value: units[0], label: t(units[0]) } : null);
   };
 
-  const handleIngredientSelect = (selectedOption: any) => {
+  const handleIngredientSelect = (selectedOption: { value: string; label: string } | null) => {
     setNewIngredientId(selectedOption ? selectedOption.value : '');
   };
 
   const addNewIngredient = () => {
-    const selectedIngredient = ingredients.find((ingredient: any) => ingredient.id === parseInt(newIngredientId));
+    const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(newIngredientId));
     if (!selectedIngredient || !newUnit || !newQuantity.trim()) return;
 
     // Check if ingredient already exists in the recipe
@@ -107,16 +113,14 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
               onChange={(e) => setNewRecipeName(e.target.value)}
             />
           </Form.Group>
-          <Form.Group>
-            <Form.Label>{t('chooseIngredient')}</Form.Label>
-            <Select
-              value={newIngredientId ? { value: newIngredientId, label: ingredients.find((i: any) => i.id === parseInt(newIngredientId))?.name } : null}
-              onChange={handleIngredientSelect}
-              options={ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : []}
-              isClearable
-              placeholder={t('chooseIngredient')}
-            />
-          </Form.Group>
+          <SelectDropdown
+            value={newIngredientId ? { value: newIngredientId, label: ingredients.find((i: Ingredient) => i.id === parseInt(newIngredientId))?.name } : null}
+            onChange={handleIngredientSelect}
+            options={ingredients ? ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })) : []}
+            isClearable
+            placeholder={t('chooseIngredient')}
+            label={t('chooseIngredient')}
+          />
           <Form.Group>
             <Form.Label>{t('quantity')}</Form.Label>
             <Form.Control
@@ -125,16 +129,14 @@ const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => 
               onChange={(e) => setNewQuantity(e.target.value)}
             />
           </Form.Group>
-          <Form.Group>
-            <Form.Label>{t('unit')}</Form.Label>
-            <Select
-              value={newUnit}
-              onChange={(selectedOption) => setNewUnit(selectedOption || null)}
-              options={newUnits}
-              isClearable
-              placeholder={t('chooseUnit')}
-            />
-          </Form.Group>
+          <SelectDropdown
+            value={newUnit}
+            onChange={(selectedOption) => setNewUnit(selectedOption || null)}
+            options={newUnits}
+            isClearable
+            placeholder={t('chooseUnit')}
+            label={t('unit')}
+          />
           <div className="d-flex justify-content-end mt-3">
             <Button 
               type="button"

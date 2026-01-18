@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
 import { FaPlus, FaTag, FaUtensils, FaFlask, FaTint } from 'react-icons/fa';
+import { Ingredient } from '../../../types/api';
+import SelectDropdown from '../../../components/SelectDropdown';
 
 interface AddIngredientModalProps {
   show: boolean;
@@ -11,7 +12,7 @@ interface AddIngredientModalProps {
     type: string;
     name: string;
   }) => Promise<void>;
-  existingIngredients: any[];
+  existingIngredients: Ingredient[];
 }
 
 const AddIngredientModal: React.FC<AddIngredientModalProps> = ({ 
@@ -85,9 +86,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setErrorMessage('');
       setShowError(false);
       onClose();
-    } catch (error: any) {
-      console.error('Failed to add ingredient', error);
-      
+    } catch (error: unknown) {
       // Обработка структурированной ошибки от сервера
       if (error?.message === 'Ingredient with this name already exists' || 
           error?.message?.includes('already exists')) {
@@ -139,27 +138,22 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
 
           <Row className="g-3">
             <Col md={6}>
-              <Form.Group controlId="ingredientType">
-                <Form.Label className="fw-semibold">
-                  <FaTag className="me-1 text-primary" />
-                  {t('ingredientType')} <span className="text-danger">*</span>
-                </Form.Label>
-                <Select
-                  value={ingredientTypeOptions.find(option => option.value === ingredientType) || null}
-                  onChange={(option) => {
-                    setIngredientType(option ? option.value : '');
-                    if (showError) {
-                      setShowError(false);
-                      setErrorField('');
-                    }
-                  }}
-                  options={ingredientTypeOptions}
-                  isClearable
-                  placeholder={t('chooseType')}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                />
-              </Form.Group>
+              <SelectDropdown
+                value={ingredientTypeOptions.find(option => option.value === ingredientType) || null}
+                onChange={(option) => {
+                  setIngredientType(option ? option.value : '');
+                  if (showError) {
+                    setShowError(false);
+                    setErrorField('');
+                  }
+                }}
+                options={ingredientTypeOptions}
+                isClearable
+                placeholder={t('chooseType')}
+                label={t('ingredientType')}
+                required
+                icon={FaTag}
+              />
             </Col>
             <Col md={6}>
               <Form.Group controlId="ingredientName">

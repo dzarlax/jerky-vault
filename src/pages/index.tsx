@@ -1,19 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, ProgressBar } from 'react-bootstrap';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
-import { Doughnut } from 'react-chartjs-2';
-import { 
-  Chart, 
-  ArcElement, 
-  Tooltip, 
-  Legend, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title 
-} from 'chart.js';
 import { useRouter } from 'next/router';
 import fetcher from '../utils/fetcher';
 import { useAuth, withAuth } from '../utils/authContext';
@@ -22,15 +10,17 @@ import ErrorState from '../components/ErrorState';
 import OrderModal from '../components/modal/Orders/OrderModal';
 import StatusModal from '../components/modal/Orders/StatusModal';
 import DeleteModal from '../components/modal/Orders/DeleteModal';
+import { MetricCard } from '../components/MetricCard';
+import { DonutChart } from '../components/charts';
 import { swrConfigs } from '../utils/swrConfig';
-import { 
-  FaBook, 
-  FaLeaf, 
-  FaBoxOpen, 
-  FaShoppingCart, 
-  FaChartPie, 
-  FaCalendarAlt, 
-  FaUser, 
+import {
+  FaBook,
+  FaLeaf,
+  FaBoxOpen,
+  FaShoppingCart,
+  FaChartPie,
+  FaCalendarAlt,
+  FaUser,
   FaArrowUp,
   FaDollarSign,
   FaClock,
@@ -43,61 +33,19 @@ import {
   FaPencilAlt,
   FaTrash
 } from 'react-icons/fa';
-
-Chart.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
-
-interface OrderStats {
-  total: number;
-  new: number;
-  in_progress: number;
-  ready: number;
-  finished: number;
-  canceled: number;
-}
-
-interface Order {
-  id: number;
-  client_id: number;
-  status: string;
-  comment?: string;
-  created_at: string;
-  items: Array<{
-    product_id: number;
-    quantity: number;
-    price: number;
-    cost_price: number;
-  }>;
-}
-
-interface DashboardData {
-  total_recipes: number;
-  total_products: number;
-  total_orders: number;
-  pending_orders: number;
-  recent_orders: Array<{
-    id: number;
-    client_name: string;
-    total_amount: number;
-    status: string;
-    order_date: string;
-  }>;
-  order_type_distribution: Array<{ type: string; count: number }>;
-}
-
-interface ProfitData {
-  total_revenue: number;
-  total_costs: number;
-  total_profit: number;
-  order_count: number;
-}
+import { Order, Client, Product, Ingredient, OrderItem, DashboardStats, ProfitData, ORDER_STATUSES } from '../types/api';
+import { calculateTotalPrice, calculateTotalCostPrice, groupOrderItems, createEmptyOrderItem, createOrderItemFromProduct, updateOrderItem, removeOrderItem, addOrderItem } from '../utils/orderHelpers';
+import { formatDate } from '../utils/contactHelpers';
+import { useNotification } from '../hooks/useNotification';
 
 const Dashboard = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
   const { auth } = useAuth();
+  const { success, error: showError } = useNotification();
 
-  const { data: dashboardStats, error: dashboardError, mutate } = useSWR<DashboardData>(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard' : null,
+  const { data: dashboardStats, error: dashboardError, mutate } = useSWR<DashboardStats>(
+    auth.isAuthenticated ? '/api/dashboard' : null,
     fetcher,
     {
       ...swrConfigs.dashboard,
@@ -111,33 +59,33 @@ const Dashboard = () => {
       }
     }
   );
-  
-  const { data: clients = [] } = useSWR(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/clients' : null,
+
+  const { data: clients = [] } = useSWR<Client[]>(
+    auth.isAuthenticated ? '/api/clients' : null,
     fetcher,
     swrConfigs.static
   );
 
   const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/orders' : null,
+    auth.isAuthenticated ? '/api/orders' : null,
     fetcher,
     swrConfigs.list
   );
 
-  const { data: ingredients = [] } = useSWR(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/ingredients' : null,
+  const { data: ingredients = [] } = useSWR<Ingredient[]>(
+    auth.isAuthenticated ? '/api/ingredients' : null,
     fetcher,
     swrConfigs.static
   );
 
   const { data: recipes = [] } = useSWR(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/recipes' : null,
+    auth.isAuthenticated ? '/api/recipes' : null,
     fetcher,
     swrConfigs.static
   );
 
-  const { data: products = [] } = useSWR(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/products' : null,
+  const { data: products = [] } = useSWR<Product[]>(
+    auth.isAuthenticated ? '/api/products' : null,
     fetcher,
     swrConfigs.static
   );
@@ -217,9 +165,14 @@ const Dashboard = () => {
     ? (orderStats.finished / orderStats.total) * 100 
     : 0;
 
+  const statusOptions = useMemo(() => ORDER_STATUSES.map(status => ({
+    value: status.value,
+    label: t(status.value),
+  })), [t]);
+
   const chartData = useMemo(() => {
     return {
-      labels: [t('new'), t('in_progress'), t('ready'), t('finished'), t('canceled')],
+      labels: statusOptions.map(opt => opt.label),
       datasets: [
         {
           data: [orderStats.new, orderStats.in_progress, orderStats.ready, orderStats.finished, orderStats.canceled],
@@ -230,7 +183,7 @@ const Dashboard = () => {
         },
       ],
     };
-  }, [orderStats, t]);
+  }, [orderStats, statusOptions]);
 
   const orderStatusData = useMemo(() => {
     if (!dashboardStats?.order_type_distribution?.length) return null;
@@ -250,9 +203,9 @@ const Dashboard = () => {
 
   const ingredientTypesData = useMemo(() => {
     if (!ingredients.length) return null;
-    
+
     const typeCount: { [key: string]: number } = {};
-    ingredients.forEach((ingredient: any) => {
+    ingredients.forEach((ingredient: Ingredient) => {
       const type = ingredient.type || 'Unknown';
       typeCount[type] = (typeCount[type] || 0) + 1;
     });
@@ -366,49 +319,38 @@ const Dashboard = () => {
         });
         // Refresh orders data
         mutateOrders();
+        success(editingOrder ? t('orderUpdated') : t('orderCreated'));
       }
       handleCloseOrderModal();
     } catch (error) {
-      console.error('Failed to save order changes', error);
+      showError(t('failedToSaveOrder'));
     }
   };
 
   // Handle product changes in order modal
   const handleProductChange = (index: number, product_id: number) => {
-    const updatedItems = [...items];
     const product = products.find((p) => p.id === product_id);
-    updatedItems[index] = {
-      product_id,
-      quantity: 1,
-      price: product?.price ?? 0,
-      cost_price: product?.cost ?? 0,
-    };
-    setItems(updatedItems);
+    if (product) {
+      const updatedItems = [...items];
+      updatedItems[index] = createOrderItemFromProduct(product);
+      setItems(updatedItems);
+    }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], quantity };
-    setItems(updatedItems);
+    setItems(updateOrderItem(items, index, 'quantity', quantity));
   };
 
-  const handleItemChange = (index: number, field: keyof typeof items[0], value: any) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setItems(updatedItems);
+  const handleItemChange = (index: number, field: keyof OrderItem, value: string | number) => {
+    setItems(updateOrderItem(items, index, field, value));
   };
 
   const handleRemoveItem = (index: number) => {
-    const updatedItems = [...items];
-    updatedItems.splice(index, 1);
-    setItems(updatedItems);
+    setItems(removeOrderItem(items, index));
   };
 
   const handleAddItem = () => {
-    setItems([
-      ...items,
-      { product_id: 0, quantity: 1, price: 0, cost_price: 0 },
-    ]);
+    setItems(addOrderItem(items));
   };
 
   // Handle status change (copied from orders.tsx)
@@ -441,8 +383,9 @@ const Dashboard = () => {
       mutateOrders(); // Refresh orders data
       setStatusOrderId(null);
       setShowStatusModal(false);
+      success(t('statusUpdated'));
     } catch (error) {
-      console.error('Failed to update order status', error);
+      showError(t('failedToUpdateStatus'));
     }
   };
 
@@ -471,19 +414,11 @@ const Dashboard = () => {
       mutateOrders(); // Refresh orders data
       setDeleteOrderId(null);
       setShowDeleteModal(false);
+      success(t('orderDeleted'));
     } catch (error) {
-      console.error('Failed to delete order', error);
+      showError(t('failedToDeleteOrder'));
     }
   };
-
-  // Options for modals (copied from orders.tsx)
-  const statusOptions = [
-    { value: "new", label: t("new") },
-    { value: "in_progress", label: t("in_progress") },
-    { value: "ready", label: t("ready") },
-    { value: "finished", label: t("finished") },
-    { value: "canceled", label: t("canceled") },
-  ];
 
   const clientOptions = clients.map((client) => ({
     value: client.id,
@@ -494,6 +429,14 @@ const Dashboard = () => {
     value: product.id,
     label: product.name,
   }));
+
+  // Generate mock sparkline data (7 days trend)
+  const generateSparklineData = (baseValue: number, variance: number = 0.2): number[] => {
+    return Array.from({ length: 7 }, () => {
+      const change = (Math.random() - 0.5) * variance * baseValue;
+      return Math.max(0, baseValue + change);
+    });
+  };
 
   if (!auth.isAuthenticated) {
     return (
@@ -524,199 +467,135 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-0">
-      <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-        <h1 className="mb-0">{t('dashboard')}</h1>
-        <div className="d-flex gap-2">
-          <Button variant="outline-primary" size="sm" onClick={() => mutate()}>
-            <FaClock className="me-1" />
-            {t('refresh')}
-          </Button>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title d-flex align-items-center gap-3">
+            <FaChartPie className="text-primary" />
+            {t('dashboard')}
+          </h1>
+          <p className="page-subtitle">
+            Overview of your business metrics
+          </p>
         </div>
+        <Button variant="outline-primary" size="sm" onClick={() => mutate()}>
+          <FaSync className="me-2" />
+          {t('refresh')}
+        </Button>
       </div>
-      
-      <div className="p-4">
-        {/* Main Statistics Cards */}
+
+      <div className="page-content">
+        {/* Main Statistics Cards with Sparklines */}
         <Row className="g-3 mb-4">
           <Col md={3} sm={6}>
-            <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="flex-grow-1">
-                  <div className="stat-icon mb-2 rounded-circle bg-primary-light p-2 d-inline-flex">
-                    <FaShoppingCart className="text-primary" size={16} />
-                  </div>
-                  <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {orderStats.total || 0}
-                  </div>
-                  <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                    {t('totalOrders')}
-                  </div>
-                  <div className="stat-change text-success small">
-                                              <FaArrowUp className="me-1" />
-                    {orderStats.new || 0} {t('new')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MetricCard
+              title={t('totalOrders')}
+              value={orderStats.total || 0}
+              icon={<FaShoppingCart size={20} />}
+              change={Math.round((orderStats.new / (orderStats.total || 1)) * 100)}
+              changeType="increase"
+              sparklineData={generateSparklineData(orderStats.total || 0)}
+              iconVariant="primary"
+            />
           </Col>
-          
+
           <Col md={3} sm={6}>
-            <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="flex-grow-1">
-                  <div className="stat-icon mb-2 rounded-circle bg-success-light p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
-                    <FaLeaf className="text-success" size={16} />
-                  </div>
-                  <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {ingredients.length || 0}
-                  </div>
-                  <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                    {t('totalIngredients')}
-                  </div>
-                  <div className="stat-change text-muted small">
-                    {recipes.length || 0} {t('recipes')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MetricCard
+              title={t('totalIngredients')}
+              value={ingredients.length || 0}
+              icon={<FaLeaf size={20} />}
+              change={Math.round((recipes.length / (ingredients.length || 1)) * 100)}
+              changeType="increase"
+              sparklineData={generateSparklineData(ingredients.length || 0)}
+              iconVariant="success"
+            />
           </Col>
-          
+
           <Col md={3} sm={6}>
-            <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="flex-grow-1">
-                  <div className="stat-icon mb-2 rounded-circle bg-warning-light p-2 d-inline-flex" style={{backgroundColor: 'rgba(255, 152, 0, 0.1)'}}>
-                    <FaUsers className="text-warning" size={16} />
-                  </div>
-                  <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {clients.length}
-                  </div>
-                  <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                    {t('totalClients')}
-                  </div>
-                  <div className="stat-change text-muted small">
-                    {completionRate.toFixed(1)}% {t('completionRate')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MetricCard
+              title={t('totalClients')}
+              value={clients.length}
+              icon={<FaUsers size={20} />}
+              change={parseFloat(completionRate.toFixed(1))}
+              changeType="increase"
+              sparklineData={generateSparklineData(clients.length)}
+              iconVariant="warning"
+            />
           </Col>
-          
+
           <Col md={3} sm={6}>
-            <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="flex-grow-1">
-                  <div className="stat-icon mb-2 rounded-circle bg-info-light p-2 d-inline-flex" style={{backgroundColor: 'rgba(33, 150, 243, 0.1)'}}>
-                    <FaBoxOpen className="text-info" size={16} />
-                  </div>
-                  <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.75rem', color: '#333' }}>
-                    {dashboardStats?.total_products || 0}
-                  </div>
-                  <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                    {t('totalProducts')}
-                  </div>
-                  <div className="stat-change text-muted small">
-                    {dashboardStats?.pending_orders || 0} {t('pendingOrders')}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MetricCard
+              title={t('totalProducts')}
+              value={dashboardStats?.total_products || 0}
+              icon={<FaBoxOpen size={20} />}
+              change={dashboardStats?.pending_orders || 0}
+              changeType="increase"
+              sparklineData={generateSparklineData(dashboardStats?.total_products || 0)}
+              iconVariant="info"
+            />
           </Col>
         </Row>
 
         {/* Profit Analytics Section */}
         {profitData && (
           <>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h4 className="mb-0 text-primary">
-                <FaChartLine className="me-2" />
+            <div className="section-header mb-3">
+              <h4 className="section-title d-flex align-items-center gap-2">
+                <FaChartLine className="text-primary" />
                 {t('profitAnalytics')}
               </h4>
             </div>
-            
+
             <Row className="g-3 mb-4">
               <Col md={3} sm={6}>
-                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="flex-grow-1">
-                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
-                        <FaArrowUp className="text-success" size={16} />
-                      </div>
-                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
-                        {profitData.total_revenue?.toFixed(0) || '0'} {t('currency')}
-                      </div>
-                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                        {t('totalRevenue')}
-                      </div>
-                      <div className="stat-change text-muted small">
-                        {profitData.order_count || 0} {t('finishedOrders')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <MetricCard
+                  title={t('totalRevenue')}
+                  value={`${profitData.total_revenue?.toFixed(0) || '0'} ${t('currency')}`}
+                  icon={<FaArrowUp size={20} />}
+                  change={profitData.order_count || 0}
+                  changeType="increase"
+                  sparklineData={generateSparklineData(profitData.total_revenue || 0, 0.3)}
+                  iconVariant="success"
+                />
               </Col>
-              
+
               <Col md={3} sm={6}>
-                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="flex-grow-1">
-                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(255, 152, 0, 0.1)'}}>
-                        <FaDollarSign className="text-warning" size={16} />
-                      </div>
-                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
-                        {profitData.total_costs?.toFixed(0) || '0'} {t('currency')}
-                      </div>
-                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                        {t('totalCosts')}
-                      </div>
-                      <div className="stat-change text-muted small">
-                        {profitData.total_revenue > 0 ? ((profitData.total_costs / profitData.total_revenue) * 100).toFixed(1) : 0}% {t('of')} {t('totalRevenue').toLowerCase()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <MetricCard
+                  title={t('totalCosts')}
+                  value={`${profitData.total_costs?.toFixed(0) || '0'} ${t('currency')}`}
+                  icon={<FaDollarSign size={20} />}
+                  change={parseFloat(profitData.total_revenue > 0 ? ((profitData.total_costs / profitData.total_revenue) * 100).toFixed(1) : '0')}
+                  changeType="decrease"
+                  sparklineData={generateSparklineData(profitData.total_costs || 0, 0.3)}
+                  sparklineColor="var(--warning-500)"
+                  iconVariant="warning"
+                />
               </Col>
-              
+
               <Col md={3} sm={6}>
-                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="flex-grow-1">
-                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
-                        <FaChartLine className="text-success" size={16} />
-                      </div>
-                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: profitData.total_profit >= 0 ? '#4caf50' : '#f44336' }}>
-                        {profitData.total_profit?.toFixed(0) || '0'} {t('currency')}
-                      </div>
-                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                        {t('totalProfit')}
-                      </div>
-                      <div className="stat-change text-muted small">
-                        {profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(1) : 0}% {t('profitMargin')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <MetricCard
+                  title={t('totalProfit')}
+                  value={`${profitData.total_profit?.toFixed(0) || '0'} ${t('currency')}`}
+                  icon={<FaChartLine size={20} />}
+                  change={parseFloat(profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(1) : '0')}
+                  changeType={profitData.total_profit >= 0 ? 'increase' : 'decrease'}
+                  sparklineData={generateSparklineData(Math.abs(profitData.total_profit || 0), 0.4)}
+                  sparklineColor={profitData.total_profit >= 0 ? 'var(--success-500)' : 'var(--error-500)'}
+                  iconVariant="success"
+                />
               </Col>
-              
+
               <Col md={3} sm={6}>
-                <div className="stat-card h-100 border-0 bg-white rounded p-3 shadow-sm">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="flex-grow-1">
-                      <div className="stat-icon mb-2 rounded-circle p-2 d-inline-flex" style={{backgroundColor: 'rgba(33, 150, 243, 0.1)'}}>
-                        <FaCheckCircle className="text-info" size={16} />
-                      </div>
-                      <div className="stat-value fw-bold mb-1" style={{ fontSize: '1.5rem', color: '#333' }}>
-                        {profitData.order_count > 0 ? (profitData.total_profit / profitData.order_count).toFixed(0) : '0'} {t('currency')}
-                      </div>
-                      <div className="stat-label text-muted mb-1" style={{ fontSize: '0.85rem' }}>
-                        {t('profit')} / {t('order').toLowerCase()}
-                      </div>
-                      <div className="stat-change text-muted small">
-                        {profitData.order_count > 0 ? (profitData.total_revenue / profitData.order_count).toFixed(0) : '0'} {t('currency')} {t('averageOrder')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <MetricCard
+                  title={`${t('profit')} / ${t('order').toLowerCase()}`}
+                  value={`${profitData.order_count > 0 ? (profitData.total_profit / profitData.order_count).toFixed(0) : '0'} ${t('currency')}`}
+                  icon={<FaCheckCircle size={20} />}
+                  change={parseFloat(profitData.order_count > 0 ? ((profitData.total_profit / profitData.order_count) / (profitData.total_revenue / profitData.order_count) * 100).toFixed(1) : '0')}
+                  changeType="increase"
+                  sparklineData={generateSparklineData(profitData.order_count > 0 ? profitData.total_profit / profitData.order_count : 0, 0.3)}
+                  iconVariant="info"
+                />
               </Col>
             </Row>
           </>
@@ -750,32 +629,56 @@ const Dashboard = () => {
           </Col>
           
           <Col lg={3}>
-            <Card className="border-0 h-100 shadow-sm">
+            <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
                   <FaChartLine className="me-2 text-primary" />
                   {t('orderStatus')}
                 </Card.Title>
-                {chartData && (
-                  <div style={{ height: '120px' }}>
-                    <Doughnut data={chartData} options={chartOptions} />
+                {orderStats.total > 0 ? (
+                  <DonutChart
+                    data={[
+                      { label: t('new'), value: orderStats.new, color: '#8B2635' },
+                      { label: t('inProgress'), value: orderStats.in_progress, color: '#F59E0B' },
+                      { label: t('ready'), value: orderStats.ready, color: '#9C27B0' },
+                      { label: t('finished'), value: orderStats.finished, color: '#10B981' },
+                      { label: t('canceled'), value: orderStats.canceled, color: '#EF4444' }
+                    ].filter(d => d.value > 0)}
+                    size={200}
+                    innerRadius={60}
+                    showLegend={false}
+                    centerText={orderStats.total.toString()}
+                    centerSubtext={t('orders')}
+                  />
+                ) : (
+                  <div className="text-center py-4">
+                    <small className="text-muted">{t('noOrdersFound')}</small>
                   </div>
                 )}
               </Card.Body>
             </Card>
           </Col>
-          
+
           <Col lg={3}>
-            <Card className="border-0 h-100 shadow-sm">
+            <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
                   <FaLeaf className="me-2 text-success" />
                   {t('ingredientTypes')}
                 </Card.Title>
                 {ingredientTypesData ? (
-                  <div style={{ height: '120px' }}>
-                    <Doughnut data={ingredientTypesData} options={chartOptions} />
-                  </div>
+                  <DonutChart
+                    data={ingredientTypesData.labels.map((label, i) => ({
+                      label,
+                      value: ingredientTypesData.datasets[0].data[i],
+                      color: ['#8B2635', '#F59E0B', '#10B981', '#0EA5E9', '#9C27B0'][i % 5]
+                    }))}
+                    size={200}
+                    innerRadius={60}
+                    showLegend={false}
+                    centerText={ingredients.length.toString()}
+                    centerSubtext={t('totalIngredients')}
+                  />
                 ) : (
                   <div className="text-center py-4">
                     <small className="text-muted">{t('noIngredientsFound')}</small>
@@ -786,16 +689,25 @@ const Dashboard = () => {
           </Col>
 
           <Col lg={3}>
-            <Card className="border-0 h-100 shadow-sm">
+            <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
                   <FaDollarSign className="me-2 text-warning" />
                   {t('revenueVsCosts')}
                 </Card.Title>
-                {profitChartData ? (
-                  <div style={{ height: '120px' }}>
-                    <Doughnut data={profitChartData} options={chartOptions} />
-                  </div>
+                {profitChartData && profitData && profitData.total_revenue > 0 ? (
+                  <DonutChart
+                    data={[
+                      { label: t('totalRevenue'), value: profitData.total_revenue, color: '#10B981' },
+                      { label: t('totalCosts'), value: profitData.total_costs, color: '#F59E0B' },
+                      { label: t('totalProfit'), value: Math.abs(profitData.total_profit), color: profitData.total_profit >= 0 ? '#0EA5E9' : '#EF4444' }
+                    ]}
+                    size={200}
+                    innerRadius={60}
+                    showLegend={false}
+                    centerText={`${profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(0) : '0'}%`}
+                    centerSubtext={t('profitMargin')}
+                  />
                 ) : (
                   <div className="text-center py-4">
                     <small className="text-muted">{t('noPendingOrders')}</small>
@@ -871,7 +783,7 @@ const Dashboard = () => {
                                 } {t('currency')}
                               </td>
                               <td className="text-muted">
-                                {new Date(isApiOrder ? (order as any).order_date : (order as any).created_at).toLocaleDateString()}
+                                {formatDate(isApiOrder ? (order as any).order_date : (order as any).created_at)}
                               </td>
                               <td className="text-center">
                                 <div className="d-flex gap-1 align-items-center justify-content-center">

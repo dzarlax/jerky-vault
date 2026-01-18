@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Modal, Button, Form, Row, Col, Alert, InputGroup } from "react-bootstrap";
-import Select from "react-select";
 import { FaTrash, FaSave, FaTimes, FaPlus, FaInfoCircle, FaTag, FaDollarSign, FaCog, FaUtensils, FaBoxOpen } from "react-icons/fa";
 import useTranslation from "next-translate/useTranslation";
 import PackageModal from "./PackageModal";
+import SelectDropdown from "../../SelectDropdown";
 
 interface ProductModalProps {
   show: boolean;
@@ -145,7 +145,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
         )}
         
         <Form>
-          <div className="form-section mb-3 p-3 rounded bg-light">
+          <div className="form-section mb-3 p-3 rounded">
             <h5 className="section-title text-primary mb-3">
               <FaInfoCircle className="me-2" />
               {t("basicInfo")}
@@ -218,7 +218,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </Form.Group>
           </div>
 
-          <div className="form-section mb-3 p-3 rounded bg-light">
+          <div className="form-section mb-3 p-3 rounded">
             <h5 className="section-title text-primary mb-3">
               <FaDollarSign className="me-2" />
               {t("prices")}
@@ -277,7 +277,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </Row>
           </div>
 
-          <div className="form-section p-3 rounded bg-light">
+          <div className="form-section p-3 rounded">
             <h5 className="section-title text-primary mb-3">
               <FaCog className="me-2" />
               {t("details")}
@@ -285,48 +285,34 @@ const ProductModal: React.FC<ProductModalProps> = ({
             <Row className="g-2">
               <Col md={6}>
                 <Form.Group controlId="packageId" className="mb-3">
-                  <Form.Label>
-                    <FaBoxOpen className="me-1" />
-                    {t("package")} <span className="text-danger">*</span>
-                  </Form.Label>
-                  <div className="d-flex">
-                    <div className="flex-grow-1 me-2">
-                      <Select
-                        options={packageOptions}
-                        value={packageOptions.find(
-                          (option) => option.value === packageId
-                        )}
-                        onChange={(selectedOption) =>
-                          setPackageId(selectedOption?.value || null)
-                        }
-                        placeholder={t("choosePackage")}
-                        className={`react-select-container ${isFieldInvalid('package') ? 'is-invalid' : ''}`}
-                        classNamePrefix="react-select"
-                        styles={{
-                          control: (provided, state) => ({
-                            ...provided,
-                            borderColor: isFieldInvalid('package') ? '#dc3545' : provided.borderColor,
-                            '&:hover': {
-                              borderColor: isFieldInvalid('package') ? '#dc3545' : provided.borderColor,
-                            },
-                          }),
-                        }}
-                      />
-                    </div>
-                    <Button 
-                      variant="outline-primary" 
-                      className="add-package-btn"
+                  <div className="d-flex align-items-center mb-2">
+                    <Form.Label className="mb-0 me-1">
+                      <FaBoxOpen className="me-1" />
+                      {t("package")} <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      className="ms-auto"
                       onClick={() => setShowPackageModal(true)}
                       title={t("addPackage")}
                     >
                       <FaPlus />
                     </Button>
                   </div>
-                  {isFieldInvalid('package') && (
-                    <div className="invalid-feedback d-block">
-                      {t('packageRequired')}
-                    </div>
-                  )}
+                  <SelectDropdown
+                    options={packageOptions}
+                    value={packageOptions.find(
+                      (option) => option.value === packageId
+                    ) || null}
+                    onChange={(selectedOption) =>
+                      setPackageId(selectedOption?.value || null)
+                    }
+                    placeholder={t("choosePackage")}
+                    isClearable
+                    error={isFieldInvalid('package') ? t('packageRequired') : undefined}
+                    required
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -340,7 +326,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       </span>
                     )}
                   </Form.Label>
-                  <Select
+                  <SelectDropdown
                     isMulti
                     options={recipeOptions}
                     value={selectedRecipes}
@@ -348,38 +334,11 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       setSelectedRecipes(selectedOptions as { value: number; label: string }[]);
                     }}
                     placeholder={t("chooseRecipe")}
-                    className={`react-select-container ${isFieldInvalid('recipes') ? 'is-invalid' : ''}`}
-                    classNamePrefix="react-select"
                     closeMenuOnSelect={false}
-                    styles={{
-                      control: (provided, state) => ({
-                        ...provided,
-                        borderColor: isFieldInvalid('recipes') ? '#dc3545' : provided.borderColor,
-                        '&:hover': {
-                          borderColor: isFieldInvalid('recipes') ? '#dc3545' : provided.borderColor,
-                        },
-                      }),
-                      multiValue: (provided) => ({
-                        ...provided,
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                      }),
-                      multiValueLabel: (provided) => ({
-                        ...provided,
-                        color: 'white',
-                      }),
-                    }}
+                    error={isFieldInvalid('recipes') ? t('atLeastOneRecipeRequired') : undefined}
+                    required
+                    helperText={selectedRecipes.length === 0 ? t('selectRecipesHelp') : undefined}
                   />
-                  {isFieldInvalid('recipes') && (
-                    <div className="invalid-feedback d-block">
-                      {t('atLeastOneRecipeRequired')}
-                    </div>
-                  )}
-                  {selectedRecipes.length === 0 && (
-                    <Form.Text className="text-muted">
-                      {t('selectRecipesHelp')}
-                    </Form.Text>
-                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -408,4 +367,4 @@ const ProductModal: React.FC<ProductModalProps> = ({
   );
 };
 
-export default ProductModal;
+export default React.memo(ProductModal);

@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies (next-translate-plugin is now in dependencies)
-RUN npm ci --omit=dev
+# Install dependencies
+RUN npm install --production
 
 # Copy project files
 COPY . .

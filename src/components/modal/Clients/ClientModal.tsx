@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Modal, Button, Form, Row, Col, InputGroup, Alert } from 'react-bootstrap';
 import { FaTrash, FaUser, FaPhone, FaTelegram, FaInstagram, FaMapMarkerAlt, FaTag } from 'react-icons/fa';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
@@ -144,14 +144,7 @@ const ClientModal = ({
           handleFieldChange('address', e.result.place_name, setAddress);
         });
 
-        // Debug: проверяем, что геокодер загрузился
-        geocoderRef.current.on('results', (e) => {
-          console.log('Geocoder results:', e.features.length);
-        });
-
-        geocoderRef.current.on('error', (e) => {
-          console.error('Geocoder error:', e);
-        });
+        // Geocoder debugging removed
       }
     }
   }, [show, mapboxToken, t]);
@@ -402,4 +395,4 @@ const ClientModal = ({
   );
 };
 
-export default ClientModal;
+export default React.memo(ClientModal);

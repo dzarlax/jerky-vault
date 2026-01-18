@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Alert, InputGroup } from 'react-bootstrap';
-import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
 import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaTag } from 'react-icons/fa';
+import { Ingredient } from '../../../types/api';
+import SelectDropdown from '../../../components/SelectDropdown';
 
 interface AddPriceModalProps {
   show: boolean;
@@ -13,7 +14,7 @@ interface AddPriceModalProps {
     quantity: string;
     unit: string;
   }) => Promise<void>;
-  ingredients: any[];
+  ingredients: Ingredient[];
 }
 
 const AddPriceModal: React.FC<AddPriceModalProps> = ({ 
@@ -47,7 +48,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
   }, [show]);
 
   const updateUnits = () => {
-    const selectedIngredient = ingredients?.find((ingredient: any) => 
+    const selectedIngredient = ingredients?.find((ingredient: Ingredient) => 
       ingredient.id === parseInt(ingredientId, 10)
     );
     if (!selectedIngredient) {
@@ -102,7 +103,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
     setIsLoading(true);
     try {
       await onSave({
-        ingredient_id: ingredientId,
+        ingredient_id: parseInt(ingredientId, 10),
         price,
         quantity,
         unit
@@ -115,8 +116,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
       setUnit('');
       setErrors([]);
       onClose();
-    } catch (error: any) {
-      console.error('Failed to add price', error);
+    } catch (error: unknown) {
       
       // Обработка структурированной ошибки от сервера
       if (error?.field) {
@@ -146,9 +146,9 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
     }
   };
 
-  const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ 
-    value: ingredient.id, 
-    label: ingredient.name 
+  const ingredientOptions = ingredients ? ingredients.map((ingredient: Ingredient) => ({
+    value: ingredient.id,
+    label: ingredient.name
   })) : [];
   
   const unitOptions = units.map((unit: string) => ({ 
@@ -179,38 +179,28 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
 
           <Row className="g-3">
             <Col md={6}>
-              <Form.Group controlId="ingredientSelect">
-                <Form.Label className="fw-semibold">
-                  <FaTag className="me-1 text-primary" />
-                  {t('ingredient')} <span className="text-danger">*</span>
-                </Form.Label>
-                <Select
-                  value={ingredientOptions.find(option => option.value === parseInt(ingredientId)) || null}
-                  onChange={(option) => setIngredientId(option ? option.value.toString() : '')}
-                  options={ingredientOptions}
-                  isClearable
-                  placeholder={t('chooseIngredient')}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                />
-              </Form.Group>
+              <SelectDropdown
+                value={ingredientOptions.find(option => option.value === parseInt(ingredientId)) || null}
+                onChange={(option) => setIngredientId(option ? option.value.toString() : '')}
+                options={ingredientOptions}
+                isClearable
+                placeholder={t('chooseIngredient')}
+                label={t('ingredient')}
+                required
+                icon={FaTag}
+              />
             </Col>
             <Col md={6}>
-              <Form.Group controlId="unitSelect">
-                <Form.Label className="fw-semibold">
-                  <FaRulerCombined className="me-1 text-primary" />
-                  {t('unit')} <span className="text-danger">*</span>
-                </Form.Label>
-                <Select
-                  value={unitOptions.find(option => option.value === unit) || null}
-                  onChange={(option) => setUnit(option ? option.value : '')}
-                  options={unitOptions}
-                  placeholder={t('chooseUnit')}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isDisabled={!ingredientId}
-                />
-              </Form.Group>
+              <SelectDropdown
+                value={unitOptions.find(option => option.value === unit) || null}
+                onChange={(option) => setUnit(option ? option.value : '')}
+                options={unitOptions}
+                placeholder={t('chooseUnit')}
+                label={t('unit')}
+                required
+                icon={FaRulerCombined}
+                isDisabled={!ingredientId}
+              />
             </Col>
           </Row>
 

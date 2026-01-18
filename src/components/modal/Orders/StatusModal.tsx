@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
-import Select from 'react-select';
 import useTranslation from 'next-translate/useTranslation';
+import SelectDropdown from '../../../components/SelectDropdown';
 
 interface StatusOption {
   value: string; // Если статус всегда будет строкой, оставьте как есть.
@@ -34,14 +34,12 @@ const StatusModal: React.FC<StatusModalProps> = ({
       </Modal.Header>
       <Modal.Body>
         <Form>
-          <Form.Group controlId="statusSelect">
-            <Form.Label>{t('status')}</Form.Label>
-            <Select
-              options={statusOptions}
-              value={statusOptions.find(option => option.value === status)}
-              onChange={option => setStatus(option?.value || '')} // Ensure status is handled properly
-            />
-          </Form.Group>
+          <SelectDropdown
+            options={statusOptions}
+            value={statusOptions.find(option => option.value === status)}
+            onChange={option => setStatus(option?.value || '')} // Ensure status is handled properly
+            label={t('status')}
+          />
         </Form>
       </Modal.Body>
       <Modal.Footer>

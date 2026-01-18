@@ -1,52 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
-import { Container, Table, Button, InputGroup, Row, Col, Form } from "react-bootstrap";
-import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
+import { Table, Button, Row, Col, Form } from "react-bootstrap";
 import { SingleValue } from 'react-select';
 import dynamic from 'next/dynamic';
-
-const Select = dynamic(() => import('react-select'), { ssr: false });
+import TableSkeleton from '../components/skeletons/TableSkeleton';
+import EmptyState from '../components/EmptyState';
+import { StatusBadge } from '../components/StatusBadge';
+import SelectDropdown from '../components/SelectDropdown';
 import OrderModal from "../components/modal/Orders/OrderModal";
 import ClientModal from "../components/modal/Orders/ClientModal";
 import StatusModal from "../components/modal/Orders/StatusModal";
 import DeleteModal from "../components/modal/Orders/DeleteModal";
 import { useRouter } from 'next/router';
+import { useAuth } from '../utils/authContext';
+import { useNotification } from '../hooks/useNotification';
+import { Order, OrderItem, Client, Product, ORDER_STATUSES } from '../types/api';
+import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
+import { FaShoppingBag, FaRubleSign } from "react-icons/fa";
 
-interface OrderItem {
-  product_id: number;
-  quantity: number;
-  price: number;
-  cost_price: number; 
-}
-
-interface Order {
-  id: number;
-  client_id: number;
-  status: string;
-  comment?: string;
-  created_at: string;
-  items: OrderItem[];
-}
-
-interface Client {
-  id: number;
-  name: string;
-  surname: string;
-  telegram?: string;
-  instagram?: string;
-  phone?: string;
-  address?: string;
-  source: string;
-}
+const Select = dynamic(() => import('react-select'), { ssr: false });
 
 const Orders = () => {
   const { t } = useTranslation("common");
-  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>("/api/orders", fetcher);
-  const { data: clients = [], mutate: mutateClients } = useSWR<Client[]>("/api/clients", fetcher);
-  const { data: products = [], mutate: mutateProducts } = useSWR<any[]>("/api/products", fetcher);
+  const { auth } = useAuth();
+  const { success, error: showError } = useNotification();
   const router = useRouter();
+
+  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(
+    auth.isAuthenticated ? "/api/orders" : null,
+    fetcher
+  );
+  const { data: clients = [], mutate: mutateClients } = useSWR<Client[]>(
+    auth.isAuthenticated ? "/api/clients" : null,
+    fetcher
+  );
+  const { data: products = [], mutate: mutateProducts } = useSWR<Product[]>(
+    auth.isAuthenticated ? "/api/products" : null,
+    fetcher
+  );
+
   const [clientId, setClientId] = useState<number | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [comment, setComment] = useState<string>("");
@@ -64,13 +58,10 @@ const Orders = () => {
   const [selectedStatus, setSelectedStatus] = useState<SingleValue<{ value: string; label: string }> | null>(null);
   const [selectedClientFilter, setSelectedClientFilter] = useState<SingleValue<{ value: number; label: string }> | null>(null);
 
-  const statusOptions = [
-    { value: "new", label: t("new") },
-    { value: "in_progress", label: t("in_progress") },
-    { value: "ready", label: t("ready") },
-    { value: "finished", label: t("finished") },
-    { value: "canceled", label: t("canceled") },
-  ];
+  const statusOptions = useMemo(() => ORDER_STATUSES.map(status => ({
+    value: status.value,
+    label: t(status.value),
+  })), [t]);
 
   useEffect(() => {
     let filtered = orders;
@@ -86,7 +77,7 @@ const Orders = () => {
     setFilteredOrders(filtered);
   }, [selectedStatus, selectedClientFilter, orders]);
 
-  const handleEditOrder = (order: Order) => {
+  const handleEditOrder = useCallback((order: Order) => {
     setEditingOrder(order);
     setClientId(order.client_id);
     setStatus(order.status);
@@ -102,7 +93,7 @@ const Orders = () => {
         : []
     );
     setShowOrderModal(true);
-  };
+  }, [t]);
 
   const handleCloseOrderModal = () => {
     setEditingOrder(null);
@@ -146,8 +137,9 @@ const Orders = () => {
       }
 
       handleCloseOrderModal();
+      success(editingOrder ? t('orderUpdated') : t('orderCreated'));
     } catch (error) {
-      console.error('Failed to save order changes', error);
+      showError(t('failedToSaveOrder'));
     }
   };
 
@@ -173,15 +165,16 @@ const Orders = () => {
       setItems([]);
       mutateOrders();
       setShowCreateOrderModal(false);
+      success(t('orderCreated'));
     } catch (error) {
-      console.error('Failed to create order', error);
+      showError(t('failedToCreateOrder'));
     }
   };
 
   const handleItemChange = (
     index: number,
     field: keyof OrderItem,
-    value: any
+    value: string | number
   ) => {
     const updatedItems = [...items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
@@ -189,22 +182,16 @@ const Orders = () => {
   };
 
   const handleAddItem = () => {
-    setItems([
-      ...items,
-      { product_id: 0, quantity: 1, price: 0, cost_price: 0 },
-    ]);
+    setItems([...items, { product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
   };
 
   const handleProductChange = (index: number, product_id: number) => {
-    const updatedItems = [...items];
     const product = products.find((p) => p.id === product_id);
-    updatedItems[index] = {
-      product_id,
-      quantity: 1,
-      price: product?.price ?? 0,
-      cost_price: product?.cost ?? 0,
-    };
-    setItems(updatedItems);
+    if (product) {
+      const updatedItems = [...items];
+      updatedItems[index] = { ...updatedItems[index], product_id, price: product.price, cost_price: product.cost };
+      setItems(updatedItems);
+    }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
@@ -214,9 +201,7 @@ const Orders = () => {
   };
 
   const handleRemoveItem = (index: number) => {
-    const updatedItems = [...items];
-    updatedItems.splice(index, 1);
-    setItems(updatedItems);
+    setItems(items.filter((_, i) => i !== index));
   };
 
   const handleClientClick = (client: Client) => {
@@ -258,8 +243,9 @@ const Orders = () => {
       mutateOrders();
       setStatusOrderId(null);
       setShowStatusModal(false);
+      success(t('statusUpdated'));
     } catch (error) {
-      console.error('Failed to update order status', error);
+      showError(t('failedToUpdateStatus'));
     }
   };
 
@@ -287,55 +273,21 @@ const Orders = () => {
       mutateOrders();
       setDeleteOrderId(null);
       setShowDeleteModal(false);
+      success(t('orderDeleted'));
     } catch (error) {
-      console.error('Failed to delete order', error);
+      showError(t('failedToDeleteOrder'));
     }
   };
-
-
 
   const clientOptions = clients.map((client) => ({
     value: client.id,
     label: `${client.name} ${client.surname}`,
   }));
+
   const productOptions = products.map((product) => ({
     value: product.id,
     label: product.name,
   }));
-
-  const calculateTotalPrice = (items: OrderItem[]) =>
-    items.reduce((total, item) => total + item.quantity * item.price, 0);
-  const calculateTotalCostPrice = (items: OrderItem[]) =>
-    items.reduce((total, item) => total + item.quantity * item.cost_price, 0);
-
-  const groupedItems = (items: OrderItem[]) => {
-    const itemMap: { [key: number]: OrderItem } = {};
-    items.forEach((item) => {
-      if (!itemMap[item.product_id]) {
-        itemMap[item.product_id] = { ...item, quantity: 0 };
-      }
-      itemMap[item.product_id].quantity += item.quantity;
-    });
-    return Object.values(itemMap);
-  };
-
-  const getTelegramLink = (username: string) => {
-    return `https://t.me/${username.replace("@", "")}`;
-  };
-
-  const getInstagramLink = (username: string) => {
-    return `https://instagram.com/${username.replace("@", "")}`;
-  };
-
-  const getPhoneLink = (phone: string) => {
-    return `tel:${phone}`;
-  };
-
-  const getMapLink = (address: string) => {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      address
-    )}`;
-  };
 
   const clearFilters = () => {
     setSelectedStatus(null);
@@ -343,178 +295,188 @@ const Orders = () => {
   };
 
   const hasActiveFilters = selectedStatus || selectedClientFilter;
+  const isLoading = !orders;
+
+  const formatCurrency = (value: number) => {
+    return `${value.toFixed(2)} ₽`;
+  };
 
   return (
-    <div className="p-0">
-      <div className="orders-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
-        <div className="header-content">
-          <h1 className="mb-2 text-primary">
-            <FaShoppingCart className="me-2" />
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title d-flex align-items-center gap-3">
+            <FaShoppingCart className="text-primary" />
             {t('orders')}
           </h1>
-          <div className="stats-summary d-flex flex-wrap gap-2">
-            <span className="badge bg-primary">
-              {t('total')}: {orders?.length || 0}
-            </span>
-            {hasActiveFilters && (
-              <span className="badge bg-warning">
-                {t('filtered')}: {filteredOrders.length}
-              </span>
-            )}
-          </div>
+          {!isLoading && (
+            <p className="page-subtitle">
+              Total: {orders.length} orders
+              {hasActiveFilters && (
+                <span className="text-tertiary"> • {filteredOrders.length} filtered</span>
+              )}
+            </p>
+          )}
         </div>
-        <div className="action-buttons d-flex gap-2">
-          <Button 
-            variant="primary" 
-            onClick={() => {
-              setClientId(null);
-              setStatus("new");
-              setComment("");
-              setItems([{ product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
-              setShowCreateOrderModal(true);
-            }}
-          >
-            <FaPlus className="me-2" /> 
-            {t('createOrder')}
-          </Button>
-        </div>
+        <Button
+          className="btn btn-primary"
+          onClick={() => {
+            setClientId(null);
+            setStatus("new");
+            setComment("");
+            setItems([{ product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
+            setShowCreateOrderModal(true);
+          }}
+        >
+          <FaPlus className="me-2" />
+          {t('createOrder')}
+        </Button>
       </div>
-      
-      <div className="orders-content p-3 p-md-4">
-        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <h5 className="mb-0 text-primary">
-              <FaFilter className="me-2" />
-              {t('filterOrders')}
-            </h5>
-            <Button 
-              variant="outline-secondary" 
-              size="sm"
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-            >
-              <FaTimes className="me-1" />
-              {t('clearFilters')}
-            </Button>
-          </div>
-          <Row className="g-3">
-            <Col md={6}>
-              <Form.Label className="fw-semibold">{t('filterByStatus')}</Form.Label>
-              <Form.Group>
-                <Select
-                  options={statusOptions}
-                  value={selectedStatus}
-                  onChange={(selectedStatus) => setSelectedStatus(selectedStatus)}
-                  placeholder={t('filterByStatus')}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isClearable
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Label className="fw-semibold">{t('filterByClient')}</Form.Label>
-              <Form.Group>
-                <Select
-                  options={clientOptions}
-                  value={selectedClientFilter}
-                  onChange={(selectedClient) => setSelectedClientFilter(selectedClient)}
-                  placeholder={t('filterByClient')}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  isClearable
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+
+      {/* Filter Section */}
+      <div className="filter-bar">
+        <div className="filter-group">
+          <SelectDropdown
+            options={statusOptions}
+            value={selectedStatus}
+            onChange={setSelectedStatus}
+            placeholder="All Statuses"
+            isClearable
+            label="Status"
+          />
         </div>
-        
+        <div className="filter-group">
+          <SelectDropdown
+            options={clientOptions}
+            value={selectedClientFilter}
+            onChange={setSelectedClientFilter}
+            placeholder="All Clients"
+            isClearable
+            label="Client"
+          />
+        </div>
+        {hasActiveFilters && (
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            onClick={clearFilters}
+            className="ms-auto"
+          >
+            <FaTimes className="me-2" />
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {/* Orders Table */}
+      {isLoading ? (
+        <TableSkeleton rows={10} columns={10} />
+      ) : orders.length === 0 ? (
+        <EmptyState
+          type="orders"
+          message={t('noOrders')}
+          actionLabel={t('createOrder')}
+          onAction={() => {
+            setClientId(null);
+            setStatus("new");
+            setComment("");
+            setItems([{ product_id: 0, quantity: 1, price: 0, cost_price: 0 }]);
+            setShowCreateOrderModal(true);
+          }}
+        />
+      ) : (
         <div className="table-responsive">
-          <Table striped hover className="mb-0">
+          <Table className="table">
             <thead>
               <tr>
-                <th>{t("order")}</th>
-                <th>{t("client")}</th>
-                <th>{t("status")}</th>
-                <th>{t("date")}</th>
-                <th>{t("products")}</th>
-                <th>{t("comment")}</th>
-                <th>{t("totalCost")}</th>
-                <th>{t("totalCostPrice")}</th>
-                <th>{t("profit")}</th>
-                <th>{t("actions")}</th>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Cost</th>
+                <th>Profit</th>
+                <th className="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
                 <tr key={order.id}>
-                  <td>{order.id}</td>
-                  <td
-                    onClick={() =>
-                      handleClientClick(
-                        clients.find((client) => client.id === order.client_id) ||
-                          ({} as Client)
-                      )
-                    }
-                    style={{ cursor: "pointer" }}
-                    className="text-primary"
-                  >
-                    {clients.find((client) => client.id === order.client_id)?.name ||
-                      t("unknownClient")}
+                  <td className="text-secondary">#{order.id}</td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        handleClientClick(
+                          clients.find((client) => client.id === order.client_id) ||
+                            ({} as Client)
+                        )
+                      }
+                      className="btn-link"
+                    >
+                      {clients.find((client) => client.id === order.client_id)?.name ||
+                        t("unknownClient")}
+                    </button>
                   </td>
                   <td>
-                    <span className={`badge bg-${order.status === 'new' ? 'primary' : order.status === 'in_progress' ? 'info' : order.status === 'delivery' ? 'warning' : 'success'}`}>
-                      {t(order.status.toLowerCase())}
-                    </span>
+                    <StatusBadge
+                      status={t(order.status)}
+                      variant={
+                        order.status === 'new' ? 'info' :
+                        order.status === 'in_progress' ? 'warning' :
+                        order.status === 'delivery' ? 'error' :
+                        order.status === 'ready' ? 'info' : 'success'
+                      }
+                    />
                   </td>
-                  <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                  <td>{groupedItems(order.items).map((item) => {
-                      const product = products.find((p) => p.id === item.product_id);
-                      return (
-                        <div key={item.product_id}>
-                          {product ? product.name : t("unknownProduct")} (
-                          {item.quantity})
-                        </div>
-                      );
-                    })}
+                  <td className="text-secondary small">
+                    {new Date(order.created_at).toLocaleDateString()}
                   </td>
                   <td>
-                    <div className="comment-cell" style={{ maxWidth: '200px', wordWrap: 'break-word' }}>
-                      {order.comment && order.comment.trim() !== '' ? (
-                        <span title={order.comment}>
-                          {order.comment.length > 50 ? `${order.comment.substring(0, 47)}...` : order.comment}
-                        </span>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
+                    <div className="text-secondary">
+                      {order.items?.map((item) => {
+                        const product = products.find((p) => p.id === item.product_id);
+                        return (
+                          <div key={item.product_id} className="small">
+                            {product ? product.name : t("unknownProduct")} x {item.quantity}
+                          </div>
+                        );
+                      })}
                     </div>
                   </td>
-                  <td>{calculateTotalPrice(order.items).toFixed(2)}{" "}{t("currency")}</td>
                   <td>
-                    {calculateTotalCostPrice(order.items).toFixed(2)}{" "}{t("currency")}
+                    <span className="fw-semibold">
+                      {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0))}
+                    </span>
                   </td>
-                  <td className="text-success">
-                    {(calculateTotalPrice(order.items) - calculateTotalCostPrice(order.items)).toFixed(2)}{" "}{t("currency")}
+                  <td className="text-secondary">
+                    {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0) || 0))}
+                  </td>
+                  <td className={parseFloat(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0) >= 0 ? 'text-success' : 'text-error'}>
+                    <span className="fw-semibold">
+                      {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0))}
+                    </span>
                   </td>
                   <td>
-                    <div className="d-flex gap-1 align-items-center">
-                      <button 
+                    <div className="d-flex gap-2 justify-content-end">
+                      <button
                         onClick={() => handleChangeStatus(order.id)}
-                        className="action-icon-btn"
+                        className="btn btn-ghost btn-sm"
                         title={t("changeStatus")}
                       >
                         <FaSync size={14} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEditOrder(order)}
-                        className="action-icon-btn"
+                        className="btn btn-ghost btn-sm"
                         title={t("edit")}
                       >
                         <FaPencilAlt size={14} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteOrder(order.id)}
-                        className="action-icon-btn text-danger"
+                        className="btn btn-ghost btn-sm text-error"
                         title={t("delete")}
                       >
                         <FaTrash size={14} />
@@ -526,8 +488,9 @@ const Orders = () => {
             </tbody>
           </Table>
         </div>
-      </div>
+      )}
 
+      {/* Modals */}
       <OrderModal
         show={showOrderModal || showCreateOrderModal}
         onClose={handleCloseOrderModal}
@@ -553,10 +516,10 @@ const Orders = () => {
         show={showClientModal}
         onClose={handleCloseClientModal}
         client={selectedClient}
-        getTelegramLink={getTelegramLink}
-        getInstagramLink={getInstagramLink}
-        getPhoneLink={getPhoneLink}
-        getMapLink={getMapLink}
+        getTelegramLink={(telegram) => `https://t.me/${telegram.replace('@', '')}`}
+        getInstagramLink={(instagram) => `https://instagram.com/${instagram.replace('@', '')}`}
+        getPhoneLink={(phone) => `tel:${phone}`}
+        getMapLink={(address) => `https://maps.google.com/?q=${encodeURIComponent(address)}`}
       />
 
       <StatusModal

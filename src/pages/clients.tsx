@@ -3,13 +3,23 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { Button, InputGroup, FormControl } from 'react-bootstrap';
+import { Button, InputGroup, FormControl, Col } from 'react-bootstrap';
 import ClientModal from '../components/modal/Clients/ClientModal';
-import { FaPlus, FaUsers, FaSearch, FaTimes } from 'react-icons/fa';
+import ClientCardSkeleton from '../components/skeletons/ClientCardSkeleton';
+import EmptyState from '../components/EmptyState';
+import { FaPlus, FaUsers, FaSearch, FaTimes, FaEdit } from 'react-icons/fa';
+import { useAuth } from '../utils/authContext';
+import { useNotification } from '../hooks/useNotification';
+import { Client } from '../types/api';
 
 const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
-  const { data: clients, mutate } = useSWR('/api/clients', fetcher);
+  const { auth } = useAuth();
+  const { success, error: showError } = useNotification();
+  const { data: clients, mutate } = useSWR<Client[]>(
+    auth.isAuthenticated ? '/api/clients' : null,
+    fetcher
+  );
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -22,13 +32,6 @@ const Clients = ({ mapboxToken }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showClientModal, setShowClientModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/signin');
-    }
-  }, [router]);
 
   const openClientModal = (client = null) => {
     if (client) {
@@ -85,8 +88,9 @@ const Clients = ({ mapboxToken }) => {
 
     mutate();
     setShowClientModal(false);
+    success(editingClient ? t('clientUpdated') : t('clientCreated'));
   } catch (error) {
-    console.error('Failed to load recipes', error);
+    showError(t('failedToSaveClient'));
   }
   };
 
@@ -107,9 +111,10 @@ const Clients = ({ mapboxToken }) => {
       });
       mutate();
       setShowClientModal(false);
+      success(t('clientDeleted'));
     }
   } catch (error) {
-    console.error('Failed to load recipes', error);
+    showError(t('failedToDeleteClient'));
   }
   };
 
@@ -127,82 +132,93 @@ const Clients = ({ mapboxToken }) => {
     setSearchTerm('');
   };
 
-  if (!clients) return <div>{t('loading')}</div>;
+  const isLoading = !clients;
 
   return (
-    <div className="p-0">
-      <div className="clients-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
-        <div className="header-content">
-          <h1 className="mb-2 text-primary">
-            <FaUsers className="me-2" />
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title d-flex align-items-center gap-3">
+            <FaUsers className="text-primary" />
             {t('clients')}
           </h1>
-          <div className="stats-summary d-flex flex-wrap gap-2">
-            <span className="badge bg-primary">
-              {t('total')}: {clients?.length || 0}
-            </span>
-            {filteredClients && filteredClients.length !== clients.length && (
-              <span className="badge bg-warning">
-                {t('filtered')}: {filteredClients.length}
-              </span>
-            )}
-          </div>
+          {!isLoading && (
+            <p className="page-subtitle">
+              Total: {clients.length} clients
+              {filteredClients && filteredClients.length !== clients.length && (
+                <span className="text-tertiary"> • {filteredClients.length} filtered</span>
+              )}
+            </p>
+          )}
         </div>
-        <div className="action-buttons d-flex gap-2">
-          <Button 
-            variant="primary" 
-            onClick={() => openClientModal()}
-          >
-            <FaPlus className="me-2" /> 
-            {t('addClient')}
-          </Button>
-        </div>
+        <Button
+          className="btn btn-primary"
+          onClick={() => openClientModal()}
+        >
+          <FaPlus className="me-2" />
+          {t('addClient')}
+        </Button>
       </div>
-      <div className="clients-content p-3 p-md-4">
 
-        <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <h5 className="mb-0 text-primary">
-              <FaSearch className="me-2" />
-              {t('searchClients')}
-            </h5>
-            {searchTerm && (
-              <Button 
-                variant="outline-secondary" 
-                size="sm"
-                onClick={clearSearch}
-              >
-                <FaTimes className="me-1" />
-                {t('clearSearch')}
-              </Button>
-            )}
-          </div>
+      {/* Search Section */}
+      <div className="filter-bar">
+        <div className="filter-group flex-grow-1">
+          <label className="filter-label">Search</label>
           <InputGroup>
-            <InputGroup.Text>
-              <FaSearch />
+            <InputGroup.Text className="bg-transparent">
+              <FaSearch className="text-secondary" />
             </InputGroup.Text>
             <FormControl
               placeholder={t('searchClientsPlaceholder')}
               aria-label={t('search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="form-control"
             />
+            {searchTerm && (
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={clearSearch}
+                className="ms-2"
+              >
+                <FaTimes />
+              </Button>
+            )}
           </InputGroup>
         </div>
-      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-4">
-        {filteredClients.map((client) => (
+      </div>
+
+      {/* Clients Grid */}
+      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <Col key={index}>
+              <ClientCardSkeleton />
+            </Col>
+          ))
+        ) : filteredClients.length === 0 ? (
+          <div className="col-12">
+            <EmptyState
+              type="clients"
+              message={searchTerm ? t('noClientsFound') : t('noClients')}
+              actionLabel={t('addClient')}
+              onAction={() => openClientModal()}
+            />
+          </div>
+        ) : (
+          filteredClients.map((client) => (
           <div key={client.id} className="col">
             <div className="client-card">
               <div className="client-card-header">
                 <h3 className="client-name">{client.name} {client.surname}</h3>
-                <button 
-                  className="action-icon-btn" 
+                <button
+                  className="btn btn-ghost btn-sm"
                   onClick={() => openClientModal(client)}
                   title={t('edit')}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
-                  </svg>
+                  <FaEdit size={14} />
                 </button>
               </div>
               <div className="client-card-body">
@@ -215,7 +231,7 @@ const Clients = ({ mapboxToken }) => {
                       <span>{client.telegram}</span>
                     </a>
                   )}
-                  
+
                   {client.instagram && (
                     <a href={`https://instagram.com/${client.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="client-contact-link instagram">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -224,7 +240,7 @@ const Clients = ({ mapboxToken }) => {
                       <span>{client.instagram}</span>
                     </a>
                   )}
-                  
+
                   {client.phone && (
                     <a href={`tel:${client.phone}`} className="client-contact-link phone">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -233,7 +249,7 @@ const Clients = ({ mapboxToken }) => {
                       <span>{client.phone}</span>
                     </a>
                   )}
-                  
+
                   {client.address && (
                     <a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noopener noreferrer" className="client-contact-link address">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -243,7 +259,7 @@ const Clients = ({ mapboxToken }) => {
                     </a>
                   )}
                 </div>
-                
+
                 {client.source && (
                   <div className="client-source">
                     <span className="source-label">{t('source')}:</span>
@@ -254,6 +270,7 @@ const Clients = ({ mapboxToken }) => {
             </div>
           </div>
         ))}
+        )}
       </div>
 
       <ClientModal
@@ -279,7 +296,6 @@ const Clients = ({ mapboxToken }) => {
         mapboxToken={mapboxToken}
         t={t}
       />
-      </div>
     </div>
   );
 };

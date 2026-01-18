@@ -1,5 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../styles/globals.css';
+import '../styles/design-system.css';
+import '../styles/components.css';
 import { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -10,6 +11,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { Container, Row, Col } from 'react-bootstrap';
 import { AuthProvider } from '../utils/authContext';
 import { useAuthHandler } from '../utils/useAuthHandler';
+import { NotificationProvider } from '../components/NotificationToast';
 
 // Component to handle auth logic inside AuthProvider
 function AppContent({ Component, pageProps }: AppProps) {
@@ -17,25 +19,25 @@ function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  
+
   // Use the auth handler hook to manage authentication
   useAuthHandler();
-  
+
   // Проверяем, является ли текущая страница страницей аутентификации
   const isAuthPage = router.pathname.startsWith('/auth/');
-  
+
   // Определяем, является ли текущее устройство мобильным
   useEffect(() => {
     const handleResize = () => {
       setIsMobileView(window.innerWidth < 992);
     };
-    
+
     // Инициализация при монтировании
     if (typeof window !== 'undefined') {
       handleResize();
       window.addEventListener('resize', handleResize);
     }
-    
+
     // Очистка при размонтировании
     return () => {
       if (typeof window !== 'undefined') {
@@ -58,20 +60,20 @@ function AppContent({ Component, pageProps }: AppProps) {
         {!isMobileView && <Sidebar />}
         {isMobileView && (
           <>
-            <Sidebar 
-              isOpen={showMobileSidebar} 
-              onClose={() => setShowMobileSidebar(false)} 
-              isMobile={true} 
+            <Sidebar
+              isOpen={showMobileSidebar}
+              onClose={() => setShowMobileSidebar(false)}
+              isMobile={true}
             />
-            <div 
-              className="mobile-menu-toggle d-lg-none" 
+            <div
+              className="mobile-menu-toggle d-lg-none"
               onClick={() => setShowMobileSidebar(!showMobileSidebar)}
               style={{
                 position: 'fixed',
                 top: '1rem',
                 left: '1rem',
                 zIndex: 1020,
-                background: 'var(--primary-color)',
+                background: 'var(--brand-500)',
                 color: 'white',
                 width: '40px',
                 height: '40px',
@@ -89,9 +91,9 @@ function AppContent({ Component, pageProps }: AppProps) {
             </div>
           </>
         )}
-        <div className="flex-grow-1" style={{ 
-          marginLeft: isMobileView ? 0 : '220px',
-          backgroundColor: 'var(--container-background-color)',
+        <div className="flex-grow-1" style={{
+          marginLeft: isMobileView ? 0 : '260px',
+          backgroundColor: 'var(--surface-secondary)',
           minHeight: '100vh'
         }}>
           <Component {...pageProps} />
@@ -107,13 +109,15 @@ function AppContent({ Component, pageProps }: AppProps) {
     token: null,
   };
 
-  // Wrap everything with AuthProvider
+  // Wrap everything with AuthProvider and NotificationProvider
   return (
     <AuthProvider initialState={initialAuthState}>
-      <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </Head>
-      {content}
+      <NotificationProvider>
+        <Head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        </Head>
+        {content}
+      </NotificationProvider>
     </AuthProvider>
   );
 }

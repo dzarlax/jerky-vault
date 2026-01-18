@@ -53,7 +53,6 @@ const PackageModal: React.FC<PackageModalProps> = ({
         handleClose();
       }
     } catch (error) {
-      console.error("Failed to create package", error);
       alert(t("failedToSaveChanges"));
       setIsSubmitting(false);
     }

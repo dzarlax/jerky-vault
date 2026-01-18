@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
-import Select from 'react-select';
 import { FaTrash } from 'react-icons/fa';
 import fetcher from '../../../utils/fetcher';
 import { useAuth } from '../../../utils/authContext';
+import { Ingredient, Recipe } from '../../../types/api';
+import SelectDropdown from '../../../components/SelectDropdown';
 
 const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe, onCloneRecipe, onUpdateRecipe }) => {
   const { auth } = useAuth();
@@ -30,7 +31,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   }, [ingredientId]);
 
   const updateUnits = () => {
-    const selectedIngredient = ingredients.find((ingredient: any) => ingredient.id === parseInt(ingredientId));
+    const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(ingredientId));
     if (!selectedIngredient) return;
 
     let units = [];
@@ -57,7 +58,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
     setUnit(units[0] ? { value: units[0], label: t(units[0]) } : null);
   };
 
-  const handleIngredientSelect = (selectedOption: any) => {
+  const handleIngredientSelect = (selectedOption: { value: string; label: string } | null) => {
     setIngredientId(selectedOption ? selectedOption.value : '');
   };
 
@@ -71,7 +72,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
 
     // Check if ingredient already exists in the recipe
     const existingIngredient = editingRecipe.recipe_ingredients?.find(
-      (ing: any) => ing.ingredient_id === parseInt(ingredientId, 10)
+      (ing: { ingredient_id: number }) => ing.ingredient_id === parseInt(ingredientId, 10)
     );
     if (existingIngredient) {
       alert(t('ingredientAlreadyExists'));
@@ -109,7 +110,6 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
         setUnits([]);
       }
     } catch (error) {
-      console.error('Error adding ingredient:', error);
       alert(t('errorOccurred'));
     }
   };
@@ -119,25 +119,22 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   const loadRecipeIngredients = async (recipeId: string) => {
     try {
       if (!auth.isAuthenticated || !auth.token) {
-        console.error('No token found');
         return;
       }
-  
-      console.log('Fetching recipe ingredients from API');
+
       const data = await fetcher(`/api/recipes/${recipeId}`, {
         headers: {
           'Authorization': `Bearer ${auth.token}`,
         }
       });
-  
-      console.log('Response from loading ingredients:', data); // Логирование ответа
+
       // Убедитесь, что вы обновляете состояние правильно
-      setEditingRecipe((prev: any) => ({
+      setEditingRecipe((prev: Recipe) => ({
         ...prev,
         recipe_ingredients: data.recipe_ingredients || []
       }));
     } catch (error) {
-      console.error('Failed to load ingredients:', error);
+      // Error handled by parent
     }
   };
   
@@ -147,11 +144,9 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
     if (!editingRecipe || !ingredientId) return;
     try {
       if (!auth.isAuthenticated || !auth.token) {
-        console.error('No token found');
         return;
       }
-  
-      console.log('Sending request to delete ingredient by ingredientId:', { ingredientId });
+
       const response = await fetcher(`/api/recipes/${editingRecipe.id}/ingredients/${ingredientId}`, {
         method: 'DELETE',
         headers: {
@@ -159,11 +154,10 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
           'Content-Type': 'application/json',
         },
       });
-  
-      console.log('Response from deleting ingredient:', response); // Логирование ответа
+
       await loadRecipeIngredients(editingRecipe.id);
     } catch (error) {
-      console.error('Failed to delete ingredient from recipe:', error);
+      // Error handled by parent
     }
   };  
   
@@ -197,16 +191,14 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
             <p>{t('totalCost')}: {editingRecipe.totalCost ? editingRecipe.totalCost.toFixed(2) : 'N/A'} {t('currency')}</p>
 
             <Form onSubmit={addIngredientToRecipe}>
-              <Form.Group>
-                <Form.Label>{t('chooseIngredient')}</Form.Label>
-                <Select
-                  value={ingredientId ? { value: ingredientId, label: ingredients.find((i: any) => i.id === parseInt(ingredientId))?.name } : null}
-                  onChange={handleIngredientSelect}
-                  options={ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : []}
-                  isClearable
-                  placeholder={t('chooseIngredient')}
-                />
-              </Form.Group>
+              <SelectDropdown
+                value={ingredientId ? { value: ingredientId, label: ingredients.find((i: Ingredient) => i.id === parseInt(ingredientId))?.name } : null}
+                onChange={handleIngredientSelect}
+                options={ingredients ? ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })) : []}
+                isClearable
+                placeholder={t('chooseIngredient')}
+                label={t('chooseIngredient')}
+              />
               <Form.Group>
                 <Form.Label>{t('quantity')}</Form.Label>
                 <Form.Control
@@ -215,16 +207,14 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
                   onChange={(e) => setQuantity(e.target.value)}
                 />
               </Form.Group>
-              <Form.Group>
-                <Form.Label>{t('unit')}</Form.Label>
-                <Select
-                  value={unit}
-                  onChange={(selectedOption) => setUnit(selectedOption || null)}
-                  options={units}
-                  isClearable
-                  placeholder={t('chooseUnit')}
-                />
-              </Form.Group>
+              <SelectDropdown
+                value={unit}
+                onChange={(selectedOption) => setUnit(selectedOption || null)}
+                options={units}
+                isClearable
+                placeholder={t('chooseUnit')}
+                label={t('unit')}
+              />
               <div className="d-flex justify-content-end mt-3">
                 <Button 
                   type="button"
@@ -247,7 +237,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
               <div className="mt-3">
                 <h6 className="text-muted mb-2">{t('ingredientsInRecipe')} ({editingRecipe.recipe_ingredients.length})</h6>
                 <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {editingRecipe.recipe_ingredients.map((ingredient: any, index: number) => (
+                  {editingRecipe.recipe_ingredients.map((ingredient: { ingredient_id: number; quantity: string; unit: string; ingredient: { name: string }; ingredientCost?: string }, index: number) => (
                     <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center py-2">
                       <div className="d-flex align-items-center">
                         <span className="me-2">🥄</span>

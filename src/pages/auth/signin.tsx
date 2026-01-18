@@ -28,7 +28,6 @@ export default function SignIn() {
 
       // Если fetcher уже возвращает JSON, то нет необходимости вызывать response.json()
       if (!data || !data.token) {
-        console.error('Invalid response format:', data);
         setError('Invalid response from server');
         return;
       }
@@ -39,7 +38,6 @@ export default function SignIn() {
       // Redirect to the protected page or home page
       router.push('/');
     } catch (error) {
-      console.error('Login error:', error);
       setError('Request failed, please try again later.');
     }
   };

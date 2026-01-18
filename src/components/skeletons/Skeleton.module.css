@@ -1,0 +1,154 @@
+/* Skeleton Loading Animations */
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeletonCard {
+  opacity: 0.7;
+}
+
+.skeletonImage {
+  height: 200px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 8px 8px 0 0;
+}
+
+.skeletonImage .shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+.skeletonTitle {
+  height: 24px;
+  width: 70%;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+.skeletonText {
+  height: 16px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+.skeletonBadge {
+  height: 24px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 12px;
+}
+
+.skeletonMetric {
+  height: 20px;
+  width: 80px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+/* Table Skeleton Styles */
+.skeletonHeader {
+  height: 20px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #e0e0e0 0%,
+    #d0d0d0 50%,
+    #e0e0e0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+.skeletonCell {
+  height: 20px;
+  width: 80%;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .skeletonImage,
+[data-theme="dark"] .skeletonTitle,
+[data-theme="dark"] .skeletonText,
+[data-theme="dark"] .skeletonBadge,
+[data-theme="dark"] .skeletonMetric,
+[data-theme="dark"] .skeletonHeader,
+[data-theme="dark"] .skeletonCell {
+  background: linear-gradient(
+    90deg,
+    #2a2a2a 0%,
+    #3a3a3a 50%,
+    #2a2a2a 100%
+  );
+  background-size: 1000px 100%;
+}
+
+[data-theme="dark"] .skeletonHeader {
+  background: linear-gradient(
+    90deg,
+    #3a3a3a 0%,
+    #4a4a4a 50%,
+    #3a3a3a 100%
+  );
+  background-size: 1000px 100%;
+}

@@ -2,16 +2,29 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
-import { Form, Button, Table, Container, Row, Col, Alert, InputGroup } from 'react-bootstrap';
-import Select from 'react-select';
+import { Form, Button, Table, Row, Col, InputGroup } from 'react-bootstrap';
+import TableSkeleton from '../components/skeletons/TableSkeleton';
+import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
-import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaFilter, FaTimes, FaTag } from 'react-icons/fa';
+import { FaPlus, FaDollarSign, FaFilter, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
+import { useAuth } from '../utils/authContext';
+import { useNotification } from '../hooks/useNotification';
+import { Ingredient, Price } from '../types/api';
+import SelectDropdown from '../components/SelectDropdown';
 
 const Prices = () => {
   const { t, lang } = useTranslation('common');
-  const { data: ingredients, error: ingredientsError } = useSWR('/api/ingredients', fetcher);
-  const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR('/api/prices', fetcher);
+  const { auth } = useAuth();
+  const { success, error: showError } = useNotification();
+  const { data: ingredients, error: ingredientsError } = useSWR(
+    auth.isAuthenticated ? '/api/ingredients' : null,
+    fetcher
+  );
+  const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR(
+    auth.isAuthenticated ? '/api/prices' : null,
+    fetcher
+  );
 
   const [filterIngredientId, setFilterIngredientId] = useState('');
   const [filterDate, setFilterDate] = useState('');
@@ -21,6 +34,22 @@ const Prices = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   const router = useRouter();
+
+  // Ingredient type options with icons
+  const ingredientTypeOptions = [
+    { value: 'base', label: t('base'), icon: FaUtensils },
+    { value: 'spice', label: t('spice'), icon: FaFlask },
+    { value: 'sauce', label: t('sauce'), icon: FaTint },
+  ];
+
+  const getTypeIcon = (type: string) => {
+    const typeOption = ingredientTypeOptions.find(option => option.value === type);
+    if (typeOption) {
+      const IconComponent = typeOption.icon;
+      return <IconComponent className="me-1" />;
+    }
+    return <FaTag className="me-1" />;
+  };
 
   useEffect(() => {
     if (ingredients && prices) {
@@ -45,22 +74,25 @@ const Prices = () => {
       router.push('/auth/signin');
       return;
     }
-    
+
     try {
       const currentDate = new Date().toISOString();
+
+      const requestData = {
+        ingredient_id: parseInt(priceData.ingredient_id, 10),
+        price: parseFloat(priceData.price),
+        quantity: parseInt(priceData.quantity, 10),
+        unit: priceData.unit,
+        date: currentDate
+      };
+
       const response = await fetcher('/api/prices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ingredient_id: priceData.ingredient_id,
-          price: parseFloat(priceData.price),
-          quantity: parseFloat(priceData.quantity),
-          unit: priceData.unit,
-          date: currentDate
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response || response.error) {
@@ -69,7 +101,6 @@ const Prices = () => {
 
       mutatePrices();
     } catch (error) {
-      // Пробрасываем ошибку дальше для обработки в модальном окне
       throw error;
     }
   };
@@ -86,15 +117,15 @@ const Prices = () => {
     if (filterDate) queryParams.append('date', filterDate);
     if (sortColumn) queryParams.append('sort_column', sortColumn);
     if (sortDirection) queryParams.append('sort_direction', sortDirection);
-  
+
     try {
       const data = await fetcher('/api/prices?' + queryParams.toString());
       mutatePrices(data, false);
     } catch (error) {
-      console.error('Failed to load prices', error);
+      showError(t('failedToLoadPrices'));
     }
   };
-  
+
   const sortPrices = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -105,119 +136,133 @@ const Prices = () => {
     loadPrices();
   };
 
-  const ingredientOptions = ingredients ? ingredients.map((ingredient: any) => ({ value: ingredient.id, label: ingredient.name })) : [];
+  const ingredientOptions = ingredients ? ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })) : [];
 
   const hasActiveFilters = filterIngredientId || filterDate;
 
-  if (isLoading) return <div>{t('loading')}</div>;
-  if (ingredientsError) return <div>{t('ingredientsError')}</div>;
-  if (pricesError) return <div>{t('pricesError')}</div>;
+  const hasError = ingredientsError || pricesError;
 
   return (
-    <div className="p-0">
-      <div className="prices-header d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 p-md-4 border-bottom bg-light">
-        <div className="header-content">
-          <h1 className="mb-2 text-primary">
-            <FaDollarSign className="me-2" />
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title d-flex align-items-center gap-3">
+            <FaDollarSign className="text-primary" />
             {t('prices')}
           </h1>
-          <div className="stats-summary d-flex flex-wrap gap-2">
-            <span className="badge bg-primary">
-              {t('totalPrices')}: {prices?.length || 0}
-            </span>
-            {hasActiveFilters && (
-              <span className="badge bg-warning">
-                {t('filtered')}
-              </span>
-            )}
-          </div>
+          {!isLoading && (
+            <p className="page-subtitle">
+              Total: {prices?.length || 0} prices
+              {hasActiveFilters && (
+                <span className="text-tertiary"> • filtered</span>
+              )}
+            </p>
+          )}
         </div>
-        <div className="action-buttons d-flex gap-2">
-          <Button 
-            variant="primary" 
-            onClick={() => setShowAddModal(true)}
-          >
-            <FaPlus className="me-2" /> 
-            {t('addPrice')}
-          </Button>
-        </div>
+        <Button
+          className="btn btn-primary"
+          onClick={() => setShowAddModal(true)}
+        >
+          <FaPlus className="me-2" />
+          {t('addPrice')}
+        </Button>
       </div>
-      <div className="prices-content p-3 p-md-4">
 
-      <div className="filter-section mb-4 p-4 rounded shadow-sm bg-light border">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <h5 className="mb-0 text-primary">
-            <FaFilter className="me-2" />
-            {t('filterPrices')}
-          </h5>
-          <Button 
-            variant="outline-secondary" 
+      {/* Filter Section */}
+      <div className="filter-bar">
+        <div className="filter-group">
+          <SelectDropdown
+            value={ingredientOptions.find(option => option.value === filterIngredientId) || null}
+            onChange={(option) => setFilterIngredientId(option ? option.value : '')}
+            options={ingredientOptions}
+            isClearable
+            placeholder={t('allIngredients')}
+            label="Ingredient"
+          />
+        </div>
+        <div className="filter-group">
+          <label className="filter-label">Date</label>
+          <Form.Control
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="form-control"
+          />
+        </div>
+        <Button
+          variant="primary"
+          onClick={loadPrices}
+          className="ms-auto"
+        >
+          {t('applyFilters')}
+        </Button>
+        {hasActiveFilters && (
+          <Button
+            variant="outline-secondary"
             size="sm"
             onClick={clearFilters}
-            disabled={!hasActiveFilters}
           >
-            <FaTimes className="me-1" />
-            {t('clearFilters')}
+            <FaTimes className="me-2" />
+            Clear
           </Button>
-        </div>
-        <Row className="g-3">
-          <Col md={6}>
-            <Form.Label className="fw-semibold">{t('filterByIngredient')}</Form.Label>
-            <Form.Group controlId="filterIngredientSelect">
-              <Select
-                value={ingredientOptions.find(option => option.value === filterIngredientId) || null}
-                onChange={(option) => setFilterIngredientId(option ? option.value : '')}
-                options={ingredientOptions}
-                isClearable
-                placeholder={t('allIngredients')}
-                className="react-select-container"
-                classNamePrefix="react-select"
-              />
-            </Form.Group>
-          </Col>
-          <Col md={6}>
-            <Form.Label className="fw-semibold">{t('filterByDate')}</Form.Label>
-            <Form.Group controlId="filterDateInput">
-              <Form.Control
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              />
-            </Form.Group>
-          </Col>
-        </Row>
-        <div className="d-flex justify-content-end mt-3">
-          <Button variant="primary" onClick={loadPrices}>
-            {t('applyFilters')}
-          </Button>
-        </div>
+        )}
       </div>
 
+      {/* Prices Table */}
       <div className="table-responsive">
-        <Table striped bordered hover className="mt-2">
-          <thead>
-            <tr>
-              <th onClick={() => sortPrices('ingredient.type')} className="cursor-pointer">{t('ingredientType')}</th>
-              <th onClick={() => sortPrices('ingredient.name')} className="cursor-pointer">{t('ingredientName')}</th>
-              <th onClick={() => sortPrices('price')} className="cursor-pointer">{t('price')}</th>
-              <th onClick={() => sortPrices('quantity')} className="cursor-pointer">{t('quantity')}</th>
-              <th onClick={() => sortPrices('unit')} className="cursor-pointer">{t('unit')}</th>
-              <th onClick={() => sortPrices('date')} className="cursor-pointer">{t('date')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {prices && prices.map((price: any) => (
+        {hasError ? (
+          <div className="text-center py-5">
+            <p className="text-error">
+              {ingredientsError ? t('ingredientsError') : t('pricesError')}
+            </p>
+          </div>
+        ) : isLoading ? (
+          <TableSkeleton rows={10} columns={6} />
+        ) : !prices || prices.length === 0 ? (
+          <EmptyState
+            type="prices"
+            message={hasActiveFilters ? t('noPricesFound') : t('noPrices')}
+            actionLabel={t('addPrice')}
+            onAction={() => setShowAddModal(true)}
+          />
+        ) : (
+          <Table className="table">
+            <thead>
+              <tr>
+                <th onClick={() => sortPrices('ingredient.type')} className="cursor-pointer">{t('ingredientType')}</th>
+                <th onClick={() => sortPrices('ingredient.name')} className="cursor-pointer">{t('ingredientName')}</th>
+                <th onClick={() => sortPrices('price')} className="cursor-pointer">{t('price')}</th>
+                <th onClick={() => sortPrices('quantity')} className="cursor-pointer">{t('quantity')}</th>
+                <th onClick={() => sortPrices('unit')} className="cursor-pointer">{t('unit')}</th>
+                <th onClick={() => sortPrices('date')} className="cursor-pointer">{t('date')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prices.map((price: Price) => (
               <tr key={price.id}>
-                <td>{price.ingredient.type}</td>
+                <td>
+                  <span className={`badge badge-${
+                    price.ingredient.type === 'base' ? 'primary' :
+                    price.ingredient.type === 'spice' ? 'warning' :
+                    price.ingredient.type === 'sauce' ? 'info' : 'secondary'
+                  }`}>
+                    {getTypeIcon(price.ingredient.type)}
+                    {t(price.ingredient.type)}
+                  </span>
+                </td>
                 <td>{price.ingredient.name}</td>
-                <td>{price.price} {t("currency")}</td>
+                <td className="fw-semibold">{price.price} {t("currency")}</td>
                 <td>{price.quantity}</td>
                 <td>{t(price.unit)}</td>
-                <td>{new Date(price.date).toLocaleString()}</td>
+                <td className="text-secondary small">
+                  {new Date(price.date).toLocaleDateString()}
+                </td>
               </tr>
             ))}
           </tbody>
         </Table>
+        )}
       </div>
 
       <AddPriceModal
@@ -226,7 +271,6 @@ const Prices = () => {
         onSave={handleAddPrice}
         ingredients={ingredients || []}
       />
-      </div>
     </div>
   );
 };

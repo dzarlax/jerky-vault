@@ -4,15 +4,15 @@ import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
 import { useAuth } from '../utils/authContext';
 import { Navbar, Nav, Dropdown, Container, Button } from 'react-bootstrap';
-import { 
-  FaHome, 
-  FaClipboardList, 
-  FaLeaf, 
-  FaTag, 
-  FaUsers, 
-  FaBoxOpen, 
-  FaShoppingCart, 
-  FaUser, 
+import {
+  FaHome,
+  FaClipboardList,
+  FaLeaf,
+  FaTag,
+  FaUsers,
+  FaBoxOpen,
+  FaShoppingCart,
+  FaUser,
   FaSignOutAlt,
   FaMoon,
   FaSun,
@@ -22,33 +22,30 @@ import {
 const ThemeToggle: React.FC = () => {
   const { t } = useTranslation('common');
   const [theme, setTheme] = useState<string>('light');
-  
+
   useEffect(() => {
-    // Проверка, что код выполняется на клиентской стороне
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') || 'light';
       setTheme(savedTheme);
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
   }, []);
-  
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
   };
-  
+
   return (
-    <Button 
-      variant="link" 
-      onClick={toggleTheme} 
-      className="theme-toggle p-0 ms-2 bg-transparent"
-      style={{ boxShadow: 'none' }}
+    <button
+      onClick={toggleTheme}
+      className="btn btn-ghost btn-sm"
       aria-label={theme === 'light' ? t('darkMode') : t('lightMode')}
     >
-      {theme === 'light' ? <FaMoon className="text-dark" /> : <FaSun className="text-warning" />}
-    </Button>
+      {theme === 'light' ? <FaMoon size={16} /> : <FaSun size={16} />}
+    </button>
   );
 };
 
@@ -65,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
 
   const handleSignOut = () => {
     logout();
-    router.push('/auth/signin'); // Перенаправление на страницу логина
+    router.push('/auth/signin');
   };
 
   const changeLanguage = (lng: string) => {
@@ -73,34 +70,27 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
     router.push({ pathname, query }, asPath, { locale: lng });
   };
 
-  // Определяем активную страницу
   const isActive = (path: string) => router.pathname === path;
 
   return (
-    <Navbar bg="transparent" expand="lg" className="py-1 sticky-top" expanded={expanded} onToggle={() => setExpanded(!expanded)}>
+    <Navbar bg="transparent" expand="lg" className="app-header" expanded={expanded} onToggle={() => setExpanded(!expanded)}>
       <Container>
         {toggleMobileSidebar && (
-          <Button 
-            variant="link" 
-            className="d-lg-none me-2 p-0" 
+          <Button
+            variant="link"
+            className="d-lg-none me-2 p-0 btn-ghost"
             onClick={toggleMobileSidebar}
             aria-label={t('toggleMenu')}
           >
-            <FaBars size={24} className="text-primary" />
+            <FaBars size={20} className="text-primary" />
           </Button>
         )}
         <Link href="/" locale={lang} passHref legacyBehavior>
           <Navbar.Brand className="d-flex align-items-center">
-            <div className="logo-container d-flex align-items-center justify-content-center me-2" 
-                style={{ 
-                  width: '24px', 
-                  height: '24px', 
-                  backgroundColor: 'var(--primary-color)', 
-                  borderRadius: '6px' 
-                }}>
-              <span style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>JV</span>
+            <div className="app-logo me-2">
+              <span>JV</span>
             </div>
-            <span className="fw-bold text-primary" style={{ fontSize: '0.9rem' }}>JerkyVault</span>
+            <span className="app-logo-text">JerkyVault</span>
           </Navbar.Brand>
         </Link>
         <div className="d-flex align-items-center ms-auto me-2">
@@ -119,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
             </div>
           ) : (
             <Dropdown align="end" className="me-2 d-none d-lg-block">
-              <Dropdown.Toggle variant="link" id="dropdown-user" className="p-0 nav-link bg-transparent">
+              <Dropdown.Toggle variant="link" id="dropdown-user" className="user-dropdown-toggle">
                 <FaUser className="text-primary" />
               </Dropdown.Toggle>
               <Dropdown.Menu>
@@ -136,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
             </Dropdown>
           )}
           <Dropdown align="end" className="me-2">
-            <Dropdown.Toggle variant="link" id="dropdown-language" className="p-0 nav-link bg-transparent">
+            <Dropdown.Toggle variant="link" id="dropdown-language" className="language-dropdown-toggle">
               <img src={`/flags/${lang}.png`} alt={lang} width={20} height={14} className="rounded" />
             </Dropdown.Toggle>
             <Dropdown.Menu>
@@ -150,54 +140,54 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
               </Dropdown.Item>
               <Dropdown.Item onClick={() => changeLanguage('rs')} active={lang === 'rs'}>
                 <img src="/flags/rs.png" alt="Srbski" width={18} height={13} className="me-2 rounded" />
-                Srbski
+                Srpski
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
           <ThemeToggle />
         </div>
-        <Navbar.Toggle aria-controls="main-navbar" />
+        <Navbar.Toggle aria-controls="main-navbar" className="btn-ghost" />
         <Navbar.Collapse id="main-navbar">
           {showNavLinks && auth.isAuthenticated && (
             <Nav className="mx-auto">
               <Link href="/" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/') ? 'active' : ''}`}>
                   <FaHome className="me-2" /> {t('home')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/recipes" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/recipes') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/recipes') ? 'active' : ''}`}>
                   <FaClipboardList className="me-2" /> {t('recipes')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/ingredients" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/ingredients') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/ingredients') ? 'active' : ''}`}>
                   <FaLeaf className="me-2" /> {t('ingredients')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/prices" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/prices') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/prices') ? 'active' : ''}`}>
                   <FaTag className="me-2" /> {t('prices')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/clients" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/clients') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/clients') ? 'active' : ''}`}>
                   <FaUsers className="me-2" /> {t('clients')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/products" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/products') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/products') ? 'active' : ''}`}>
                   <FaBoxOpen className="me-2" /> {t('products')}
                 </Nav.Link>
               </Link>
-              
+
               <Link href="/orders" locale={lang} passHref legacyBehavior>
-                <Nav.Link className={`mx-1 d-flex align-items-center ${isActive('/orders') ? 'active' : ''}`}>
+                <Nav.Link className={`nav-link-custom ${isActive('/orders') ? 'active' : ''}`}>
                   <FaShoppingCart className="me-2" /> {t('orders')}
                 </Nav.Link>
               </Link>
@@ -244,4 +234,4 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
   );
 };
 
-export default Header;
+export default React.memo(Header);

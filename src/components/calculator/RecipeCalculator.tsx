@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, ListGroup } from 'react-bootstrap';
 import { FaCalculator } from 'react-icons/fa';
+import { Recipe } from '../../types/api';
 
 interface RecipeCalculatorProps {
   show: boolean;
   onHide: () => void;
-  recipe: any;
+  recipe: Recipe;
   t: (key: string) => string;
 }
 
 const RecipeCalculator: React.FC<RecipeCalculatorProps> = ({ show, onHide, recipe, t }) => {
-  const [baseIngredient, setBaseIngredient] = useState<any>(null);
+  const [baseIngredient, setBaseIngredient] = useState<{
+    id: number;
+    quantity: string;
+    unit: string;
+    ingredient: { name: string };
+  } | null>(null);
   const [baseWeight, setBaseWeight] = useState<string>('');
-  const [calculatedIngredients, setCalculatedIngredients] = useState<any[]>([]);
+  const [calculatedIngredients, setCalculatedIngredients] = useState<Array<{
+    id: number;
+    quantity: string;
+    unit: string;
+    ingredient: { name: string };
+  }>>([]);
 
   useEffect(() => {
     if (recipe && recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0) {
@@ -34,7 +45,12 @@ const RecipeCalculator: React.FC<RecipeCalculatorProps> = ({ show, onHide, recip
 
       if (!isNaN(originalWeight) && !isNaN(newWeight) && originalWeight > 0) {
         const ratio = newWeight / originalWeight;
-        const newCalculatedIngredients = recipe.recipe_ingredients.map((ing: any) => {
+        const newCalculatedIngredients = recipe.recipe_ingredients.map((ing: {
+          id: number;
+          quantity: string;
+          unit: string;
+          ingredient: { name: string };
+        }) => {
           const newQuantity = parseFloat(ing.quantity) * ratio;
           return {
             ...ing,
@@ -75,7 +91,12 @@ const RecipeCalculator: React.FC<RecipeCalculatorProps> = ({ show, onHide, recip
           </Form>
         )}
         <ListGroup>
-          {calculatedIngredients.map((ing: any) => (
+          {calculatedIngredients.map((ing: {
+            id: number;
+            quantity: string;
+            unit: string;
+            ingredient: { name: string };
+          }) => (
             <ListGroup.Item key={ing.id}>
               <div className="d-flex justify-content-between align-items-center">
                 <span>{ing.ingredient.name}</span>
@@ -96,4 +117,4 @@ const RecipeCalculator: React.FC<RecipeCalculatorProps> = ({ show, onHide, recip
   );
 };
 
-export default RecipeCalculator; 
+export default React.memo(RecipeCalculator); 
