@@ -301,6 +301,13 @@
       <li>Shortened donut-chart center labels, reduced center text size for the smaller dashboard chart cards, and put performance cards on the same <code>g-3</code> grid as the rest of the dashboard so labels and spacing no longer collide.</li>
     </ul>
     <p><strong>Narrow dashboard checks run:</strong> browser QA at 900px width on <code>/ru</code> around the metric and chart-card sections, <code>npm run lint</code>, and <code>npm run build:docker</code>. The verified dashboard metric cards were two per row, 403px wide, 145px tall, with 32px icons and no chart center-text overlap.</p>
+    <p class="done">Clients/Ingredients/Prices CRUD slice completed on 2026-05-24.</p>
+    <ul>
+      <li>Localized visible page subtitles and filter labels that still used hard-coded English on Clients, Ingredients, and Prices.</li>
+      <li>Removed a duplicate Ingredients auth redirect so <code>withAuth</code> remains the only route guard for that page.</li>
+      <li>Refined shared CRUD card/table surfaces through the adapter, including compact client cards, table headers, cursor affordance for sortable headers, and mobile-safe price-table scrolling.</li>
+    </ul>
+    <p><strong>CRUD checks run:</strong> browser QA for <code>/ru/clients</code>, <code>/ru/ingredients</code>, and <code>/ru/prices</code> at 900px plus mobile checks at 390px, <code>npm run lint</code>, and <code>npm run build:docker</code>. Prices now use a horizontal table scroll on mobile without wrapping price values such as <code>123 RSD</code>.</p>
   </section>
 
   <section class="risk">

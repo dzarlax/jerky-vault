@@ -400,7 +400,7 @@ h6,
 /* Orders workflow pass. */
 .filter-bar {
   gap: var(--space-4);
-  align-items: end;
+  align-items: flex-end;
   padding: var(--space-4);
   border-color: var(--border-primary);
   border-radius: var(--radius-lg);
@@ -413,6 +413,68 @@ h6,
 
 .filter-group {
   min-width: min(260px, 100%);
+}
+
+.client-card {
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.client-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.client-card-header {
+  padding: var(--space-4);
+  background: var(--surface-secondary);
+}
+
+.client-card-body {
+  padding: var(--space-4);
+}
+
+.client-name {
+  font-size: var(--text-base);
+  line-height: var(--leading-tight);
+  min-width: 0;
+}
+
+.client-contact-link {
+  min-width: 0;
+}
+
+.client-contact-link span,
+.source-value {
+  overflow-wrap: anywhere;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  color: var(--text-tertiary) !important;
+  font-size: var(--text-xs) !important;
+  font-weight: var(--font-semibold) !important;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.prices-table {
+  min-width: 760px;
+}
+
+.prices-table th,
+.prices-table td {
+  white-space: nowrap;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .orders-table-wrap {

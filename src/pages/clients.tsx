@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
@@ -146,9 +146,9 @@ const Clients = ({ mapboxToken }) => {
           </h1>
           {!isLoading && (
             <p className="page-subtitle">
-              Total: {clients.length} clients
+              {t('total')}: {clients.length} {t('clients').toLowerCase()}
               {filteredClients && filteredClients.length !== clients.length && (
-                <span className="text-tertiary"> • {filteredClients.length} filtered</span>
+                <span className="text-tertiary"> / {filteredClients.length} {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -165,7 +165,7 @@ const Clients = ({ mapboxToken }) => {
       {/* Search Section */}
       <div className="filter-bar">
         <div className="filter-group flex-grow-1">
-          <label className="filter-label">Search</label>
+          <label className="filter-label">{t('search')}</label>
           <InputGroup>
             <InputGroup.Text className="bg-transparent">
               <FaSearch className="text-secondary" />
