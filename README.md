@@ -125,7 +125,7 @@ Create a `.env.local` file in the project root:
 
 ```env
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080/api
+NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 
 # Authentication

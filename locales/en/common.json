@@ -283,7 +283,7 @@
   "enterCurrentPassword": "Enter current password",
   "enterNewPassword": "Enter new password",
   "confirmNewPassword": "Confirm new password",
-  "passwordMinLength": "Minimum 3 characters",
+  "passwordMinLength": "Minimum 8 characters",
   "success": "Success",
   "filterOrders": "Filter Orders",
   "selectProduct": "Select Product",
