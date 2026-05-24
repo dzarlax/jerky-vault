@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: Move JerkyVault Images to GitHub Container Registry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #fff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #d8dde5;
+      --code: #eef1f5;
+      --accent: #8b2635;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ead7dc;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta { color: var(--muted); margin-top: 6px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+    .approval { border-left: 4px solid var(--warning); }
+    .risk { border-left: 4px solid var(--danger); }
+    .success { border-left: 4px solid var(--ok); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Implementation Plan: Move JerkyVault Images to GitHub Container Registry</h1>
+    <span class="badge">Approved and implemented in frontend PR</span>
+    <p class="meta">Created 2026-05-24 from <code>D:\Projects\Code\Personal\jerky-vault</code>. The approved scope is frontend-only GHCR publishing. Backend migration and live deploy compose changes are handled separately.</p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>Migrate the JerkyVault frontend container image from Docker Hub to GitHub Container Registry (GHCR), then update frontend deployment references so the VPS pulls the frontend image from <code>ghcr.io</code>. Backend migration is explicitly out of scope for this plan and will be handled separately.</p>
+  </section>
+
+  <section>
+    <h2>Current Behavior</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Frontend</h3>
+        <p><code>D:\Projects\Code\Personal\jerky-vault\.github\workflows\main.yml</code> logs in to Docker Hub with <code>DOCKER_USERNAME</code> and <code>DOCKER_PASSWORD</code>, then pushes <code>${{ secrets.DOCKER_USERNAME }}/jerky-vault-frontend:latest</code> and a commit-SHA tag.</p>
+      </div>
+      <div class="card">
+        <h3>Backend</h3>
+        <p><code>D:\Projects\Code\Personal\jerky-vault-back\.github\workflows\main.yml</code> still publishes the backend Docker Hub image. This is noted only because the deploy compose contains both services; backend workflow and backend image names are out of scope here.</p>
+      </div>
+      <div class="card">
+        <h3>Deployment</h3>
+        <p><code>D:\Projects\Code\Personal\personal_ai_stack\deploy\jerkyvault\docker-compose.yaml</code> pulls <code>dzarlax/jerky-vault-frontend:latest</code> for the frontend and <code>dzarlax/jerky_vault_backend:latest</code> for the backend. This plan changes only the frontend image line. The deploy file contains live configuration and secrets, so changes must be narrow and reviewable.</p>
+      </div>
+      <div class="card">
+        <h3>Docs</h3>
+        <p>Frontend docs reference <code>dzarlax/jerky-vault-frontend:latest</code>. The example compose file also contains an older frontend image name, <code>dzarlax/jerky_vault:latest</code>, which is already inconsistent with the real deploy state.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Frontend image publishes to <code>ghcr.io/dzarlax/jerky-vault-frontend:latest</code> and <code>ghcr.io/dzarlax/jerky-vault-frontend:${{ github.sha }}</code>.</li>
+      <li>Frontend GitHub Actions use <code>GITHUB_TOKEN</code> and package write permissions instead of Docker Hub secrets.</li>
+      <li>Deployment compose references the GHCR frontend image while leaving the backend Docker Hub image untouched.</li>
+      <li>Frontend documentation and example compose files no longer point frontend deploys at Docker Hub image names.</li>
+      <li>Rollback remains simple: change image references back to Docker Hub and redeploy.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Assumptions and Unknowns</h2>
+    <ul>
+      <li>Target registry is GHCR under the same GitHub owner visible from remotes, <code>dzarlax</code>.</li>
+      <li>The user selected public packages. Public packages avoid requiring <code>docker login ghcr.io</code> on the VPS for pulls.</li>
+      <li>If packages are private, the VPS needs a GHCR read token and a one-time <code>docker login ghcr.io</code>. This should be decided before deploy.</li>
+      <li>The current frontend hotfix PR is separate and should not be mixed with this migration PR.</li>
+      <li>Backend GHCR migration will be performed separately by the user; this plan must not edit backend repository files.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <ul>
+      <li><code>D:\Projects\Code\Personal\jerky-vault\.github\workflows\main.yml</code> - switch login target to <code>ghcr.io</code>, add <code>packages: write</code>, and update image tags.</li>
+      <li><code>D:\Projects\Code\Personal\jerky-vault\DOCKER.md</code> - update pull/compose examples from Docker Hub to GHCR.</li>
+      <li><code>D:\Projects\Code\Personal\jerky-vault\docker-compose.yml.example</code> - update the frontend image example to GHCR and fix the stale frontend image name. Leave the backend example untouched unless it is part of frontend documentation wording.</li>
+      <li><code>D:\Projects\Code\Personal\personal_ai_stack\deploy\jerkyvault\docker-compose.yaml</code> - update only the frontend <code>image:</code> line to the GHCR reference after the frontend package exists; do not edit backend, live secrets, or unrelated deployment settings.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Wait for or intentionally separate from the current frontend hotfix PR, then create a clean branch for GHCR migration.</li>
+      <li>Update frontend workflow to authenticate to GHCR with <code>registry: ghcr.io</code>, <code>username: ${{ github.actor }}</code>, and <code>password: ${{ secrets.GITHUB_TOKEN }}</code>.</li>
+      <li>Add workflow permissions: <code>contents: read</code> and <code>packages: write</code>.</li>
+      <li>Update frontend image tags to <code>ghcr.io/dzarlax/jerky-vault-frontend:latest</code> and commit-SHA tag.</li>
+      <li>Update frontend documentation and compose examples to the GHCR frontend image name.</li>
+      <li>After the GHCR package exists, update <code>personal_ai_stack</code> deploy compose frontend image line only.</li>
+      <li>Open a PR for the frontend repository. If <code>personal_ai_stack</code> changes are committed separately, keep that commit/PR narrowly scoped to the frontend image reference.</li>
+      <li>After merge to <code>main</code>, confirm GitHub Actions publish the frontend package and set package visibility if needed.</li>
+      <li>Deploy by pulling the new GHCR images and restarting the JerkyVault stack, then verify frontend and backend endpoints.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li>Frontend: <code>npm run lint</code> and <code>npm run build:docker</code> before opening the PR.</li>
+      <li>Workflow syntax: inspect YAML after edits and, if available, use <code>gh workflow list</code> / GitHub PR checks to verify workflow parsing.</li>
+      <li>Image publishing: after merge, verify frontend package tags exist via GitHub Packages UI or <code>docker manifest inspect ghcr.io/dzarlax/jerky-vault-frontend:latest</code>.</li>
+      <li>Deploy verification: after compose update, run <code>docker compose pull jerky_vault_frontend</code>, <code>docker compose up -d jerky_vault_frontend</code>, check frontend container status/logs, and hit <code>https://admin.jerky.in.rs</code>. Backend endpoint verification is optional sanity checking, not part of the migration.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>GHCR packages may default to private. If so, public VPS pulls will fail until package visibility is changed or the VPS logs in with a token.</li>
+      <li>Docker Hub images should remain available until GHCR deploy is verified, so rollback is immediate.</li>
+      <li>The deploy compose contains live secrets. Edits must be limited to image references and reviewed carefully before commit.</li>
+      <li>Because backend migration is separate, do not change backend image references in this pass.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>If GHCR publish or frontend pulls fail, restore the existing frontend Docker Hub image reference: <code>dzarlax/jerky-vault-frontend:latest</code>. The backend reference remains unchanged by this plan.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>GHCR package visibility: answered. Public.</li>
+      <li>Publishing target: answered. GHCR only; no Docker Hub transition window.</li>
+      <li>Deploy compose timing: wait until the frontend GHCR package is visible after merge, then update <code>personal_ai_stack</code>.</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>Approved by the user on 2026-05-24 with public GHCR package visibility and GHCR-only publishing. Backend migration remains out of scope.</p>
+  </section>
+
+  <section class="success">
+    <h2>Implementation Results</h2>
+    <ul>
+      <li><code>.github/workflows/main.yml</code> now logs in to <code>ghcr.io</code> with <code>GITHUB_TOKEN</code>, grants <code>packages: write</code>, and publishes <code>ghcr.io/dzarlax/jerky-vault-frontend:latest</code> plus a commit-SHA tag.</li>
+      <li><code>DOCKER.md</code> now documents the frontend image as a GHCR image instead of a Docker Hub image.</li>
+      <li><code>docker-compose.yml.example</code> now uses <code>ghcr.io/dzarlax/jerky-vault-frontend:latest</code> for the frontend example. The backend image example remains unchanged.</li>
+      <li>Live deploy compose in <code>personal_ai_stack</code> was not changed in this PR. It should be updated after the GHCR package is published and public.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run After Implementation</h2>
+    <ul>
+      <li><code>npm run lint</code> passed.</li>
+      <li><code>npm run build:docker</code> passed.</li>
+      <li><code>rg "DockerHub|Docker Hub|DOCKER_USERNAME|DOCKER_PASSWORD|dzarlax/jerky-vault-frontend|dzarlax/jerky_vault" .github DOCKER.md docker-compose.yml.example docs\ai-plans\2026-05-24-ghcr-migration.html -n</code> shows no active frontend Docker Hub workflow or docs references; remaining Docker Hub mentions are historical plan context, rollback notes, and backend-out-of-scope references.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
