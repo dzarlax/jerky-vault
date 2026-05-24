@@ -199,9 +199,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="mobile-nav-header">
           <div className="d-flex align-items-center">
             <div className="app-logo me-2">
-              <span>JV</span>
+              <img src="/batchvault-icon-64.png" alt="" aria-hidden="true" />
             </div>
-            <span className="app-logo-text">JerkyVault</span>
+            <span className="app-logo-text">BatchVault</span>
           </div>
           <button className="sidebar-close-btn" onClick={onClose} aria-label={t('close')}>
             <FaTimes size={16} />
@@ -213,9 +213,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="sidebar-header">
           <div className="d-flex justify-content-center align-items-center">
             <div className="app-logo me-2">
-              <span>JV</span>
+              <img src="/batchvault-icon-64.png" alt="" aria-hidden="true" />
             </div>
-            <span className="app-logo-text">JerkyVault</span>
+            <span className="app-logo-text">BatchVault</span>
           </div>
         </div>
       )}

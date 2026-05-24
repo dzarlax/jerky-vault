@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**JerkyVault Frontend** is a Next.js 14 web application for comprehensive management of jerky production operations. It communicates with a separate Go backend API (`jerky-vault-back`) for all data operations.
+**BatchVault Frontend** is a Next.js 14 web application for comprehensive management of small food production operations. It communicates with a separate Go backend API (`jerky-vault-back`) for all data operations.
 
 **Architecture:**
 - **Frontend:** Next.js 14 with TypeScript, Pages Router (not App Router)

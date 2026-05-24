@@ -1,4 +1,4 @@
-// Centralized API types for JerkyVault
+// Centralized API types for BatchVault
 // All API response/request types should be defined here
 
 // ===================== ORDER TYPES =====================

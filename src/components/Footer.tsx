@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
         <Row className="align-items-center justify-content-between">
           <Col md={6} className="text-center text-md-start">
             <p className="mb-0 small">
-              &copy; {currentYear} JerkyVault
+              &copy; {currentYear} BatchVault
             </p>
           </Col>
           <Col md={6} className="text-center text-md-end">

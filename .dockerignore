@@ -40,6 +40,8 @@ LICENSE
 Dockerfile
 docker-compose.yml
 docker-compose.yml.example
+docker-compose.dev.yml
+docker-compose.dev.yml.example
 .dockerignore
 
 # Exclude other unnecessary files

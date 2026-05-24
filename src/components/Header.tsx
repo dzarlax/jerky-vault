@@ -88,9 +88,9 @@ const Header: React.FC<HeaderProps> = ({ toggleMobileSidebar, showNavLinks = fal
         <Link href="/" locale={lang} passHref legacyBehavior>
           <Navbar.Brand className="d-flex align-items-center">
             <div className="app-logo me-2">
-              <span>JV</span>
+              <img src="/batchvault-icon-64.png" alt="" aria-hidden="true" />
             </div>
-            <span className="app-logo-text">JerkyVault</span>
+            <span className="app-logo-text">BatchVault</span>
           </Navbar.Brand>
         </Link>
         <div className="d-flex align-items-center ms-auto me-2">

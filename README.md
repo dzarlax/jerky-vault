@@ -1,14 +1,14 @@
-# JerkyVault
+# BatchVault
 
-**JerkyVault** is a modern, full-stack web application designed for comprehensive management of jerky production operations. Built with cutting-edge technologies including **Next.js 14**, **TypeScript**, and **Bootstrap**, the application provides a scalable, secure, and user-friendly platform for managing recipes, orders, clients, products, and production workflows.
+**BatchVault** is a modern, full-stack web application for small food production management. Built with **Next.js 14**, **TypeScript**, and **Bootstrap**, the application provides a scalable, secure, and user-friendly platform for managing recipes, ingredients, batches, orders, clients, products, pricing, cost, and profit workflows.
 
 ## 🚀 Key Features
 
 ### **Production Management**
-- **Recipe Management**: Create, edit, and organize jerky recipes with detailed ingredient lists and instructions
+- **Recipe Management**: Create, edit, and organize production recipes with detailed ingredient lists and instructions
 - **Order Tracking**: Complete order lifecycle management from creation to fulfillment
 - **Client Database**: Comprehensive client management with contact information and order history
-- **Product Catalog**: Manage your jerky product lineup with pricing and descriptions
+- **Product Catalog**: Manage your food product lineup with pricing and descriptions
 - **Inventory Control**: Track ingredients and manage stock levels
 - **Price Management**: Dynamic pricing system for products and services
 
@@ -176,7 +176,7 @@ Configure environment variables in `docker-compose.yml`:
 
 ## 🌐 Internationalization
 
-JerkyVault supports multiple languages out of the box:
+BatchVault supports multiple languages out of the box:
 
 - **English** (en) 🇬🇧
 - **Russian** (ru) 🇷🇺
@@ -328,4 +328,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-**JerkyVault** - Streamlining jerky production management with modern web technologies and the Smoked Ember design system.
+**BatchVault** - Food production management for recipes, batches, orders and profit, built with modern web technologies and the Smoked Ember design system.
