@@ -47,10 +47,13 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="btn btn-ghost btn-sm"
+      className="sidebar-theme-btn"
       aria-label={theme === 'light' ? t('darkMode') : t('lightMode')}
     >
-      {theme === 'light' ? <FaMoon size={16} /> : <FaSun size={16} />}
+      <span className="sidebar-theme-icon">
+        {theme === 'light' ? <FaMoon size={15} /> : <FaSun size={15} />}
+      </span>
+      <span>{theme === 'light' ? t('darkMode') : t('lightMode')}</span>
     </button>
   );
 };
@@ -225,8 +228,16 @@ const Sidebar: React.FC<SidebarProps> = ({
       </Nav>
 
       <div className="sidebar-footer">
+        <div className="sidebar-footer-section">
+          <div className="sidebar-footer-label">
+            <FaMoon size={14} />
+            <span>{t('theme')}</span>
+          </div>
+          <ThemeToggle />
+        </div>
+
         <div className="sidebar-language-selector">
-          <div className="sidebar-language-label">
+          <div className="sidebar-footer-label">
             <FaGlobe size={14} />
             <span>{t('language')}</span>
           </div>
@@ -255,8 +266,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <div className="sidebar-footer-row">
-          <ThemeToggle />
+        <div className="sidebar-signout-row">
           <button
             className="sidebar-signout-btn"
             onClick={handleSignOut}

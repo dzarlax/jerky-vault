@@ -470,7 +470,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container dashboard-page">
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -490,7 +490,7 @@ const Dashboard = () => {
 
       <div className="page-content">
         {/* Main Statistics Cards with Sparklines */}
-        <Row className="g-3 mb-4">
+        <Row className="dashboard-stat-grid g-3 mb-4">
           <Col xs={12} md={6} xxl={3}>
             <MetricCard
               title={t('totalOrders')}
@@ -550,7 +550,7 @@ const Dashboard = () => {
               </h4>
             </div>
 
-            <Row className="g-3 mb-4">
+            <Row className="dashboard-stat-grid g-3 mb-4">
               <Col xs={12} md={6} xxl={3}>
                 <MetricCard
                   title={t('totalRevenue')}
