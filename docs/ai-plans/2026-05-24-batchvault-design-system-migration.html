@@ -294,6 +294,13 @@
       <li>Removed the duplicate Recipes auth redirect that could run before <code>withAuth</code> finished restoring the persisted token.</li>
     </ul>
     <p><strong>Products/Recipes checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser login with test credentials <code>123</code>/<code>123</code>, smoke checks for <code>/ru/products</code> and <code>/ru/recipes</code> at desktop and 390px mobile width. Console returned no warnings or errors for both checked pages, and mobile document width stayed within the viewport.</p>
+    <p class="done">Narrow dashboard card fix completed on 2026-05-24.</p>
+    <ul>
+      <li>Changed dashboard metric breakpoints so narrow tablet/small-desktop widths use one or two readable columns instead of squeezing four metric cards into the row.</li>
+      <li>Moved metric-card icons into a compact heading row, reduced the icon footprint, and placed sparklines beside the value block to remove excess vertical whitespace.</li>
+      <li>Shortened donut-chart center labels, reduced center text size for the smaller dashboard chart cards, and put performance cards on the same <code>g-3</code> grid as the rest of the dashboard so labels and spacing no longer collide.</li>
+    </ul>
+    <p><strong>Narrow dashboard checks run:</strong> browser QA at 900px width on <code>/ru</code> around the metric and chart-card sections, <code>npm run lint</code>, and <code>npm run build:docker</code>. The verified dashboard metric cards were two per row, 403px wide, 145px tall, with 32px icons and no chart center-text overlap.</p>
   </section>
 
   <section class="risk">

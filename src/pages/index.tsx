@@ -491,7 +491,7 @@ const Dashboard = () => {
       <div className="page-content">
         {/* Main Statistics Cards with Sparklines */}
         <Row className="g-3 mb-4">
-          <Col md={3} sm={6}>
+          <Col xs={12} md={6} xxl={3}>
             <MetricCard
               title={t('totalOrders')}
               value={orderStats.total || 0}
@@ -503,7 +503,7 @@ const Dashboard = () => {
             />
           </Col>
 
-          <Col md={3} sm={6}>
+          <Col xs={12} md={6} xxl={3}>
             <MetricCard
               title={t('totalIngredients')}
               value={ingredients.length || 0}
@@ -515,7 +515,7 @@ const Dashboard = () => {
             />
           </Col>
 
-          <Col md={3} sm={6}>
+          <Col xs={12} md={6} xxl={3}>
             <MetricCard
               title={t('totalClients')}
               value={clients.length}
@@ -527,7 +527,7 @@ const Dashboard = () => {
             />
           </Col>
 
-          <Col md={3} sm={6}>
+          <Col xs={12} md={6} xxl={3}>
             <MetricCard
               title={t('totalProducts')}
               value={dashboardStats?.total_products || 0}
@@ -551,7 +551,7 @@ const Dashboard = () => {
             </div>
 
             <Row className="g-3 mb-4">
-              <Col md={3} sm={6}>
+              <Col xs={12} md={6} xxl={3}>
                 <MetricCard
                   title={t('totalRevenue')}
                   value={`${profitData.total_revenue?.toFixed(0) || '0'} ${t('currency')}`}
@@ -563,7 +563,7 @@ const Dashboard = () => {
                 />
               </Col>
 
-              <Col md={3} sm={6}>
+              <Col xs={12} md={6} xxl={3}>
                 <MetricCard
                   title={t('totalCosts')}
                   value={`${profitData.total_costs?.toFixed(0) || '0'} ${t('currency')}`}
@@ -576,7 +576,7 @@ const Dashboard = () => {
                 />
               </Col>
 
-              <Col md={3} sm={6}>
+              <Col xs={12} md={6} xxl={3}>
                 <MetricCard
                   title={t('totalProfit')}
                   value={`${profitData.total_profit?.toFixed(0) || '0'} ${t('currency')}`}
@@ -589,7 +589,7 @@ const Dashboard = () => {
                 />
               </Col>
 
-              <Col md={3} sm={6}>
+              <Col xs={12} md={6} xxl={3}>
                 <MetricCard
                   title={`${t('profit')} / ${t('order').toLowerCase()}`}
                   value={`${profitData.order_count > 0 ? (profitData.total_profit / profitData.order_count).toFixed(0) : '0'} ${t('currency')}`}
@@ -605,8 +605,8 @@ const Dashboard = () => {
         )}
 
         {/* Performance Metrics */}
-        <Row className="mb-4">
-          <Col xs={12} sm={6} xl={3}>
+        <Row className="dashboard-performance-grid g-3 mb-4">
+          <Col xs={12} md={6} xxl={3}>
             <Card className="border-0 h-100 shadow-sm">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -631,7 +631,7 @@ const Dashboard = () => {
             </Card>
           </Col>
           
-          <Col xs={12} sm={6} xl={3}>
+          <Col xs={12} md={6} xxl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -662,7 +662,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={12} sm={6} xl={3}>
+          <Col xs={12} md={6} xxl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -680,7 +680,7 @@ const Dashboard = () => {
                     innerRadius={60}
                     showLegend={false}
                     centerText={ingredients.length.toString()}
-                    centerSubtext={t('totalIngredients')}
+                    centerSubtext={t('ingredients')}
                   />
                 ) : (
                   <div className="text-center py-4">
@@ -691,7 +691,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={12} sm={6} xl={3}>
+          <Col xs={12} md={6} xxl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -709,7 +709,7 @@ const Dashboard = () => {
                     innerRadius={60}
                     showLegend={false}
                     centerText={`${profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(0) : '0'}%`}
-                    centerSubtext={t('profitMargin')}
+                    centerSubtext={t('margin')}
                   />
                 ) : (
                   <div className="text-center py-4">

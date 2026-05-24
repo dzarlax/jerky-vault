@@ -37,24 +37,28 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
   return (
     <div className="stat-card">
-      <div className={`stat-icon ${getIconVariantClass()}`}>{icon}</div>
-      <div className="stat-content">
+      <div className="stat-card-heading">
+        <div className={`stat-icon ${getIconVariantClass()}`}>{icon}</div>
         <div className="stat-label">{title}</div>
-        <div className="stat-value">{value}</div>
-        {change !== undefined && (
-          <div className="stat-change">
-            {changeType === 'increase' ? (
-              <span style={{ color: 'var(--success-500)' }}>+{change}%</span>
-            ) : (
-              <span style={{ color: 'var(--error-500)' }}>{change}%</span>
-            )}
-            <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
-              vs last 7 days
-            </span>
-          </div>
-        )}
+      </div>
+      <div className="stat-content">
+        <div className="stat-primary">
+          <div className="stat-value">{value}</div>
+          {change !== undefined && (
+            <div className="stat-change">
+              {changeType === 'increase' ? (
+                <span style={{ color: 'var(--success-500)' }}>+{change}%</span>
+              ) : (
+                <span style={{ color: 'var(--error-500)' }}>{change}%</span>
+              )}
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+                vs last 7 days
+              </span>
+            </div>
+          )}
+        </div>
         {sparklineData && sparklineData.length > 0 && (
-          <div style={{ marginTop: '12px' }}>
+          <div className="stat-sparkline">
             <Sparkline data={sparklineData} color={sparklineColor} />
           </div>
         )}
