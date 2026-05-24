@@ -479,7 +479,7 @@ const Dashboard = () => {
             {t('dashboard')}
           </h1>
           <p className="page-subtitle">
-            Overview of your business metrics
+            {t('dashboardDescription')}
           </p>
         </div>
         <Button variant="outline-primary" size="sm" onClick={() => mutateDashboardStats()}>

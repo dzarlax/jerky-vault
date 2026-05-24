@@ -1,6 +1,6 @@
-import { Form, Button, Container } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import fetcher from '../../utils/fetcher';
 import { useAuth } from '../../utils/authContext';
@@ -13,7 +13,7 @@ export default function SignIn() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
@@ -28,7 +28,7 @@ export default function SignIn() {
 
       // Если fetcher уже возвращает JSON, то нет необходимости вызывать response.json()
       if (!data || !data.token) {
-        setError('Invalid response from server');
+        setError(t('invalidServerResponse'));
         return;
       }
 
@@ -38,14 +38,17 @@ export default function SignIn() {
       // Redirect to the protected page or home page
       router.push('/');
     } catch (error) {
-      setError('Request failed, please try again later.');
+      setError(t('requestFailed'));
     }
   };
 
   return (
-    <Container>
-      <h1 className="my-4">{t('signIn')}</h1>
-      <Form onSubmit={handleSubmit}>
+    <div className="auth-card">
+      <div className="auth-card-header">
+        <h1>{t('signIn')}</h1>
+        <p>{t('pleaseSignIn')}</p>
+      </div>
+      <Form onSubmit={handleSubmit} className="auth-form">
         <Form.Group controlId="username">
           <Form.Label>{t('username')}</Form.Label>
           <Form.Control
@@ -71,6 +74,6 @@ export default function SignIn() {
           {t('signIn')}
         </Button>
       </Form>
-    </Container>
+    </div>
   );
 }

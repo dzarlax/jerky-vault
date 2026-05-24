@@ -314,6 +314,13 @@
       <li>Fixed long mobile modals by capping modal content height and making <code>.modal-body</code> scroll internally, keeping footer actions reachable.</li>
     </ul>
     <p><strong>Modal checks run:</strong> browser QA at 390px for the six create modals, <code>npm run lint</code>, and <code>npm run build:docker</code>. The longest tested Client modal now fits within the viewport with a scrollable body and visible footer.</p>
+    <p class="done">Auth/Profile and wide-screen dashboard pass completed on 2026-05-24.</p>
+    <ul>
+      <li>Moved Sign In and Sign Up into compact BatchVault auth cards and localized the remaining auth/dashboard metric strings that were still hard-coded in English.</li>
+      <li>Removed the duplicate Profile auth redirect so <code>withAuth</code> remains the route guard, and aligned the new-password input with the existing 8-character validation.</li>
+      <li>Raised the app content max width for wide screens, kept dashboard metric rows visually even at 1920px, and hid sparklines on mobile metric cards to avoid excess empty space.</li>
+    </ul>
+    <p><strong>Auth/Profile and wide-screen checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser login with test credentials <code>123</code>/<code>123</code>, and viewport smoke checks at 390px, 900px, and 1920px. Dashboard and Orders had no horizontal overflow at 1920px; dashboard metric cards did not overlap at 390px or 900px.</p>
   </section>
 
   <section class="risk">

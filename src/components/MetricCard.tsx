@@ -1,4 +1,5 @@
 import React from 'react';
+import useTranslation from 'next-translate/useTranslation';
 import { Sparkline } from './charts';
 
 interface MetricCardProps {
@@ -22,6 +23,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   sparklineColor = 'var(--success-500)',
   iconVariant = 'primary',
 }) => {
+  const { t } = useTranslation('common');
+
   const getIconVariantClass = () => {
     switch (iconVariant) {
       case 'success':
@@ -52,7 +55,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 <span style={{ color: 'var(--error-500)' }}>{change}%</span>
               )}
               <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
-                vs last 7 days
+                {t('vsLast7Days')}
               </span>
             </div>
           )}
