@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
-import { Form, Button, Table, Row, Col, Badge, InputGroup } from 'react-bootstrap';
+import { Form, Button, Table, InputGroup } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../utils/fetcher';
 import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
-import { FaPlus, FaFilter, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint } from 'react-icons/fa';
 import AddIngredientModal from '../components/modal/Ingredients/AddIngredientModal';
 import { Ingredient } from '../types/api';
 import SelectDropdown from '../components/SelectDropdown';
@@ -22,13 +22,6 @@ const Ingredients: React.FC = () => {
   const [filterType, setFilterType] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
-
-  // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      router.push('/auth/signin');
-    }
-  }, [auth.isAuthenticated, router]);
 
   const ingredientTypeOptions = [
     { value: 'base', label: t('base'), icon: FaUtensils },
@@ -110,9 +103,9 @@ const Ingredients: React.FC = () => {
           </h1>
           {!isLoading && (
             <p className="page-subtitle">
-              Total: {ingredients?.length || 0} ingredients
+              {t('total')}: {ingredients?.length || 0} {t('ingredients').toLowerCase()}
               {hasActiveFilters && (
-                <span className="text-tertiary"> • {filteredIngredients.length} filtered</span>
+                <span className="text-tertiary"> / {filteredIngredients.length} {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -129,7 +122,7 @@ const Ingredients: React.FC = () => {
       {/* Filter Section */}
       <div className="filter-bar">
         <div className="filter-group">
-          <label className="filter-label">Search</label>
+          <label className="filter-label">{t('search')}</label>
           <InputGroup>
             <InputGroup.Text className="bg-transparent">
               <FaSearch className="text-secondary" />
@@ -150,7 +143,7 @@ const Ingredients: React.FC = () => {
             options={ingredientTypeOptions}
             isClearable
             placeholder={t('allTypes')}
-            label="Type"
+            label={t('type')}
           />
         </div>
         {hasActiveFilters && (
@@ -161,7 +154,7 @@ const Ingredients: React.FC = () => {
             className="ms-auto"
           >
             <FaTimes className="me-2" />
-            Clear
+            {t('clear')}
           </Button>
         )}
       </div>

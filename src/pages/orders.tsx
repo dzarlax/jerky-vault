@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import useSWR from "swr";
 import fetcher from "../utils/fetcher";
 import useTranslation from "next-translate/useTranslation";
-import { Table, Button, Row, Col, Form } from "react-bootstrap";
+import { Table, Button } from "react-bootstrap";
 import { SingleValue } from 'react-select';
-import dynamic from 'next/dynamic';
 import TableSkeleton from '../components/skeletons/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { StatusBadge } from '../components/StatusBadge';
@@ -17,10 +16,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Order, OrderItem, Client, Product, ORDER_STATUSES } from '../types/api';
-import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaFilter, FaTimes } from "react-icons/fa";
-import { FaShoppingBag, FaRubleSign } from "react-icons/fa";
-
-const Select = dynamic(() => import('react-select'), { ssr: false });
+import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaTimes } from "react-icons/fa";
 
 const Orders = () => {
   const { t } = useTranslation("common");
@@ -28,18 +24,22 @@ const Orders = () => {
   const { success, error: showError } = useNotification();
   const router = useRouter();
 
-  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(
+  const { data: ordersData, mutate: mutateOrders } = useSWR<Order[]>(
     auth.isAuthenticated ? "/api/orders" : null,
     fetcher
   );
-  const { data: clients = [], mutate: mutateClients } = useSWR<Client[]>(
+  const { data: clientsData = [], mutate: mutateClients } = useSWR<Client[]>(
     auth.isAuthenticated ? "/api/clients" : null,
     fetcher
   );
-  const { data: products = [], mutate: mutateProducts } = useSWR<Product[]>(
+  const { data: productsData = [], mutate: mutateProducts } = useSWR<Product[]>(
     auth.isAuthenticated ? "/api/products" : null,
     fetcher
   );
+
+  const orders = ordersData ?? [];
+  const clients = clientsData;
+  const products = productsData;
 
   const [clientId, setClientId] = useState<number | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -53,7 +53,6 @@ const Orders = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [statusOrderId, setStatusOrderId] = useState<number | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<number | null>(null);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<SingleValue<{ value: string; label: string }> | null>(null);
   const [selectedClientFilter, setSelectedClientFilter] = useState<SingleValue<{ value: number; label: string }> | null>(null);
@@ -63,7 +62,7 @@ const Orders = () => {
     label: t(status.value),
   })), [t]);
 
-  useEffect(() => {
+  const filteredOrders = useMemo(() => {
     let filtered = orders;
 
     if (selectedStatus) {
@@ -74,7 +73,7 @@ const Orders = () => {
       filtered = filtered.filter((order) => order.client_id === selectedClientFilter.value);
     }
 
-    setFilteredOrders(filtered);
+    return filtered;
   }, [selectedStatus, selectedClientFilter, orders]);
 
   const handleEditOrder = useCallback((order: Order) => {
@@ -295,7 +294,7 @@ const Orders = () => {
   };
 
   const hasActiveFilters = selectedStatus || selectedClientFilter;
-  const isLoading = !orders;
+  const isLoading = !ordersData;
 
   const formatCurrency = (value: number) => {
     return `${value.toFixed(2)} ₽`;
@@ -312,9 +311,9 @@ const Orders = () => {
           </h1>
           {!isLoading && (
             <p className="page-subtitle">
-              Total: {orders.length} orders
+              {t('total')}: {orders.length} {t('orders').toLowerCase()}
               {hasActiveFilters && (
-                <span className="text-tertiary"> • {filteredOrders.length} filtered</span>
+                <span className="text-tertiary"> / {filteredOrders.length} {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -341,9 +340,9 @@ const Orders = () => {
             options={statusOptions}
             value={selectedStatus}
             onChange={setSelectedStatus}
-            placeholder="All Statuses"
+            placeholder={t('allStatuses')}
             isClearable
-            label="Status"
+            label={t('status')}
           />
         </div>
         <div className="filter-group">
@@ -351,9 +350,9 @@ const Orders = () => {
             options={clientOptions}
             value={selectedClientFilter}
             onChange={setSelectedClientFilter}
-            placeholder="All Clients"
+            placeholder={t('allClients')}
             isClearable
-            label="Client"
+            label={t('client')}
           />
         </div>
         {hasActiveFilters && (
@@ -364,7 +363,7 @@ const Orders = () => {
             className="ms-auto"
           >
             <FaTimes className="me-2" />
-            Clear
+            {t('clear')}
           </Button>
         )}
       </div>
@@ -386,19 +385,19 @@ const Orders = () => {
           }}
         />
       ) : (
-        <div className="table-responsive">
-          <Table className="table">
+        <div className="table-responsive orders-table-wrap">
+          <Table className="table orders-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Cost</th>
-                <th>Profit</th>
-                <th className="text-end">Actions</th>
+                <th>{t('id')}</th>
+                <th>{t('client')}</th>
+                <th>{t('status')}</th>
+                <th>{t('date')}</th>
+                <th>{t('items')}</th>
+                <th>{t('total')}</th>
+                <th>{t('cost')}</th>
+                <th>{t('profit')}</th>
+                <th className="text-end">{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -459,7 +458,7 @@ const Orders = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="d-flex gap-2 justify-content-end">
+                    <div className="order-actions">
                       <button
                         onClick={() => handleChangeStatus(order.id)}
                         className="btn btn-ghost btn-sm"

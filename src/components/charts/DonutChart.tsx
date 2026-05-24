@@ -170,7 +170,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         textGroup
           .append('text')
           .attr('dy', '-0.5em')
-          .style('font-size', '32px')
+          .style('font-size', innerRadius <= 60 ? '28px' : '32px')
           .style('font-weight', '700')
           .style('fill', 'var(--text-primary)')
           .text(centerText);
@@ -180,7 +180,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         textGroup
           .append('text')
           .attr('dy', '1.5em')
-          .style('font-size', '14px')
+          .style('font-size', innerRadius <= 60 ? '12px' : '14px')
           .style('fill', 'var(--text-secondary)')
           .text(centerSubtext);
       }

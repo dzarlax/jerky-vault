@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Form, Button, Container } from 'react-bootstrap';
+import { FormEvent, useState } from 'react';
+import { Form, Button } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../../utils/fetcher';
 
@@ -9,7 +9,7 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const { t } = useTranslation('common');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert(t('passwordsDoNotMatch'));
@@ -33,9 +33,12 @@ export default function SignUp() {
   };
 
   return (
-    <Container>
-      <h1 className="my-4">{t('signUp')}</h1>
-      <Form onSubmit={handleSubmit}>
+    <div className="auth-card">
+      <div className="auth-card-header">
+        <h1>{t('signUp')}</h1>
+        <p>{t('basicInfo')}</p>
+      </div>
+      <Form onSubmit={handleSubmit} className="auth-form">
         <Form.Group controlId="username">
           <Form.Label>{t('username')}</Form.Label>
           <Form.Control
@@ -67,6 +70,6 @@ export default function SignUp() {
           {t('signUp')}
         </Button>
       </Form>
-    </Container>
+    </div>
   );
 }

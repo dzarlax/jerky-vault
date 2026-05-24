@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
-import { Form, Button, Table, Row, Col, InputGroup } from 'react-bootstrap';
+import { Form, Button, Table } from 'react-bootstrap';
 import TableSkeleton from '../components/skeletons/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
-import { FaPlus, FaDollarSign, FaFilter, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
+import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
@@ -153,9 +153,9 @@ const Prices = () => {
           </h1>
           {!isLoading && (
             <p className="page-subtitle">
-              Total: {prices?.length || 0} prices
+              {t('total')}: {prices?.length || 0} {t('prices').toLowerCase()}
               {hasActiveFilters && (
-                <span className="text-tertiary"> • filtered</span>
+                <span className="text-tertiary"> / {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -178,11 +178,11 @@ const Prices = () => {
             options={ingredientOptions}
             isClearable
             placeholder={t('allIngredients')}
-            label="Ingredient"
+            label={t('ingredient')}
           />
         </div>
         <div className="filter-group">
-          <label className="filter-label">Date</label>
+          <label className="filter-label">{t('date')}</label>
           <Form.Control
             type="date"
             value={filterDate}
@@ -204,7 +204,7 @@ const Prices = () => {
             onClick={clearFilters}
           >
             <FaTimes className="me-2" />
-            Clear
+            {t('clear')}
           </Button>
         )}
       </div>
@@ -227,7 +227,7 @@ const Prices = () => {
             onAction={() => setShowAddModal(true)}
           />
         ) : (
-          <Table className="table">
+          <Table className="table prices-table">
             <thead>
               <tr>
                 <th onClick={() => sortPrices('ingredient.type')} className="cursor-pointer">{t('ingredientType')}</th>

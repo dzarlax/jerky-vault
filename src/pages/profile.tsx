@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Form, Button, Alert, InputGroup } from 'react-bootstrap';
 import { useAuth, withAuth } from '../utils/authContext';
-import { useRouter } from 'next/router';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaShieldAlt, FaCalendarAlt, FaIdCard, FaEnvelope } from 'react-icons/fa';
 
 const Profile = () => {
   const { t } = useTranslation('common');
   const { auth } = useAuth();
-  const router = useRouter();
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -22,12 +20,6 @@ const Profile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      router.push('/auth/signin');
-    }
-  }, [auth.isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,7 +181,7 @@ const Profile = () => {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder={t('enterNewPassword')}
-                        minLength={3}
+                        minLength={8}
                         required
                       />
                       <Button
