@@ -340,3 +340,137 @@ h6,
     padding: var(--space-4);
   }
 }
+
+/* Orders workflow pass. */
+.filter-bar {
+  gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-4);
+  border-color: var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-bar:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-group {
+  min-width: min(260px, 100%);
+}
+
+.orders-table-wrap {
+  border-radius: var(--radius-lg) !important;
+}
+
+.orders-table {
+  min-width: 920px;
+}
+
+.orders-table th {
+  color: var(--text-tertiary) !important;
+  font-size: var(--text-xs) !important;
+  font-weight: var(--font-semibold) !important;
+  white-space: nowrap;
+}
+
+.orders-table td {
+  vertical-align: middle;
+}
+
+.orders-table .btn-link {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+}
+
+.orders-table .btn-link:hover {
+  color: var(--brand-500);
+}
+
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.order-actions .btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.status-badge {
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.modal-content {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+.modal-header,
+.modal-footer {
+  background: var(--surface-primary) !important;
+}
+
+.modal-title {
+  font-size: var(--text-lg) !important;
+}
+
+.order-item-card {
+  background: var(--surface-secondary);
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.order-item-header {
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.order-item-body .form-row {
+  gap: var(--space-3);
+}
+
+.order-summary {
+  min-width: min(280px, 100%);
+  padding: var(--space-3);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 767.98px) {
+  .filter-bar {
+    align-items: stretch;
+  }
+
+  .order-item-body .form-row {
+    flex-direction: column;
+  }
+
+  .modal-footer {
+    align-items: stretch;
+  }
+
+  .order-summary {
+    width: 100%;
+    margin: 0 0 var(--space-3) 0 !important;
+  }
+}

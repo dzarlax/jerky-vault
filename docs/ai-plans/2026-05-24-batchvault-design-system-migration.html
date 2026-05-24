@@ -277,6 +277,15 @@
       <li>Removed browser warnings from this path by loading <code>/config.js</code> through <code>next/script</code> and adding missing <code>language</code> and <code>noOrdersFound</code> translation keys to all locales.</li>
     </ul>
     <p><strong>Additional checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke checks at mobile and desktop widths. After the fix, mobile document width stayed within the viewport and browser console returned no warnings or errors for the checked page.</p>
+    <p class="done">Orders workflow slice completed on 2026-05-24.</p>
+    <ul>
+      <li>Refined the Orders table, status badges, action buttons, filters, and order modal surfaces through the adapter without changing API behavior.</li>
+      <li>Localized visible Orders labels that were still hard-coded in English.</li>
+      <li>Fixed a render loop in the Orders page by deriving filtered orders with <code>useMemo</code> instead of syncing derived state in <code>useEffect</code>.</li>
+      <li>Made <code>SelectDropdown</code> provide a stable <code>react-select</code> instance id to avoid hydration mismatch warnings.</li>
+      <li>Changed dev compose to isolate <code>.next</code> in a named volume, so local production builds no longer poison the Docker dev server.</li>
+    </ul>
+    <p><strong>Orders checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke checks for <code>/ru/orders</code> at desktop and mobile widths. Console returned no warnings or errors after restart, and mobile document width stayed within the viewport.</p>
   </section>
 
   <section class="risk">

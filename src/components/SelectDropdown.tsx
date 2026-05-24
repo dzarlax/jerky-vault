@@ -24,8 +24,10 @@ const SelectDropdown = forwardRef<SelectInstance<any>, SelectDropdownProps>(
     loadingMessage = 'Loading...',
     noOptionsMessage = 'No options',
     menuPortalTarget,
+    instanceId,
     ...props
   }, ref) => {
+    const generatedInstanceId = React.useId().replace(/:/g, '');
     // Default styles to ensure dropdown is always on top
     const defaultStyles = {
       menuPortal: (base: any) => ({
@@ -62,6 +64,7 @@ const SelectDropdown = forwardRef<SelectInstance<any>, SelectDropdownProps>(
           classNamePrefix="react-select"
           loadingMessage={() => loadingMessage}
           noOptionsMessage={() => noOptionsMessage}
+          instanceId={instanceId || generatedInstanceId}
           menuPortalTarget={menuPortalTarget || (typeof window !== 'undefined' ? document.body : undefined)}
           menuPosition={'fixed'}
           styles={styles}
