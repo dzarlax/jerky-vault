@@ -30,13 +30,6 @@ const Recipes: React.FC = () => {
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [calculatorRecipe, setCalculatorRecipe] = useState<any>(null);
 
-  // Проверка аутентификации и перенаправление на логин, если пользователь не аутентифицирован
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      router.push('/auth/signin');
-    }
-  }, [auth.isAuthenticated, router]);
-
   // Fetch списков рецептов и ингредиентов
   const { data: recipeNames, error: recipeNamesError } = useSWR(
     auth.isAuthenticated ? '/api/recipes' : null,
@@ -243,9 +236,9 @@ const Recipes: React.FC = () => {
             {t('recipes')}
           </h1>
           <div className="page-subtitle">
-            Total: {recipes?.length || 0} recipes
+            {t('total')}: {recipes?.length || 0} {t('recipes').toLowerCase()}
             {hasActiveFilters && (
-              <span className="text-tertiary"> • filtered</span>
+              <span className="text-tertiary"> / {t('filtered').toLowerCase()}</span>
             )}
           </div>
         </div>
@@ -277,8 +270,8 @@ const Recipes: React.FC = () => {
                 : []
             }
             isClearable
-            placeholder={t('recipeName')}
-            label="Recipe"
+            placeholder={t('allRecipes')}
+            label={t('recipe')}
           />
         </div>
         <div className="filter-group">
@@ -298,8 +291,8 @@ const Recipes: React.FC = () => {
                 : []
             }
             isClearable
-            placeholder={t('ingredientName')}
-            label="Ingredient"
+            placeholder={t('allIngredients')}
+            label={t('ingredient')}
           />
         </div>
         {hasActiveFilters && (
@@ -310,7 +303,7 @@ const Recipes: React.FC = () => {
             className="ms-auto"
           >
             <FaTimes className="me-2" />
-            Clear
+            {t('clear')}
           </Button>
         )}
       </div>

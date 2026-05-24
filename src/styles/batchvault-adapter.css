@@ -474,3 +474,104 @@ h6,
     margin: 0 0 var(--space-3) 0 !important;
   }
 }
+
+/* Products and recipes pass. */
+.products-grid,
+.recipe-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)) !important;
+  gap: var(--space-5) !important;
+}
+
+.product-card,
+.recipe-card {
+  overflow: hidden;
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.product-card:hover,
+.recipe-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.product-card-image {
+  height: 180px;
+  background: var(--surface-tertiary);
+}
+
+.product-card-content,
+.recipe-card-body {
+  padding: var(--space-4);
+}
+
+.product-card-title,
+.recipe-card-title {
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+}
+
+.product-card-description {
+  min-height: 44px;
+  line-height: var(--leading-normal);
+}
+
+.product-card-metrics {
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+}
+
+.product-metric {
+  min-width: 0;
+}
+
+.product-metric-value {
+  font-size: var(--text-sm);
+}
+
+.product-card-footer,
+.recipe-card-footer {
+  background: var(--surface-primary);
+  border-top: 1px solid var(--border-primary);
+}
+
+.recipe-card-header {
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.recipe-card-header::before {
+  display: none;
+}
+
+.recipe-card-cost {
+  width: fit-content;
+  margin-top: var(--space-3);
+  border: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+}
+
+.recipe-ingredient-item {
+  border-color: var(--border-primary);
+  box-shadow: none;
+}
+
+.recipe-ingredient-item:hover {
+  transform: none;
+  border-color: var(--border-secondary);
+}
+
+@media (max-width: 575.98px) {
+  .products-grid,
+  .recipe-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-4) !important;
+  }
+
+  .product-card-image {
+    height: 160px;
+  }
+}

@@ -266,7 +266,7 @@
       <li>Added a compatibility bridge for current <code>[data-theme="dark"]</code> dark mode rather than switching the app to the design-system <code>[dark-mode]</code> attribute.</li>
     </ul>
     <p><strong>Checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml run --rm builder</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke check on <code>http://127.0.0.1:3000/ru</code> at desktop and mobile sizes. The color adapter v1 was checked with the same lint, production-style build, dev-compose rebuild, and browser smoke flow.</p>
-    <p><strong>Known follow-up:</strong> the mobile dashboard still appears wider than the viewport in browser snapshot output. No console errors were reported, and this looks like an existing dashboard responsiveness issue rather than a direct result of the adapter. It should be handled as a focused frontend bug after this safe adapter slice.</p>
+    <p><strong>Known follow-up:</strong> the dashboard mobile overflow noted during the initial adapter slice was resolved in the dashboard/app-shell slice.</p>
     <p><strong>Build note:</strong> the dev-compose builder reported existing npm audit findings during dependency install, but the build itself completed successfully. Dependency remediation is out of scope for this visual migration slice.</p>
     <p class="done">Dashboard/app-shell slice completed on 2026-05-24.</p>
     <ul>
@@ -286,6 +286,14 @@
       <li>Changed dev compose to isolate <code>.next</code> in a named volume, so local production builds no longer poison the Docker dev server.</li>
     </ul>
     <p><strong>Orders checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke checks for <code>/ru/orders</code> at desktop and mobile widths. Console returned no warnings or errors after restart, and mobile document width stayed within the viewport.</p>
+    <p class="done">Products/Recipes card slice completed on 2026-05-24.</p>
+    <ul>
+      <li>Refined product and recipe card grids through the adapter: consistent surfaces, restrained hover movement, compact metadata sections, and mobile-safe single-column cards.</li>
+      <li>Changed Products filtering to derive filtered results with <code>useMemo</code> instead of storing duplicate filtered state.</li>
+      <li>Localized visible Product and Recipe filter labels, empty copy, clear actions, and the ProductCard margin label across English, Russian, and Serbian locales.</li>
+      <li>Removed the duplicate Recipes auth redirect that could run before <code>withAuth</code> finished restoring the persisted token.</li>
+    </ul>
+    <p><strong>Products/Recipes checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser login with test credentials <code>123</code>/<code>123</code>, smoke checks for <code>/ru/products</code> and <code>/ru/recipes</code> at desktop and 390px mobile width. Console returned no warnings or errors for both checked pages, and mobile document width stayed within the viewport.</p>
   </section>
 
   <section class="risk">

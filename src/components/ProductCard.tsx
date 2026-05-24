@@ -91,7 +91,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           <div className="product-metric">
-            <span className="product-metric-label">Margin:</span>
+            <span className="product-metric-label">{t('margin')}:</span>
             <span className={`product-metric-value ${profit >= 0 ? 'price' : 'cost'}`}>
               {profitMargin}%
             </span>

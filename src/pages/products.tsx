@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import { useRouter } from 'next/router';
@@ -45,21 +45,11 @@ const Products = () => {
   const [packageId, setPackageId] = useState<number | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: number; label: string }> | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: number; label: string }> | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<SingleValue<{ value: number; label: string }> | null>(null);
 
-  useEffect(() => {
-    setFilteredProducts(products || []);
-  }, [products]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [selectedRecipe, selectedPackage, selectedProduct]);
-
-
-  const applyFilters = () => {
+  const filteredProducts = useMemo(() => {
     let filtered = products || [];
     if (selectedRecipe) {
       filtered = filtered.filter(product =>
@@ -77,8 +67,8 @@ const Products = () => {
       filtered = filtered.filter(product => product.id === selectedProduct.value);
     }
 
-    setFilteredProducts(filtered);
-  };
+    return filtered;
+  }, [products, selectedPackage, selectedProduct, selectedRecipe]);
 
   const handleEditProduct = (product: Product) => {
     if (!recipes || !packages) {
@@ -255,9 +245,9 @@ const Products = () => {
           </h1>
           {!isLoading && (
             <p className="page-subtitle">
-              Total: {products?.length || 0} products
+              {t('total')}: {products?.length || 0} {t('products').toLowerCase()}
               {filteredProducts.length !== products?.length && (
-                <span className="text-tertiary"> • {filteredProducts.length} filtered</span>
+                <span className="text-tertiary"> / {filteredProducts.length} {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -278,7 +268,7 @@ const Products = () => {
             options={recipeOptions}
             onChange={setSelectedRecipe}
             value={selectedRecipe}
-            placeholder={t('chooseRecipe')}
+            placeholder={t('allRecipes')}
             isClearable
             label={t('recipe')}
           />
@@ -288,7 +278,7 @@ const Products = () => {
             options={packageOptions}
             onChange={setSelectedPackage}
             value={selectedPackage}
-            placeholder={t('choosePackage')}
+            placeholder={t('allPackages')}
             isClearable
             label={t('package')}
           />
@@ -298,7 +288,7 @@ const Products = () => {
             options={productOptions}
             onChange={setSelectedProduct}
             value={selectedProduct}
-            placeholder={t('chooseProduct')}
+            placeholder={t('allProducts')}
             isClearable
             label={t('product')}
           />
@@ -311,12 +301,11 @@ const Products = () => {
               setSelectedRecipe(null);
               setSelectedPackage(null);
               setSelectedProduct(null);
-              setFilteredProducts(products || []);
             }}
             className="ms-auto"
           >
             <FaTimes className="me-2" />
-            Clear
+            {t('clear')}
           </Button>
         ) : null}
       </div>
