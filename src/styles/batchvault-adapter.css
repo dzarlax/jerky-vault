@@ -1,0 +1,169 @@
+/* ========================================
+   BATCHVAULT APPLICATION DESIGN ADAPTER
+   Bridges the shared dzarlax design-system vocabulary to a dense app UI.
+   Do not import the editorial base typography directly into this app.
+   ======================================== */
+
+:root {
+  /* Shared design-system color base, adapted for BatchVault. */
+  --surface-primary: #ffffff;
+  --surface-secondary: #fcfaf7;
+  --surface-tertiary: #f5f0e8;
+  --surface-overlay: rgba(26, 26, 30, 0.42);
+  --text-primary: #1a1a1e;
+  --text-secondary: rgba(26, 26, 30, 0.7);
+  --text-tertiary: rgba(26, 26, 30, 0.5);
+  --text-inverse: #ffffff;
+  --border-primary: rgba(0, 0, 0, 0.08);
+  --border-secondary: rgba(0, 0, 0, 0.12);
+  --border-focus: var(--brand-500);
+
+  /* BatchVault keeps the burgundy brand with a copper secondary accent. */
+  --brand-50: #fff4ec;
+  --brand-100: #fee7d5;
+  --brand-200: #f8caa7;
+  --brand-300: #ec9f69;
+  --brand-400: #c97845;
+  --brand-500: #8b2635;
+  --brand-600: #7a1f2c;
+  --brand-700: #681924;
+  --brand-800: #56121d;
+  --brand-900: #450c16;
+
+  /* Shared design-system vocabulary aliases */
+  --bg: var(--surface-secondary);
+  --surface: var(--surface-primary);
+  --surface-2: var(--surface-secondary);
+  --surface-3: var(--surface-tertiary);
+  --text: var(--text-primary);
+  --border: var(--border-primary);
+  --border-hover: var(--border-secondary);
+  --accent: var(--brand-500);
+  --accent-hover: var(--brand-600);
+  --accent-foreground: var(--text-inverse);
+  --good: var(--success-500);
+  --good-bg: var(--success-50);
+  --warn: var(--warning-500);
+  --warn-bg: var(--warning-50);
+  --danger: var(--error-500);
+  --danger-bg: var(--error-50);
+
+  /* Product accent direction. */
+  --batchvault-copper: #c97845;
+  --batchvault-copper-soft: #fff4ec;
+  --batchvault-burgundy-soft: rgba(139, 38, 53, 0.1);
+
+  /* Application typography preset. */
+  --font-body: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --font-ui: var(--font-sans);
+  --font-numeric: var(--font-sans);
+  --leading-tight: 1.25;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.55;
+  --tracking-tight: 0;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.04em;
+
+  /* Dense admin surface defaults. */
+  --app-control-height-sm: 32px;
+  --app-control-height-md: 40px;
+  --app-table-cell-y: 10px;
+  --app-table-cell-x: 14px;
+  --app-section-gap: var(--space-6);
+
+  /* Keep cards crisp for a dashboard instead of a marketing page. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius: var(--radius-md);
+}
+
+[data-theme="dark"] {
+  --surface-primary: #22252a;
+  --surface-secondary: #1a1d21;
+  --surface-tertiary: #2a2d32;
+  --surface-overlay: rgba(0, 0, 0, 0.62);
+  --text-primary: #f5f5f5;
+  --text-secondary: rgba(245, 245, 245, 0.72);
+  --text-tertiary: rgba(245, 245, 245, 0.5);
+  --text-inverse: #ffffff;
+  --border-primary: rgba(255, 255, 255, 0.08);
+  --border-secondary: rgba(255, 255, 255, 0.12);
+  --border-focus: var(--brand-400);
+
+  --bg: var(--surface-secondary);
+  --surface: var(--surface-primary);
+  --surface-2: var(--surface-secondary);
+  --surface-3: var(--surface-tertiary);
+  --text: var(--text-primary);
+  --border: var(--border-primary);
+  --border-hover: var(--border-secondary);
+  --accent: var(--brand-400);
+  --accent-hover: var(--brand-300);
+  --accent-foreground: var(--text-inverse);
+  --good: #22c55e;
+  --good-bg: rgba(22, 163, 74, 0.15);
+  --warn: #f59e0b;
+  --warn-bg: rgba(217, 119, 6, 0.15);
+  --danger: #ef4444;
+  --danger-bg: rgba(220, 38, 38, 0.15);
+  --batchvault-copper-soft: rgba(201, 120, 69, 0.14);
+  --batchvault-burgundy-soft: rgba(139, 38, 53, 0.22);
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  font-family: var(--font-heading);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.table th {
+  letter-spacing: var(--tracking-caps) !important;
+}
+
+.table th,
+.table td {
+  padding: var(--app-table-cell-y) var(--app-table-cell-x) !important;
+}
+
+.form-label,
+.sidebar-section-title,
+.sidebar-language-label,
+.product-metric-label,
+.recipe-ingredient-quantity,
+.profile-info-label {
+  letter-spacing: var(--tracking-caps);
+}
+
+.btn {
+  min-height: var(--app-control-height-sm);
+  letter-spacing: var(--tracking-normal);
+}
+
+.btn:not(.btn-sm):not(.btn-lg) {
+  min-height: var(--app-control-height-md);
+}
+
+.badge {
+  letter-spacing: var(--tracking-wide);
+}

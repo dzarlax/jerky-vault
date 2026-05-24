@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: BatchVault Design System Migration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #fff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #d8dde5;
+      --code: #eef1f5;
+      --accent: #8b2635;
+      --accent-soft: #ead7dc;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ok: #047857;
+      --info: #0369a1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main { max-width: 1160px; margin: 0 auto; padding: 32px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; margin-bottom: 6px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta { color: var(--muted); margin-top: 6px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+    .approval { border-left: 4px solid var(--warning); }
+    .risk { border-left: 4px solid var(--danger); }
+    .decision { border-left: 4px solid var(--info); }
+    .done { color: var(--ok); font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid var(--border); padding: 9px 10px; vertical-align: top; text-align: left; }
+    th { background: #f3f4f6; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Implementation Plan: BatchVault Design System Migration</h1>
+    <span class="badge">Approval required before implementation</span>
+    <p class="meta">Created 2026-05-24 from <code>D:\Projects\Code\Personal\jerky-vault</code>. This plan covers planning and implementation for applying the local dzarlax design system to the BatchVault frontend without breaking the existing production build or dev-compose workflow.</p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>Migrate BatchVault toward the shared dzarlax design system while preserving the product's operational dashboard ergonomics. The migration should reuse design-system tokens and suitable CSS primitives, avoid directly importing editorial website patterns, and identify reusable app-specific components that can later be upstreamed into the design system.</p>
+  </section>
+
+  <section>
+    <h2>Inspected Current State</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>BatchVault frontend</h3>
+        <ul>
+          <li>Next.js 14 Pages Router in <code>src/pages</code>.</li>
+          <li>React Bootstrap and Bootstrap 5.3 are active dependencies.</li>
+          <li>Global imports currently load <code>bootstrap.min.css</code>, <code>src/styles/design-system.css</code>, and <code>src/styles/components.css</code> from <code>src/pages/_app.tsx</code>.</li>
+          <li>The current local theme is the old Smoked Ember token set with burgundy brand colors, slate neutrals, and <code>[data-theme="dark"]</code>.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Shared design system</h3>
+        <ul>
+          <li>CSS-first, minimal vanilla JS, no npm runtime dependency.</li>
+          <li>Sources are split across <code>tokens</code>, <code>base</code>, <code>components</code>, <code>themes</code>, <code>brand</code>, <code>js</code>, and generated <code>dist</code>.</li>
+          <li>Available component CSS includes buttons, forms, cards, tables, badges, alerts, spinner, empty-state, KPI/stat/tag chips, nav, lang switcher, theme toggle, and combobox.</li>
+          <li>The base design principles are currently website/editorial oriented: warm ivory background, dark graphite accent, Georgia headings, system body font, and <code>[dark-mode]</code> for dark mode.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="decision">
+    <h2>Key Design Decision: Typography</h2>
+    <p>The shared design system's base typography uses serif headings for <code>h1</code>, <code>h2</code>, and <code>h3</code>. That is appropriate for dzarlax.dev editorial pages, but it is not a good default for BatchVault's dense operational UI.</p>
+    <p><strong>Decision proposed for approval:</strong> do not import <code>base/typography.css</code> directly into BatchVault. Instead, use design-system size and line-height tokens where helpful, but introduce a BatchVault application typography adapter with system sans headings, tighter table/form density, and zero or near-zero letter spacing.</p>
+    <ul>
+      <li>Body and headings: system sans stack.</li>
+      <li>Page headings: <code>600</code> or <code>700</code>, compact line-height, no serif.</li>
+      <li>Tables and forms: optimized for scan speed and repeated use.</li>
+      <li>Marketing/editorial presets remain out of the app shell.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What We Can Reuse</h2>
+    <table>
+      <thead>
+        <tr><th>Design-system asset</th><th>How to use it in BatchVault</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>tokens/colors.css</code>, <code>spacing.css</code>, <code>shadows.css</code></td><td>Use as the base vocabulary, then override product accent and density in a BatchVault adapter.</td></tr>
+        <tr><td><code>themes/dark.css</code></td><td>Use conceptually, but bridge it to BatchVault's current <code>[data-theme="dark"]</code> unless we explicitly migrate the attribute to <code>[dark-mode]</code>.</td></tr>
+        <tr><td><code>components/buttons.css</code>, <code>forms.css</code></td><td>Map to React Bootstrap buttons/forms through CSS variables and adapter classes instead of rewriting every component at once.</td></tr>
+        <tr><td><code>components/cards.css</code>, <code>tables.css</code></td><td>Use for dashboard cards, CRUD tables, and modal section framing after checking Bootstrap collisions.</td></tr>
+        <tr><td><code>badges.css</code>, <code>tag-chip.css</code>, <code>stat-chip.css</code>, <code>kpi-bar.css</code></td><td>Good candidates for dashboard metrics, order statuses, ingredient/product tags, and compact analytics.</td></tr>
+        <tr><td><code>alert.css</code>, <code>spinner.css</code>, <code>empty-state.css</code></td><td>Good candidates for <code>ErrorState</code>, <code>LoadingState</code>, and <code>EmptyState</code> refresh.</td></tr>
+        <tr><td><code>theme-toggle.css</code>, <code>lang-switcher.css</code></td><td>Can inform Sidebar controls; implementation should remain React-driven.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>What We Should Not Reuse Directly</h2>
+    <ul>
+      <li><code>base/typography.css</code> as-is, because serif editorial headings are not right for an operational SaaS/admin interface.</li>
+      <li><code>hero.css</code>, <code>prose.css</code>, <code>share.css</code>, <code>footer.css</code>, and most of <code>timeline.css</code>, because they are content-site patterns rather than BatchVault workflow UI.</li>
+      <li>Design-system brand assets from <code>brand/</code>, because BatchVault now has its own product brand and logo.</li>
+      <li>Vanilla JS modules from <code>js/</code> directly in app flows. BatchVault should keep navigation, combobox, and interaction state in React components.</li>
+      <li>The generated <code>dist/dzarlax.css</code> as a blind import before testing, because it can override Bootstrap and current app-specific styles in unpredictable places.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What BatchVault Can Add Back to the Design System</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Application preset</h3>
+        <ul>
+          <li>Sans heading preset for dashboards and admin tools.</li>
+          <li>Density tokens for tables, forms, sidebars, and CRUD screens.</li>
+          <li>Theme bridge guidance for product-specific accents.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Dashboard primitives</h3>
+        <ul>
+          <li>App shell/sidebar/navigation group pattern.</li>
+          <li>Metric card and KPI row variants.</li>
+          <li>Status badge taxonomy for business workflows.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Data-entry patterns</h3>
+        <ul>
+          <li>CRUD modal section layout.</li>
+          <li>Data table toolbar: search, filters, actions.</li>
+          <li>React-friendly combobox/select guidance.</li>
+          <li>Skeleton, toast, empty, error, and loading states for app screens.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <ul>
+      <li><code>src/pages/_app.tsx</code> - update style import order only if we introduce a new adapter file.</li>
+      <li><code>src/styles/design-system.css</code> - split or replace the legacy Smoked Ember tokens with a BatchVault adapter built on shared design-system token names.</li>
+      <li><code>src/styles/components.css</code> - align existing app components with the adapter tokens and remove conflicting one-off values.</li>
+      <li><code>src/components/Sidebar.tsx</code> - align navigation, theme toggle, language switcher, and logo presentation.</li>
+      <li><code>src/components/Header.tsx</code> - align auth-page header and mobile menu affordances.</li>
+      <li><code>src/components/MetricCard.tsx</code>, <code>StatusBadge.tsx</code>, <code>EmptyState.tsx</code>, <code>LoadingState.tsx</code>, <code>ErrorState.tsx</code>, <code>NotificationToast.tsx</code> - map to reusable design-system-style states.</li>
+      <li><code>src/components/SelectDropdown.tsx</code> - keep React behavior, align visuals with design-system combobox patterns.</li>
+      <li><code>src/components/modal/**</code> - gradually normalize modal layout, form labels, spacing, and action rows.</li>
+      <li><code>locales/*/common.json</code> - only if new labels are introduced; visual migration should avoid copy churn.</li>
+      <li><code>docs/ai-plans/2026-05-24-batchvault-design-system-migration.html</code> - update after implementation with actual changes and checks.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Proposed Implementation Steps</h2>
+    <ol>
+      <li>Create a small local visual inventory: current dashboard, orders table, product cards, modal form, sign-in page, mobile sidebar, dark mode.</li>
+      <li>Define the BatchVault design adapter: product accent, neutral surfaces, typography preset, density, radius, shadows, and dark-mode bridge.</li>
+      <li>Introduce the adapter with minimal import churn and verify Bootstrap still renders correctly.</li>
+      <li>Refresh foundational app shell components first: Sidebar, Header/mobile toggle, theme/language controls.</li>
+      <li>Refresh reusable state and data components: MetricCard, StatusBadge, EmptyState, LoadingState, ErrorState, NotificationToast, SelectDropdown.</li>
+      <li>Apply the refreshed patterns to one representative high-traffic page first, preferably dashboard or orders.</li>
+      <li>Expand across remaining CRUD pages only after the representative page works in light, dark, desktop, and mobile.</li>
+      <li>Document design-system gaps discovered during the migration and, if useful, prepare a separate PR for upstream design-system additions.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>UX and Deployment Impact</h2>
+    <ul>
+      <li>UX impact is broad: most screens may receive visual changes, but API behavior, authentication, data fetching, and backend contracts should stay unchanged.</li>
+      <li>No database or backend migration is expected.</li>
+      <li>No production CDN dependency should be introduced. If shared design-system artifacts are consumed, they should be vendored, copied, or baked into the build artifact.</li>
+      <li>The existing dev-compose flow should remain intact: use the persistent frontend container to serve rebuilt output, and only run the builder after frontend source changes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code> - verify TypeScript/ESLint expectations for touched frontend files.</li>
+      <li><code>npm run build:docker</code> - verify the production-style Next.js build still works.</li>
+      <li><code>docker compose -f docker-compose.dev.yml run --rm builder</code> - rebuild the local dist only after source changes are complete.</li>
+      <li><code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code> - refresh the persistent serving container after the build output changes.</li>
+      <li>Use browser QA on <code>http://127.0.0.1:3000/ru</code> and auth pages.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Dashboard metrics, charts, recent orders, and empty/loading/error states remain legible.</li>
+      <li>Orders table, filters, status badges, and action buttons remain dense enough for operations work.</li>
+      <li>Modal forms keep clear labels, validation errors, dropdown portals, and action rows.</li>
+      <li>Light and dark modes both meet contrast expectations.</li>
+      <li>Russian, English, and Serbian labels do not overflow buttons, sidebar items, cards, or modals.</li>
+      <li>Mobile sidebar opens/closes correctly and does not cover important controls permanently.</li>
+      <li>Sign-in/sign-up pages still feel like BatchVault, not the editorial website.</li>
+      <li>Browser console has no new client-side errors.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Results</h2>
+    <p class="done">Initial safe migration slice completed on 2026-05-24.</p>
+    <ul>
+      <li>Added <code>src/styles/batchvault-adapter.css</code> as a narrow adapter layer instead of importing the full generated design-system bundle.</li>
+      <li>Connected the adapter from <code>src/pages/_app.tsx</code> after the existing local token file and before component styles.</li>
+      <li>Kept React components unchanged in this first slice to reduce regression risk.</li>
+      <li>Added shared design-system vocabulary aliases such as <code>--bg</code>, <code>--surface</code>, <code>--accent</code>, <code>--good</code>, <code>--warn</code>, and <code>--danger</code> while preserving BatchVault's existing burgundy product accent.</li>
+      <li>Added color adapter v1 from the shared design-system palette: warm ivory light background, white surfaces, warm border/text tokens, and graphite dark surfaces. BatchVault keeps burgundy as the primary product accent and copper as the secondary accent.</li>
+      <li>Introduced the approved application typography preset: system sans headings, compact line-height, no editorial serif heading import, and more restrained letter spacing.</li>
+      <li>Added a compatibility bridge for current <code>[data-theme="dark"]</code> dark mode rather than switching the app to the design-system <code>[dark-mode]</code> attribute.</li>
+    </ul>
+    <p><strong>Checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml run --rm builder</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke check on <code>http://127.0.0.1:3000/ru</code> at desktop and mobile sizes. The color adapter v1 was checked with the same lint, production-style build, dev-compose rebuild, and browser smoke flow.</p>
+    <p><strong>Known follow-up:</strong> the mobile dashboard still appears wider than the viewport in browser snapshot output. No console errors were reported, and this looks like an existing dashboard responsiveness issue rather than a direct result of the adapter. It should be handled as a focused frontend bug after this safe adapter slice.</p>
+    <p><strong>Build note:</strong> the dev-compose builder reported existing npm audit findings during dependency install, but the build itself completed successfully. Dependency remediation is out of scope for this visual migration slice.</p>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>Bootstrap and design-system class names may collide, especially generic names like <code>.btn</code>, <code>.card</code>, <code>.badge</code>, and table styles.</li>
+      <li>Typography can become too editorial if shared base styles are imported without an app preset.</li>
+      <li>Global reset changes can affect modal sizing, dropdown portals, chart containers, and Bootstrap layout utilities.</li>
+      <li>Dark-mode attribute mismatch between <code>[data-theme="dark"]</code> and <code>[dark-mode]</code> can silently break themes.</li>
+      <li>One-shot page restyling can leave inconsistent UI if reusable components are not migrated first.</li>
+      <li>The design-system <code>dist</code> output is generated; edits must happen in source files if we later upstream changes.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>Keep the migration in a dedicated branch. If the approach causes broad visual regressions, revert the adapter import and touched component styles while leaving the plan document intact. If only individual components regress, roll back those components to the previous local styles and continue with a narrower token-only migration.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should BatchVault keep its current burgundy/copper brand direction, or should it move closer to the design-system graphite/ivory defaults?</li>
+      <li>Should we eventually migrate BatchVault dark mode from <code>[data-theme="dark"]</code> to design-system <code>[dark-mode]</code>, or keep a compatibility bridge permanently?</li>
+      <li>Should upstream design-system additions be a separate PR after BatchVault proves the patterns, or should we update both repos in parallel?</li>
+      <li>How far should this first branch go: token adapter only, app shell plus reusable components, or all visible CRUD pages?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>Implementation must not start until this plan is explicitly approved. Approval should include the intended first-branch scope: token adapter only, shell plus reusable components, or full visible UI pass.</p>
+  </section>
+</main>
+</body>
+</html>
