@@ -268,6 +268,15 @@
     <p><strong>Checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml run --rm builder</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke check on <code>http://127.0.0.1:3000/ru</code> at desktop and mobile sizes. The color adapter v1 was checked with the same lint, production-style build, dev-compose rebuild, and browser smoke flow.</p>
     <p><strong>Known follow-up:</strong> the mobile dashboard still appears wider than the viewport in browser snapshot output. No console errors were reported, and this looks like an existing dashboard responsiveness issue rather than a direct result of the adapter. It should be handled as a focused frontend bug after this safe adapter slice.</p>
     <p><strong>Build note:</strong> the dev-compose builder reported existing npm audit findings during dependency install, but the build itself completed successfully. Dependency remediation is out of scope for this visual migration slice.</p>
+    <p class="done">Dashboard/app-shell slice completed on 2026-05-24.</p>
+    <ul>
+      <li>Changed the local dev compose frontend service to run <code>npm run dev -- -H 0.0.0.0 -p 3000</code> instead of serving a production build. The tracked example and local ignored compose file now use the same dev-server flow.</li>
+      <li>Kept the optional <code>builder</code> profile available for production-style build checks, but it is no longer required for normal CSS/TSX iteration.</li>
+      <li>Refined the app shell and dashboard through the adapter: sidebar surfaces, navigation states, page header, stat cards, card shadows, and responsive table containment.</li>
+      <li>Fixed dashboard mobile overflow by giving the main flex content a real shrink boundary and by making dashboard chart columns stack on mobile.</li>
+      <li>Removed browser warnings from this path by loading <code>/config.js</code> through <code>next/script</code> and adding missing <code>language</code> and <code>noOrdersFound</code> translation keys to all locales.</li>
+    </ul>
+    <p><strong>Additional checks run:</strong> <code>npm run lint</code>, <code>npm run build:docker</code>, <code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code>, browser smoke checks at mobile and desktop widths. After the fix, mobile document width stayed within the viewport and browser console returned no warnings or errors for the checked page.</p>
   </section>
 
   <section class="risk">

@@ -6,6 +6,7 @@ import { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Script from 'next/script';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import useTranslation from 'next-translate/useTranslation';
@@ -95,7 +96,9 @@ function AppContent({ Component, pageProps }: AppProps) {
         <div className="flex-grow-1" style={{
           marginLeft: isMobileView ? 0 : '260px',
           backgroundColor: 'var(--surface-secondary)',
-          minHeight: '100vh'
+          minHeight: '100vh',
+          minWidth: 0,
+          width: '100%'
         }}>
           <Component {...pageProps} />
         </div>
@@ -116,9 +119,8 @@ function AppContent({ Component, pageProps }: AppProps) {
       <NotificationProvider>
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          {/* Load runtime config */}
-          <script src="/config.js" async />
         </Head>
+        <Script src="/config.js" strategy="beforeInteractive" />
         {content}
       </NotificationProvider>
     </AuthProvider>

@@ -606,7 +606,7 @@ const Dashboard = () => {
 
         {/* Performance Metrics */}
         <Row className="mb-4">
-          <Col lg={3}>
+          <Col xs={12} sm={6} xl={3}>
             <Card className="border-0 h-100 shadow-sm">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -631,7 +631,7 @@ const Dashboard = () => {
             </Card>
           </Col>
           
-          <Col lg={3}>
+          <Col xs={12} sm={6} xl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -662,7 +662,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col lg={3}>
+          <Col xs={12} sm={6} xl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
@@ -691,7 +691,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col lg={3}>
+          <Col xs={12} sm={6} xl={3}>
             <Card className="border-0 h-100 shadow-sm rounded-lg">
               <Card.Body className="p-3">
                 <Card.Title className="mb-3 fs-6 d-flex align-items-center">
