@@ -16,7 +16,7 @@ The application uses **multi-stage Docker build** with **runtime configuration**
 ### 1. Pull the Image
 
 ```bash
-docker pull dzarlax/jerky-vault-frontend:latest
+docker pull ghcr.io/dzarlax/jerky-vault-frontend:latest
 ```
 
 ### 2. Create docker-compose.yaml
@@ -24,7 +24,7 @@ docker pull dzarlax/jerky-vault-frontend:latest
 ```yaml
 services:
   jerky_vault_frontend:
-    image: dzarlax/jerky-vault-frontend:latest
+    image: ghcr.io/dzarlax/jerky-vault-frontend:latest
     ports:
       - "3000:3000"
     environment:
@@ -59,7 +59,7 @@ The application will be available at `http://localhost:3000`
 
 ## How Runtime Configuration Works
 
-### Build Time (Docker Hub / GitHub Actions)
+### Build Time (GitHub Container Registry / GitHub Actions)
 
 ```dockerfile
 # Multi-stage build
@@ -97,7 +97,7 @@ const mapboxToken = getMapboxToken();
 
 ## Building Locally
 
-If you want to build the image yourself instead of pulling from Docker Hub:
+If you want to build the image yourself instead of pulling from GHCR:
 
 ```bash
 docker build -t jerky-vault-frontend:local .
@@ -183,7 +183,7 @@ Total: ~2 seconds
 The `.github/workflows/main.yml` workflow automatically:
 
 1. Builds image on push to `main` branch
-2. Pushes to Docker Hub with default values
+2. Pushes to GitHub Container Registry with default values
 3. Uses GitHub Actions cache for faster builds
 
 ## Support

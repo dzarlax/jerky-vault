@@ -40,16 +40,14 @@ const Profile = () => {
       return;
     }
 
-    // Проверка длины нового пароля
-    if (newPassword.length < 3) {
-      setError(t('passwordTooShort'));
+    if (newPassword.length < 8) {
+      setError(t('passwordMinLength'));
       return;
     }
 
     setIsLoading(true);
     try {
-      // Запрос на изменение пароля
-      const response = await fetcher('/api/profile/change-password', {
+      await fetcher('/api/profile/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,16 +56,12 @@ const Profile = () => {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      if (response?.success) {
-        setSuccess(t('passwordChangedSuccessfully'));
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setError(response?.error || t('unknownError'));
-      }
+      setSuccess(t('passwordChangedSuccessfully'));
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err: any) {
-      setError(err?.error || t('requestFailed'));
+      setError(err?.message || t('requestFailed'));
     } finally {
       setIsLoading(false);
     }

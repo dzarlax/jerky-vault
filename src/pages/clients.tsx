@@ -270,7 +270,7 @@ const Clients = ({ mapboxToken }) => {
               </div>
             </div>
           </div>
-        ))}
+        ))
         )}
       </div>
 

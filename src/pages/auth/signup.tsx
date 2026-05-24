@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Form, Button, Container } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
+import fetcher from '../../utils/fetcher';
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
@@ -14,15 +15,19 @@ export default function SignUp() {
       alert(t('passwordsDoNotMatch'));
       return;
     }
+    if (password.length < 8) {
+      alert(t('passwordMinLength'));
+      return;
+    }
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (res.ok) {
+    try {
+      await fetcher('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+        headers: { 'Content-Type': 'application/json' },
+      });
       alert(t('userRegisteredSuccessfully'));
-    } else {
+    } catch {
       alert(t('failedToRegisterUser'));
     }
   };

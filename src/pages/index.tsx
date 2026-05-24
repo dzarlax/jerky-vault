@@ -44,7 +44,7 @@ const Dashboard = () => {
   const { auth } = useAuth();
   const { success, error: showError } = useNotification();
 
-  const { data: dashboardStats, error: dashboardError, mutate } = useSWR<DashboardStats>(
+  const { data: dashboardStats, error: dashboardError, mutate: mutateDashboardStats } = useSWR<DashboardStats>(
     auth.isAuthenticated ? '/api/dashboard' : null,
     fetcher,
     {
@@ -460,7 +460,7 @@ const Dashboard = () => {
     return (
       <ErrorState 
         message={t('failedToLoadDashboard')} 
-        onRetry={() => mutate()} 
+        onRetry={() => mutateDashboardStats()} 
       />
     );
   }
@@ -482,7 +482,7 @@ const Dashboard = () => {
             Overview of your business metrics
           </p>
         </div>
-        <Button variant="outline-primary" size="sm" onClick={() => mutate()}>
+        <Button variant="outline-primary" size="sm" onClick={() => mutateDashboardStats()}>
           <FaSync className="me-2" />
           {t('refresh')}
         </Button>

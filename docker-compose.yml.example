@@ -16,7 +16,7 @@ services:
         NEXT_DISABLE_SSG: 'true'
         SKIP_ENV_VALIDATION: 'true'
         NODE_ENV: 'production'
-    image: dzarlax/jerky_vault:latest
+    image: ghcr.io/dzarlax/jerky-vault-frontend:latest
     ports:
       - "3000:3000"  # Port for frontend
     environment:

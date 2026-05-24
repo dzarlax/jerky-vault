@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: JerkyVault Frontend Review Fixes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #d8dde5;
+      --code: #eef1f5;
+      --accent: #8b2635;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    header {
+      margin-bottom: 20px;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 {
+      line-height: 1.2;
+      margin-top: 0;
+    }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ead7dc;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .meta {
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+    .priority {
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .risk { border-left: 4px solid var(--danger); }
+    .approval { border-left: 4px solid var(--warning); }
+    .success { border-left: 4px solid var(--ok); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Implementation Plan: JerkyVault Frontend Review Fixes</h1>
+    <span class="badge">Approval required before implementation</span>
+    <p class="meta">Created 2026-05-24 for <code>D:\Projects\Code\Personal\jerky-vault</code>. Production code must not be changed until this plan is approved.</p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>Fix the concrete frontend issues found during review after backend-side security and API changes: dashboard order action crashes, profile password-change response handling, password validation copy, Windows build script compatibility, and API base URL documentation/config consistency.</p>
+  </section>
+
+  <section>
+    <h2>Current Behavior</h2>
+    <div class="grid">
+      <div class="card">
+        <p><span class="priority">P0</span> Dashboard order actions call <code>mutateDashboardStats()</code>, but the dashboard SWR hook currently exposes the mutate function as <code>mutate</code>. This will throw at runtime after order update, status change, or delete from <code>src/pages/index.tsx</code>.</p>
+      </div>
+      <div class="card">
+        <p><span class="priority">P1</span> <code>src/pages/profile.tsx</code> treats password-change success as <code>response.success</code>, while the backend returns <code>{ "message": "Password changed successfully" }</code>.</p>
+      </div>
+      <div class="card">
+        <p><span class="priority">P2</span> Profile validation uses <code>t('passwordTooShort')</code>, but locale files contain <code>passwordMinLength</code>. The signup page already uses <code>passwordMinLength</code>.</p>
+      </div>
+      <div class="card">
+        <p><span class="priority">P2</span> <code>npm run build:no-ssg</code> fails on Windows because <code>package.json</code> uses POSIX-style inline environment variables.</p>
+      </div>
+      <div class="card">
+        <p><span class="priority">P3</span> <code>.env.example</code> documents <code>NEXT_PUBLIC_API_URL=http://localhost:8080/api</code>, but <code>fetcher</code> appends endpoints such as <code>/api/auth/login</code>. This can produce <code>/api/api/...</code> if copied literally.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Dashboard order update, status change, and delete refresh both the order list and dashboard stats without runtime errors.</li>
+      <li>Profile password change shows success when the backend returns its current successful <code>message</code> response.</li>
+      <li>All frontend password-minimum validation and locale copy consistently use the backend policy of 8 characters.</li>
+      <li>Build commands are runnable from this Windows workspace and remain suitable for Docker/Linux use.</li>
+      <li>API URL examples make it clear whether the variable is the API origin or the full <code>/api</code> base path.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Assumptions and Unknowns</h2>
+    <ul>
+      <li>Backend password policy is intentionally 8 characters, based on inspected <code>../jerky-vault-back/controllers/auth.go</code> and <code>../jerky-vault-back/controllers/profile.go</code>.</li>
+      <li>The frontend should keep using the shared <code>fetcher</code> contract where endpoints include their own <code>/api/...</code> prefix.</li>
+      <li>Deployment is a real VPS-backed service, so build script changes should be conservative and avoid breaking Docker workflows.</li>
+      <li>Existing TypeScript errors outside this fix set are not automatically in scope unless they block the targeted changes or verification.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <ul>
+      <li><code>src/pages/index.tsx</code> - rename the dashboard SWR mutate binding to <code>mutateDashboardStats</code> or update the call sites to the existing <code>mutate</code>.</li>
+      <li><code>src/pages/profile.tsx</code> - accept backend success via <code>response.message</code> or simply treat a resolved fetcher call as success; use the existing <code>passwordMinLength</code> translation key.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, <code>locales/rs/common.json</code> - only if a clearer dedicated <code>passwordTooShort</code> key is preferred over reusing <code>passwordMinLength</code>.</li>
+      <li><code>package.json</code> - make build scripts cross-platform, likely with <code>cross-env</code> or a small Node script. Adding a dependency should be weighed against keeping scripts shell-specific.</li>
+      <li><code>package-lock.json</code> - if <code>cross-env</code> is added.</li>
+      <li><code>.env.example</code>, <code>README.md</code>, <code>DOCKER.md</code> - align examples with the actual base URL convention.</li>
+      <li><code>docs/ai-plans/2026-05-24-frontend-review-fixes.html</code> - update after implementation with actual changes, checks, limitations, and follow-ups.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Re-check <code>git status --short --branch</code> and preserve the existing local edits as user work.</li>
+      <li>Fix the dashboard mutate binding in <code>src/pages/index.tsx</code>. Preferred small change: destructure <code>mutate: mutateDashboardStats</code> from the dashboard SWR hook.</li>
+      <li>Fix profile password-change success handling so a successful resolved request clears fields and shows the success alert. Keep useful backend error messages in the catch path by reading <code>err.message</code>.</li>
+      <li>Align profile password validation copy with signup by using <code>t('passwordMinLength')</code>, unless a separate locale key is explicitly desired.</li>
+      <li>Decide the cross-platform script approach. Preferred pragmatic option: add <code>cross-env</code> as a dev dependency and update <code>build:docker</code>, <code>build:no-ssg</code>, and <code>start</code>.</li>
+      <li>Normalize API URL examples to the backend origin convention, for example <code>http://localhost:8080</code> and <code>https://api.jerky.in.rs</code>, not values ending in <code>/api</code>.</li>
+      <li>Run targeted verification and update this plan with the final results.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Impact</h2>
+    <ul>
+      <li><strong>API contract:</strong> No backend API changes are planned. The frontend will adapt to the backend's current password-change success response.</li>
+      <li><strong>Auth:</strong> No auth model change. Registration endpoint and 8-character password policy remain aligned with the backend.</li>
+      <li><strong>Deployment:</strong> Build script changes may affect Docker and VPS deploy commands. This is why the plan includes Docker-oriented build verification.</li>
+      <li><strong>UX:</strong> Users should see correct success and validation messages instead of false failure states or raw translation keys.</li>
+      <li><strong>Data/migrations:</strong> No database or migration changes are expected.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code> - should pass.</li>
+      <li><code>npm run build:no-ssg</code> - should run successfully on Windows after script changes.</li>
+      <li><code>npm run build</code> or <code>npm run build:docker</code> - choose based on final script edits; at least one production build path must be verified.</li>
+      <li><code>npx tsc --noEmit</code> - run and record status. Current repo has unrelated type errors, so completion criteria are either "passes" if fixed broadly or "no new relevant errors" if broader type debt remains out of scope.</li>
+      <li>Search check: <code>rg "mutateDashboardStats|passwordTooShort|localhost:8080/api|api/api" src locales README.md DOCKER.md .env.example</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Start the frontend locally and sign in with a test account.</li>
+      <li>On dashboard, edit an order and confirm the recent orders/stat cards refresh without console errors.</li>
+      <li>On dashboard, change an order status and confirm the UI refreshes without console errors.</li>
+      <li>On dashboard, delete an order only against test data or a disposable record; confirm the UI refreshes without console errors.</li>
+      <li>On profile, submit a new password shorter than 8 characters and confirm the localized validation message is shown.</li>
+      <li>On profile, change password with valid data and confirm the success alert appears.</li>
+      <li>Confirm the configured API base URL does not generate duplicated <code>/api/api</code> requests in the network tab.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>Adding <code>cross-env</code> modifies dependency metadata. If dependency churn is undesirable, use a small Node wrapper instead.</li>
+      <li>Profile password-change QA can lock a test account into a new password. Use a disposable account or immediately restore the old password.</li>
+      <li>Dashboard delete QA must avoid real production data unless the user explicitly confirms it is safe.</li>
+      <li>Fixing only the reviewed issues leaves existing broader TypeScript debt in place; the plan should clearly report that if <code>tsc</code> still fails.</li>
+      <li>Changing API URL docs must match the actual deploy environment; do not overwrite private <code>.env</code> values unless explicitly requested.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>All expected changes are source/config/documentation edits. Rollback is a normal git revert of the implementation commit or selective restoration of the touched files. If <code>cross-env</code> is added and later rejected, remove it from <code>package.json</code>, regenerate <code>package-lock.json</code>, and restore the prior scripts.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should the Windows script fix use <code>cross-env</code>, or do you prefer avoiding a new dev dependency?</li>
+      <li>Should this pass also clean the existing broader TypeScript errors, or should it stay tightly scoped to review findings?</li>
+      <li>Should manual QA use local backend/test data only, or is there a known safe staging/prod-like environment for JerkyVault?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>Approved by the user on 2026-05-24. Implementation was allowed to proceed with emphasis on keeping the GitHub/Docker build path working.</p>
+  </section>
+
+  <section class="success">
+    <h2>Implementation Results</h2>
+    <ul>
+      <li><code>src/pages/index.tsx</code> now aliases the dashboard SWR mutate function as <code>mutateDashboardStats</code> and uses it for retry, manual refresh, order update, status update, and delete refresh paths.</li>
+      <li><code>src/pages/profile.tsx</code> now treats a resolved password-change request as success, clears password fields, and shows the existing success translation. It also uses the existing <code>passwordMinLength</code> key for the 8-character validation message.</li>
+      <li><code>package.json</code> now uses <code>scripts/run-with-env.mjs</code> for cross-platform environment variable setup in <code>build:docker</code>, <code>build:no-ssg</code>, and <code>start</code>. No new npm dependency was added.</li>
+      <li><code>.env.example</code> and <code>README.md</code> now document <code>NEXT_PUBLIC_API_URL</code> as the backend origin, not a value ending in <code>/api</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run After Implementation</h2>
+    <ul>
+      <li><code>npm run lint</code> passed.</li>
+      <li><code>npm run build</code> passed.</li>
+      <li><code>npm run build:no-ssg</code> passed on Windows through the updated npm script.</li>
+      <li><code>npm run build:docker</code> passed on Windows through the updated npm script.</li>
+      <li><code>npx tsc --noEmit</code> still fails on existing type debt in calculator, charts, modal error handling, SelectDropdown, orders, prices, and products. The dashboard <code>mutate</code>/<code>mutateDashboardStats</code> errors from this fix pass are gone.</li>
+      <li><code>rg "passwordTooShort|localhost:8080/api|api/api|response\?\.success|onClick=\{\(\) =&gt; mutate\(|onRetry=\{\(\) =&gt; mutate\(" src locales README.md DOCKER.md .env.example package.json scripts -n</code> returned no matches.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Known Limitations and Follow-up</h2>
+    <ul>
+      <li>Manual browser QA was not run against a live backend in this pass, to avoid touching real orders or changing a real account password without a disposable test target.</li>
+      <li>Full TypeScript validation remains blocked by pre-existing project-wide type errors. A separate type cleanup pass is recommended before relying on <code>tsc --noEmit</code> as a CI gate.</li>
+      <li>The local build emits a Browserslist stale-data notice. This is not a build failure and was not changed because it would update dependency metadata outside the requested fix scope.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

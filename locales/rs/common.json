@@ -283,7 +283,7 @@
   "enterCurrentPassword": "Unesite trenutnu lozinku",
   "enterNewPassword": "Unesite novu lozinku",
   "confirmNewPassword": "Potvrdite novu lozinku",
-  "passwordMinLength": "Minimum 3 karaktera",
+  "passwordMinLength": "Minimum 8 karaktera",
   "success": "Uspeh",
   "filterOrders": "Filtriraj narudžbine",
   "selectProduct": "Izaberi proizvod",

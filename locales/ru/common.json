@@ -283,7 +283,7 @@
   "enterCurrentPassword": "Введите текущий пароль",
   "enterNewPassword": "Введите новый пароль",
   "confirmNewPassword": "Подтвердите новый пароль",
-  "passwordMinLength": "Минимум 3 символа",
+  "passwordMinLength": "Минимум 8 символов",
   "success": "Успех",
   "filterOrders": "Фильтр заказов",
   "selectProduct": "Выберите продукт",
