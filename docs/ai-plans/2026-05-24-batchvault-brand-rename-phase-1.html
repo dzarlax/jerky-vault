@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: BatchVault Brand Rename Phase 1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #fff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #d8dde5;
+      --code: #eef1f5;
+      --accent: #8b2635;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ead7dc;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta { color: var(--muted); margin-top: 6px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+    .approval { border-left: 4px solid var(--warning); }
+    .risk { border-left: 4px solid var(--danger); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Implementation Plan: BatchVault Brand Rename Phase 1</h1>
+    <span class="badge">Approval required before implementation</span>
+    <p class="meta">Created 2026-05-24 from <code>D:\Projects\Code\Personal\jerky-vault</code>. This plan is for a product-facing rename and positioning update only; infrastructure identifiers stay stable unless explicitly approved later.</p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>Rename the user-visible product brand from <code>JerkyVault</code> / <code>Jerky Vault</code> to <code>BatchVault</code> and shift the product copy from jerky-only management to small food production / batch operations. Preserve technical identifiers such as repositories, package names, image names, domains, compose service names, database names, and existing deployment paths.</p>
+  </section>
+
+  <section>
+    <h2>Rename Rationale</h2>
+    <p>The old name anchors the platform to one product category. The actual system is broader: recipes, ingredients, production batches, products, clients, orders, pricing, cost, status tracking, margin, and dashboard workflows. The new name should keep a food-production feel without implying the product is only for jerky.</p>
+    <p><code>BatchVault</code> keeps continuity with the old <code>Vault</code> identity while making the core domain broader: batches, recipes, orders, and production records for small food producers.</p>
+  </section>
+
+  <section>
+    <h2>Current Behavior</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Frontend UI</h3>
+        <p>The visible app name appears in <code>Header.tsx</code>, <code>Sidebar.tsx</code>, <code>Footer.tsx</code>, and the document meta description in <code>_document.tsx</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Frontend Docs</h3>
+        <p><code>README.md</code>, <code>DOCKER.md</code>, <code>CLAUDE.md</code>, <code>AGENTS.md</code>, and plan files still use the old brand. <code>AGENTS.md</code> is currently untracked and should not be silently included unless the user wants it tracked.</p>
+      </div>
+      <div class="card">
+        <h3>Backend Docs</h3>
+        <p><code>README.md</code>, <code>API_DOCUMENTATION.md</code>, <code>CLAUDE.md</code>, and Swagger docs still use old brand wording. Some Swagger files are generated and should not be manually edited if the source annotations can be updated instead.</p>
+      </div>
+      <div class="card">
+        <h3>Infrastructure</h3>
+        <p>Current live deployment uses <code>admin.jerky.in.rs</code>, <code>api.jerky.in.rs</code>, <code>ghcr.io/dzarlax/jerky-vault-frontend</code>, <code>ghcr.io/dzarlax/jerky-vault-back</code>, and <code>personal_ai_stack/deploy/jerkyvault</code>. These should stay unchanged in phase 1.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Browser-visible app chrome says <code>BatchVault</code>.</li>
+      <li>Document metadata describes <code>BatchVault</code>, not <code>JerkyVault</code>.</li>
+      <li>User-facing README and Docker guide introduce the product as <code>BatchVault</code>.</li>
+      <li>Backend docs refer to <code>BatchVault Backend</code> where this is product-facing documentation.</li>
+      <li>Product description becomes small-food-production oriented, for example: <code>Food production management for recipes, batches, orders and profit.</code></li>
+      <li>Feature copy should use broader terms like food production, batches, products, orders, ingredients, pricing, cost, and margin instead of jerky-specific framing.</li>
+      <li>Domain, image, compose service, repo, package, executable, and database identifiers remain unchanged for now.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Out of Scope for Phase 1</h2>
+    <ul>
+      <li>Repository renames: <code>jerky-vault</code>, <code>jerky-vault-back</code>.</li>
+      <li>Package names in <code>package.json</code> and <code>package-lock.json</code>.</li>
+      <li>GHCR image names: <code>jerky-vault-frontend</code>, <code>jerky-vault-back</code>.</li>
+      <li>Compose service names: <code>jerky_vault_frontend</code>, <code>jerky_vault_backend</code>.</li>
+      <li>Traefik router names and deploy directory: <code>jerkyvault_front</code>, <code>jerkyvault_back</code>, <code>deploy/jerkyvault</code>.</li>
+      <li>Domains: <code>admin.jerky.in.rs</code>, <code>api.jerky.in.rs</code>.</li>
+      <li>Database names, schemas, Neon project names, and data content.</li>
+      <li>Mobile app rename, unless the user explicitly brings the mobile repo into scope.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <ul>
+      <li><code>src/components/Header.tsx</code> - visible navbar brand.</li>
+      <li><code>src/components/Sidebar.tsx</code> - visible sidebar brand in desktop and mobile variants.</li>
+      <li><code>src/components/Footer.tsx</code> - visible copyright/product name.</li>
+      <li><code>src/pages/_document.tsx</code> - meta description.</li>
+      <li><code>src/types/api.ts</code> - code comment only, if keeping comments aligned is desired.</li>
+      <li><code>README.md</code> and <code>DOCKER.md</code> in frontend - product-facing documentation.</li>
+      <li><code>README.md</code>, <code>API_DOCUMENTATION.md</code>, and source Swagger annotations in backend if present - product-facing backend docs.</li>
+      <li><code>CLAUDE.md</code> / <code>AGENTS.md</code> only after deciding whether these local instruction files should be tracked/updated in this pass.</li>
+      <li>Existing <code>docs/ai-plans/*.html</code> should generally not be rewritten except to add this plan; historical plans can keep old context.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Wait for the current frontend hotfix/GHCR PR to settle or create a fresh branch from updated <code>origin/main</code>.</li>
+      <li>In the frontend, update visible brand strings and metadata to <code>BatchVault</code>.</li>
+      <li>In frontend docs, update product-facing names and descriptions while leaving repo/image/domain/service identifiers unchanged. Replace jerky-only positioning with small food production / batch operations copy.</li>
+      <li>In backend, update product-facing docs and source annotations only. Avoid manual edits to generated Swagger output unless the repo's existing workflow expects committed generated docs.</li>
+      <li>Run grep checks to ensure no unintended product-facing <code>JerkyVault</code> remains in active UI/docs, while expected technical identifiers remain.</li>
+      <li>Run frontend and backend verification commands, then open PR(s). Prefer separate PRs per repo unless the user wants a coordinated multi-repo rollout.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li>Frontend: <code>npm run lint</code> and <code>npm run build</code>.</li>
+      <li>Frontend browser QA: load the app and confirm header/sidebar/footer/title/meta-visible behavior where applicable.</li>
+      <li>Backend: run the repo's Go checks after verifying the correct module path, likely <code>go test ./...</code> and <code>go build ./...</code>.</li>
+      <li>Search checks: <code>rg "JerkyVault|Jerky Vault|Jerky-vault" src README.md DOCKER.md</code> in frontend and equivalent docs search in backend.</li>
+      <li>Copy check: <code>rg "jerky production|jerky management|jerky recipes|jerky product" README.md DOCKER.md src</code> should not find active product positioning unless it is intentionally describing legacy repo/domain/image names.</li>
+      <li>Ensure technical identifiers are not accidentally renamed by checking compose, workflow, image, and domain references.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>Blind replacing <code>jerky</code> would break real domains, package names, image names, DB names, and deploy paths.</li>
+      <li>Changing generated Swagger docs manually may create drift from source annotations.</li>
+      <li>Changing repo/package/image names in the same pass would require a broader CI/deploy migration and is deliberately avoided here.</li>
+      <li>Some old names should remain in historical plan files and rollback notes because they describe past states.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>Rollback is a normal git revert of the brand rename commit(s). Because phase 1 avoids infrastructure identifiers, rollback should not require image, DNS, database, or deploy changes.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Answered: copy should become broader. It should describe small food production / batch operations, not jerky-only management.</li>
+      <li>Should <code>AGENTS.md</code> be tracked and updated, or left untracked outside the PR?</li>
+      <li>Should backend Swagger generated files be updated if source annotations change, or skipped until a docs-generation workflow is clarified?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>Approved by the user on 2026-05-24. The positioning decision is resolved: use broader small-food-production / batch-operations copy under the BatchVault brand.</p>
+  </section>
+
+  <section>
+    <h2>Implementation Results</h2>
+    <ul>
+      <li>Frontend UI brand now uses <code>BatchVault</code> in the header, sidebar, footer, and document meta description.</li>
+      <li>Frontend header/sidebar now use the new BatchVault logo asset, with PNG variants for app chrome, favicon, and Apple touch icon.</li>
+      <li>Frontend README and Docker guide now describe BatchVault as a small food production / batch operations product instead of a jerky-only system.</li>
+      <li>Frontend Docker docs now include a reusable local full-stack preview compose setup with frontend, backend, production database configuration, cached Node modules, reusable build output, and a Go-run backend mode using mounted backend source files.</li>
+      <li>Backend README, API documentation, CLAUDE overview, and Swagger source annotations now use <code>BatchVault Backend</code> and broader food-production wording.</li>
+      <li>Technical identifiers were intentionally preserved: repository paths, package names, image names, domains, compose service names, deploy paths, and database identifiers.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run After Implementation</h2>
+    <ul>
+      <li>Frontend: <code>npm run lint</code> passed.</li>
+      <li>Frontend: <code>npm run build</code> passed.</li>
+      <li>Backend: <code>go test ./...</code> passed.</li>
+      <li>Backend: <code>go build ./...</code> passed.</li>
+      <li>Docker preview: <code>docker compose -f docker-compose.dev.yml up -d --force-recreate backend frontend</code> started both services locally, with backend running from <code>golang:1.25.10-alpine</code> via <code>go run .</code>.</li>
+      <li>Docker preview: <code>http://127.0.0.1:3000/auth/signin</code>, <code>/config.js</code>, and <code>/batchvault-logo.png</code> returned HTTP 200.</li>
+      <li>Docker preview: <code>http://127.0.0.1:8080/api/dashboard</code> returned HTTP 401 without a token, confirming the local backend is reachable and protected.</li>
+      <li>Browser QA: signing in with the existing test credentials reached the dashboard through the local frontend and local backend against the production database.</li>
+      <li>Search checks no longer find active <code>JerkyVault</code> / jerky-only positioning in frontend UI/docs or backend source docs, excluding technical identifiers and historical/generated docs.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Known Limitations</h2>
+    <ul>
+      <li><code>swag init -g main.go</code> could not run because the <code>swag</code> CLI is not installed in this environment.</li>
+      <li>Generated backend Swagger files under <code>docs/</code> still contain the old generated title until Swagger docs are regenerated from the updated <code>main.go</code> annotations.</li>
+      <li>The local <code>docker-compose.dev.yml</code> contains environment-specific database settings and is intentionally ignored; only <code>docker-compose.dev.yml.example</code> is intended for git.</li>
+      <li>Historical implementation plans still mention old names where they describe prior state; these were not rewritten.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -10,8 +10,9 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          <link rel="icon" href="/favicon.ico" />
-          <meta name="description" content="JerkyVault - Jerky Management System" />
+          <link rel="icon" type="image/png" sizes="64x64" href="/batchvault-icon-64.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+          <meta name="description" content="BatchVault - Food production management for recipes, batches, orders and profit." />
           
           {/* Preload auth context to prevent errors during SSR */}
           <script

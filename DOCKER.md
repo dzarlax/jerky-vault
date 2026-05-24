@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide explains how to deploy JerkyVault frontend using Docker with runtime configuration.
+This guide explains how to deploy the BatchVault frontend using Docker with runtime configuration.
 
 ## Architecture Overview
 
@@ -42,6 +42,78 @@ docker-compose up -d
 ```
 
 The application will be available at `http://localhost:3000`
+
+## Local Docker Preview
+
+Use the dev compose template when you want a reusable local stack. The frontend
+serves the production build from the working tree, and the backend runs directly
+from mounted Go files with cached Go module/build volumes:
+
+```bash
+cp docker-compose.dev.yml.example docker-compose.dev.yml
+docker compose -f docker-compose.dev.yml up backend frontend
+```
+
+The default template starts both frontend and backend. The frontend points to the
+local backend origin: `http://127.0.0.1:8080`. The app adds `/api` in its
+request paths.
+
+Set `BATCHVAULT_DATABASE_URL` in your ignored `docker-compose.dev.yml` or shell.
+Override `BATCHVAULT_API_URL` only when needed; this avoids accidental
+interference from the app's normal `NEXT_PUBLIC_API_URL` setting.
+
+After changing frontend source, rebuild the Next.js dist inside Docker and
+restart the existing serving container:
+
+```bash
+docker compose -f docker-compose.dev.yml run --rm builder
+docker compose -f docker-compose.dev.yml restart frontend
+```
+
+After changing backend source, restart the Go runner without rebuilding a backend
+image. The backend service uses `sh -c` deliberately so the Go image `PATH`
+keeps `/usr/local/go/bin`:
+
+```bash
+docker compose -f docker-compose.dev.yml restart backend
+```
+
+For a production-like backend image check, run the image profile on a separate
+host port:
+
+```bash
+docker compose -f docker-compose.dev.yml --profile image up -d --build backend-image
+```
+
+### Moving to the Next Backend Branch
+
+The local `backend` service mounts one backend git worktree. When this frontend
+branch is finished and a new backend branch is created, update only your ignored
+`docker-compose.dev.yml`:
+
+```yaml
+services:
+  backend:
+    volumes:
+      - ./_worktrees/<new-backend-worktree>:/app
+```
+
+Then recreate the local stack:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --force-recreate backend frontend
+```
+
+Backend source commits, pushes, and pull requests must still be made from the
+backend repository/worktree. The `backend` service is for fast `go run .`
+development; the production backend image is updated by the backend repository's
+CI after its PR is merged.
+
+`docker-compose.dev.yml` is intentionally ignored so local ports and API URLs can
+be adjusted without touching git.
+
+The preview container also writes `public/config.js` at startup, matching the
+runtime config behavior of the production image.
 
 ## Environment Variables
 

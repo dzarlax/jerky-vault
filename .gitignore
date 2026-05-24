@@ -56,8 +56,13 @@ nextjs-app.tar
 # Screenshots (for local development only)
 screenshots/
 
+# Local automation artifacts
+.playwright-mcp/
+/_worktrees/
+
 # Docker compose overrides (local development only)
 docker-compose.override.yml
 docker-compose.override.yaml
 /docker-compose.yaml
+/docker-compose.dev.yml
 /.claude
