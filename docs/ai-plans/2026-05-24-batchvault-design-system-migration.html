@@ -308,6 +308,12 @@
       <li>Refined shared CRUD card/table surfaces through the adapter, including compact client cards, table headers, cursor affordance for sortable headers, and mobile-safe price-table scrolling.</li>
     </ul>
     <p><strong>CRUD checks run:</strong> browser QA for <code>/ru/clients</code>, <code>/ru/ingredients</code>, and <code>/ru/prices</code> at 900px plus mobile checks at 390px, <code>npm run lint</code>, and <code>npm run build:docker</code>. Prices now use a horizontal table scroll on mobile without wrapping price values such as <code>123 RSD</code>.</p>
+    <p class="done">Modal smoke/fix pass completed on 2026-05-24.</p>
+    <ul>
+      <li>Checked create modals for Clients, Ingredients, Prices, Products, Recipes, and Orders at mobile width without saving data.</li>
+      <li>Fixed long mobile modals by capping modal content height and making <code>.modal-body</code> scroll internally, keeping footer actions reachable.</li>
+    </ul>
+    <p><strong>Modal checks run:</strong> browser QA at 390px for the six create modals, <code>npm run lint</code>, and <code>npm run build:docker</code>. The longest tested Client modal now fits within the viewport with a scrollable body and visible footer.</p>
   </section>
 
   <section class="risk">
