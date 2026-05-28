@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/design-system.css';
-import '../styles/batchvault-adapter.css';
 import '../styles/components.css';
+import '../styles/batchvault-adapter.css';
 import { AppProps } from 'next/app';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
