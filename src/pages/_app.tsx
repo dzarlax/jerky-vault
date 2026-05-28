@@ -62,6 +62,14 @@ function AppContent({ Component, pageProps }: AppProps) {
         {!isMobileView && <Sidebar />}
         {isMobileView && (
           <>
+            {showMobileSidebar && (
+              <button
+                type="button"
+                className="mobile-nav-backdrop"
+                aria-label={t('close')}
+                onClick={() => setShowMobileSidebar(false)}
+              />
+            )}
             <Sidebar
               isOpen={showMobileSidebar}
               onClose={() => setShowMobileSidebar(false)}

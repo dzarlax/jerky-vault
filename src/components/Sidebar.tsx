@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useTranslation from 'next-translate/useTranslation';
-import { Nav, Dropdown, Button } from 'react-bootstrap';
+import { Nav } from 'react-bootstrap';
 import {
   FaHome,
   FaClipboardList,
@@ -17,11 +17,8 @@ import {
   FaSun,
   FaSignOutAlt,
   FaGlobe,
-  FaBars,
-  FaChevronLeft,
-  FaChevronRight,
-  FaThLarge,
-  FaSlidersH
+  FaIndustry,
+  FaStore
 } from 'react-icons/fa';
 import { useAuth } from '../utils/authContext';
 
@@ -71,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { t, lang } = useTranslation('common');
   const router = useRouter();
-  const { auth, logout } = useAuth();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => router.pathname === path;
 
@@ -93,22 +90,22 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const navLinks = (
     <>
-      {/* Main Section */}
+      <Link href="/" locale={lang} passHref legacyBehavior>
+        <Nav.Link
+          className={`sidebar-link ${isActive('/') ? 'active' : ''}`}
+          onClick={isMobile ? onClose : undefined}
+        >
+          <FaHome className="sidebar-link-icon" />
+          <span>{t('home')}</span>
+        </Nav.Link>
+      </Link>
+
+      {/* Production Section */}
       <div className="sidebar-section">
         <div className="sidebar-section-title">
-          <FaThLarge size={14} />
-          <span>{t('main')}</span>
+          <FaIndustry size={14} />
+          <span>{t('production')}</span>
         </div>
-        <Link href="/" locale={lang} passHref legacyBehavior>
-          <Nav.Link
-            className={`sidebar-link ${isActive('/') ? 'active' : ''}`}
-            onClick={isMobile ? onClose : undefined}
-          >
-            <FaHome className="sidebar-link-icon" />
-            <span>{t('home')}</span>
-          </Nav.Link>
-        </Link>
-
         <Link href="/recipes" locale={lang} passHref legacyBehavior>
           <Nav.Link
             className={`sidebar-link ${isActive('/recipes') ? 'active' : ''}`}
@@ -128,13 +125,23 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>{t('ingredients')}</span>
           </Nav.Link>
         </Link>
+
+        <Link href="/prices" locale={lang} passHref legacyBehavior>
+          <Nav.Link
+            className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}
+            onClick={isMobile ? onClose : undefined}
+          >
+            <FaTag className="sidebar-link-icon" />
+            <span>{t('prices')}</span>
+          </Nav.Link>
+        </Link>
       </div>
 
-      {/* Management Section */}
+      {/* Commerce Section */}
       <div className="sidebar-section">
         <div className="sidebar-section-title">
-          <FaSlidersH size={14} />
-          <span>{t('management')}</span>
+          <FaStore size={14} />
+          <span>{t('commerce')}</span>
         </div>
         <Link href="/products" locale={lang} passHref legacyBehavior>
           <Nav.Link
@@ -165,34 +172,17 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>{t('clients')}</span>
           </Nav.Link>
         </Link>
-
-        <Link href="/prices" locale={lang} passHref legacyBehavior>
-          <Nav.Link
-            className={`sidebar-link ${isActive('/prices') ? 'active' : ''}`}
-            onClick={isMobile ? onClose : undefined}
-          >
-            <FaTag className="sidebar-link-icon" />
-            <span>{t('prices')}</span>
-          </Nav.Link>
-        </Link>
       </div>
 
-      {/* Account Section */}
-      <div className="sidebar-section">
-        <div className="sidebar-section-title">
-          <FaUser size={14} />
-          <span>{t('account')}</span>
-        </div>
-        <Link href="/profile" locale={lang} passHref legacyBehavior>
-          <Nav.Link
-            className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}
-            onClick={isMobile ? onClose : undefined}
-          >
-            <FaUser className="sidebar-link-icon" />
-            <span>{t('profile')}</span>
-          </Nav.Link>
-        </Link>
-      </div>
+      <Link href="/profile" locale={lang} passHref legacyBehavior>
+        <Nav.Link
+          className={`sidebar-link ${isActive('/profile') ? 'active' : ''}`}
+          onClick={isMobile ? onClose : undefined}
+        >
+          <FaUser className="sidebar-link-icon" />
+          <span>{t('profile')}</span>
+        </Nav.Link>
+      </Link>
     </>
   );
 
