@@ -1,207 +1,365 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, ListGroup, CloseButton } from 'react-bootstrap';
-import { useAuth } from '../../../utils/authContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Modal, Button, Form } from 'react-bootstrap';
+import { FaExclamationTriangle, FaLayerGroup, FaPlus, FaTrash } from 'react-icons/fa';
 import { Ingredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
+import { formatCount } from '../../../utils/pluralize';
 
-const CreateRecipeModal = ({ show, onHide, ingredients, t, onCreateRecipe }) => {
-  const { auth } = useAuth();
-  const [newRecipeName, setNewRecipeName] = useState<string>('');
-  const [newIngredients, setNewIngredients] = useState<Array<{
-    id: number;
-    name: string;
-    quantity: string;
-    unit: { value: string; label: string };
-  }>>([]);
-  const [newIngredientId, setNewIngredientId] = useState<string>('');
-  const [newQuantity, setNewQuantity] = useState<string>('');
-  const [newUnit, setNewUnit] = useState<{ value: string, label: string } | null>(null);
-  const [newUnits, setNewUnits] = useState<{ value: string, label: string }[]>([]);
+type UnitOption = {
+  value: string;
+  label: string;
+};
+
+type DraftIngredient = {
+  id: number;
+  name: string;
+  type?: string;
+  quantity: string;
+  unit: UnitOption;
+};
+
+type CreateRecipeModalProps = {
+  show: boolean;
+  onHide: () => void;
+  ingredients?: Ingredient[];
+  t: (key: string) => string;
+  onCreateRecipe: (name: string, ingredients: DraftIngredient[]) => Promise<void>;
+};
+
+const getUnitsForIngredient = (ingredient?: Ingredient) => {
+  if (!ingredient) return [];
+
+  switch (ingredient.type) {
+    case 'base':
+      return ['kg', 'g'];
+    case 'spice':
+      return ['g'];
+    case 'sauce':
+      return ['ml'];
+    case 'electricity':
+      return ['hh'];
+    case 'packing':
+      return ['pieces'];
+    default:
+      return [];
+  }
+};
+
+const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
+  show,
+  onHide,
+  ingredients = [],
+  t,
+  onCreateRecipe,
+}) => {
+  const [recipeName, setRecipeName] = useState('');
+  const [draftIngredients, setDraftIngredients] = useState<DraftIngredient[]>([]);
+  const [ingredientId, setIngredientId] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState<UnitOption | null>(null);
+  const [formError, setFormError] = useState('');
+  const [ingredientError, setIngredientError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const selectedIngredient = useMemo(
+    () => ingredients.find((ingredient) => ingredient.id === parseInt(ingredientId, 10)),
+    [ingredients, ingredientId]
+  );
+
+  const unitOptions = useMemo(
+    () => getUnitsForIngredient(selectedIngredient).map((unitValue) => ({
+      value: unitValue,
+      label: t(unitValue),
+    })),
+    [selectedIngredient, t]
+  );
+
+  const ingredientOptions = useMemo(
+    () => ingredients.map((ingredient) => ({
+      value: String(ingredient.id),
+      label: ingredient.type ? `${ingredient.name} · ${t(ingredient.type)}` : ingredient.name,
+    })),
+    [ingredients, t]
+  );
+
+  const selectedIngredientOption = ingredientId
+    ? ingredientOptions.find((option) => option.value === ingredientId) || null
+    : null;
+
+  const canAddIngredient = Boolean(ingredientId && quantity.trim() && unit);
+  const canSave = Boolean(recipeName.trim() && draftIngredients.length > 0 && !isSaving);
 
   useEffect(() => {
-    if (newIngredientId) {
-      updateNewUnits();
+    if (!show) {
+      setRecipeName('');
+      setDraftIngredients([]);
+      setIngredientId('');
+      setQuantity('');
+      setUnit(null);
+      setFormError('');
+      setIngredientError('');
+      setIsSaving(false);
     }
-  }, [newIngredientId]);
+  }, [show]);
 
-  const updateNewUnits = () => {
-    const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(newIngredientId));
-    if (!selectedIngredient) return;
+  useEffect(() => {
+    setUnit(unitOptions[0] || null);
+    setIngredientError('');
+  }, [unitOptions]);
 
-    let units = [];
-    switch (selectedIngredient.type) {
-      case 'base':
-        units = ['kg', 'g'];
-        break;
-      case 'spice':
-        units = ['g'];
-        break;
-      case 'sauce':
-        units = ['ml'];
-        break;
-      case 'electricity':
-        units = ['hh'];
-        break;
-      case 'packing':
-        units = ['pieces'];
-        break;
-      default:
-        units = [];
-    }
-    setNewUnits(units.map(unit => ({ value: unit, label: t(unit) })));
-    setNewUnit(units[0] ? { value: units[0], label: t(units[0]) } : null);
+  const resetIngredientEntry = () => {
+    setIngredientId('');
+    setQuantity('');
+    setUnit(null);
   };
 
-  const handleIngredientSelect = (selectedOption: { value: string; label: string } | null) => {
-    setNewIngredientId(selectedOption ? selectedOption.value : '');
+  const validateQuantity = () => {
+    const normalizedQuantity = quantity.trim().replace(',', '.');
+    const numericQuantity = Number(normalizedQuantity);
+    return Number.isFinite(numericQuantity) && numericQuantity > 0;
   };
 
-  const addNewIngredient = () => {
-    const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(newIngredientId));
-    if (!selectedIngredient || !newUnit || !newQuantity.trim()) return;
+  const addIngredient = () => {
+    setIngredientError('');
+    setFormError('');
 
-    // Check if ingredient already exists in the recipe
-    const existingIngredient = newIngredients.find(ing => ing.id === selectedIngredient.id);
-    if (existingIngredient) {
-      alert(t('ingredientAlreadyExists'));
+    if (!selectedIngredient) {
+      setIngredientError(t('ingredientRequired'));
       return;
     }
 
-    setNewIngredients([...newIngredients, {
-      id: selectedIngredient.id,
-      name: selectedIngredient.name,
-      quantity: newQuantity.trim(),
-      unit: newUnit
-    }]);
-    
-    // Clear form
-    setNewIngredientId('');
-    setNewQuantity('');
-    setNewUnit(null);
-    setNewUnits([]);
+    if (!quantity.trim() || !validateQuantity()) {
+      setIngredientError(t('validQuantityRequired'));
+      return;
+    }
+
+    if (!unit) {
+      setIngredientError(t('unitRequired'));
+      return;
+    }
+
+    if (draftIngredients.some((ingredient) => ingredient.id === selectedIngredient.id)) {
+      setIngredientError(t('ingredientAlreadyExists'));
+      return;
+    }
+
+    setDraftIngredients((currentIngredients) => [
+      ...currentIngredients,
+      {
+        id: selectedIngredient.id,
+        name: selectedIngredient.name,
+        type: selectedIngredient.type,
+        quantity: quantity.trim(),
+        unit,
+      },
+    ]);
+    resetIngredientEntry();
   };
 
-  const handleCreateRecipe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newRecipeName.trim()) {
-      alert(t('recipeNameRequired'));
-      return;
-    }
-    
-    if (newIngredients.length === 0) {
-      alert(t('atLeastOneIngredientRequired'));
+  const removeIngredient = (ingredientId: number) => {
+    setDraftIngredients((currentIngredients) =>
+      currentIngredients.filter((ingredient) => ingredient.id !== ingredientId)
+    );
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError('');
+    setIngredientError('');
+
+    if (!recipeName.trim()) {
+      setFormError(t('recipeNameRequired'));
       return;
     }
 
-    await onCreateRecipe(newRecipeName, newIngredients);
-    onHide(); // Закрыть модалку после успешного создания
+    if (draftIngredients.length === 0) {
+      setFormError(t('atLeastOneIngredientRequired'));
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await onCreateRecipe(recipeName.trim(), draftIngredients);
+    } catch (error) {
+      setFormError(error instanceof Error && error.message === 'Failed to add ingredient'
+        ? t('failedToAddIngredient')
+        : t('failedToCreateRecipe'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <Modal show={show} onHide={onHide}>
-      <Modal.Header closeButton>
-        <Modal.Title className="h4 text-center">{t('addRecipe')}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleCreateRecipe}>
-          <Form.Group>
-            <Form.Label>{t('recipeName')}</Form.Label>
-            <Form.Control
-              type="text"
-              value={newRecipeName}
-              onChange={(e) => setNewRecipeName(e.target.value)}
-            />
-          </Form.Group>
-          <SelectDropdown
-            value={newIngredientId ? { value: newIngredientId, label: ingredients.find((i: Ingredient) => i.id === parseInt(newIngredientId))?.name } : null}
-            onChange={handleIngredientSelect}
-            options={ingredients ? ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })) : []}
-            isClearable
-            placeholder={t('chooseIngredient')}
-            label={t('chooseIngredient')}
-          />
-          <Form.Group>
-            <Form.Label>{t('quantity')}</Form.Label>
-            <Form.Control
-              type="text"
-              value={newQuantity}
-              onChange={(e) => setNewQuantity(e.target.value)}
-            />
-          </Form.Group>
-          <SelectDropdown
-            value={newUnit}
-            onChange={(selectedOption) => setNewUnit(selectedOption || null)}
-            options={newUnits}
-            isClearable
-            placeholder={t('chooseUnit')}
-            label={t('unit')}
-          />
-          <div className="d-flex justify-content-end mt-3">
-            <Button 
-              type="button"
-              variant="outline-primary" 
-              size="sm"
-              onClick={addNewIngredient}
-              disabled={!newIngredientId || !newQuantity || !newUnit}
-              className="d-flex align-items-center add-ingredient-button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="me-2" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-              </svg>
-              {t('addIngredient')}
-            </Button>
+    <Modal show={show} onHide={onHide} size="lg" className="recipe-builder-modal" centered>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Header closeButton>
+          <div>
+            <Modal.Title>{t('addRecipe')}</Modal.Title>
+            <div className="recipe-builder-subtitle">{t('recipeBuilderSubtitle')}</div>
           </div>
-        </Form>
-        {newIngredients.length > 0 && (
-          <div className="mt-3">
-            <h6 className="text-muted mb-2">{t('ingredientsInRecipe')} ({newIngredients.length})</h6>
-            <ListGroup style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {newIngredients.map((ingredient, index) => (
-                <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center py-2">
-                  <div className="d-flex align-items-center">
-                    <span className="me-2">🥄</span>
-                    <div>
-                      <strong>{ingredient.name}</strong>
-                      <div className="text-muted small">
+        </Modal.Header>
+
+        <Modal.Body>
+          <div className="recipe-builder-layout">
+            <div className="recipe-builder-main">
+              <section className="recipe-builder-section">
+                <Form.Group>
+                  <Form.Label>{t('recipeName')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={recipeName}
+                    onChange={(event) => {
+                      setRecipeName(event.target.value);
+                      setFormError('');
+                    }}
+                    placeholder={t('recipeName')}
+                    isInvalid={Boolean(formError && !recipeName.trim())}
+                  />
+                </Form.Group>
+              </section>
+
+              <section className="recipe-builder-section">
+                <div className="recipe-builder-section-header">
+                  <div>
+                    <h3>{t('addIngredient')}</h3>
+                    <p>{t('recipeBuilderIngredientHelp')}</p>
+                  </div>
+                </div>
+
+                <div className="recipe-builder-entry-grid">
+                  <SelectDropdown
+                    value={selectedIngredientOption}
+                    onChange={(selectedOption: any) => setIngredientId(selectedOption ? selectedOption.value : '')}
+                    options={ingredientOptions}
+                    isClearable
+                    placeholder={t('chooseIngredient')}
+                    label={t('ingredient')}
+                    error={ingredientError === t('ingredientRequired') ? ingredientError : undefined}
+                  />
+                  <Form.Group>
+                    <Form.Label>{t('quantity')}</Form.Label>
+                    <Form.Control
+                      type="text"
+                      inputMode="decimal"
+                      value={quantity}
+                      onChange={(event) => {
+                        setQuantity(event.target.value);
+                        setIngredientError('');
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          addIngredient();
+                        }
+                      }}
+                      isInvalid={ingredientError === t('validQuantityRequired')}
+                    />
+                  </Form.Group>
+                  <SelectDropdown
+                    value={unit}
+                    onChange={(selectedOption) => {
+                      setUnit(selectedOption || null);
+                      setIngredientError('');
+                    }}
+                    options={unitOptions}
+                    isClearable
+                    placeholder={t('chooseUnit')}
+                    label={t('unit')}
+                    error={ingredientError === t('unitRequired') ? ingredientError : undefined}
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={addIngredient}
+                    disabled={!canAddIngredient}
+                    className="recipe-builder-add-button"
+                  >
+                    <FaPlus className="me-2" />
+                    {t('add')}
+                  </Button>
+                </div>
+
+                {ingredientError && ![t('ingredientRequired'), t('validQuantityRequired'), t('unitRequired')].includes(ingredientError) && (
+                  <div className="recipe-builder-inline-error">
+                    <FaExclamationTriangle />
+                    {ingredientError}
+                  </div>
+                )}
+              </section>
+            </div>
+
+            <aside className="recipe-builder-summary">
+              <div className="recipe-builder-summary-header">
+                <div>
+                  <h3>{t('recipeComposition')}</h3>
+                  <p>
+                    {draftIngredients.length} {t('of')} {formatCount(t, ingredients.length, 'ingredient')}
+                  </p>
+                </div>
+                <div className="recipe-builder-count">
+                  <FaLayerGroup />
+                  {draftIngredients.length}
+                </div>
+              </div>
+
+              {draftIngredients.length > 0 ? (
+                <div className="recipe-builder-list">
+                  {draftIngredients.map((ingredient) => (
+                    <div key={ingredient.id} className="recipe-builder-list-item">
+                      <div>
+                        <strong>{ingredient.name}</strong>
+                        {ingredient.type && <span>{t(ingredient.type)}</span>}
+                      </div>
+                      <div className="recipe-builder-list-quantity">
                         {ingredient.quantity} {t(ingredient.unit.value)}
                       </div>
+                      <Button
+                        type="button"
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => removeIngredient(ingredient.id)}
+                        aria-label={t('removeIngredientFromRecipe')}
+                        className="recipe-builder-remove-button"
+                      >
+                        <FaTrash />
+                      </Button>
                     </div>
-                  </div>
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm" 
-                    onClick={() => setNewIngredients(newIngredients.filter((_, i) => i !== index))}
-                    className="btn-icon-small"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                      <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                    </svg>
-                  </Button>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+                  ))}
+                </div>
+              ) : (
+                <div className="recipe-builder-empty">
+                  <FaLayerGroup />
+                  <strong>{t('noIngredientsAddedYet')}</strong>
+                  <span>{t('recipeBuilderEmptyHelp')}</span>
+                </div>
+              )}
+            </aside>
           </div>
-        )}
-        
-        {newIngredients.length === 0 && (
-          <div className="text-center py-3 mt-3 bg-light rounded">
-            <div className="text-muted">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="mb-2" viewBox="0 0 16 16">
-                <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
-              </svg>
-              <p className="mb-0 small">{t('noIngredientsAddedYet')}</p>
+
+          {formError && (
+            <div className="recipe-builder-form-error">
+              <FaExclamationTriangle />
+              {formError}
             </div>
+          )}
+        </Modal.Body>
+
+        <Modal.Footer>
+          <div className="recipe-builder-footer-status">
+            {draftIngredients.length > 0
+              ? formatCount(t, draftIngredients.length, 'ingredient')
+              : t('recipeBuilderNotReady')}
           </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="primary" onClick={handleCreateRecipe}>
-          {t('save')}
-        </Button>
-      </Modal.Footer>
+          <div className="recipe-builder-footer-actions">
+            <Button variant="outline-secondary" onClick={onHide} disabled={isSaving}>
+              {t('cancel')}
+            </Button>
+            <Button variant="primary" type="submit" disabled={!canSave}>
+              {isSaving ? t('loading') : t('save')}
+            </Button>
+          </div>
+        </Modal.Footer>
+      </Form>
     </Modal>
   );
 };
