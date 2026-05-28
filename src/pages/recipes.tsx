@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
-import { Container, Row, Col, Button, ListGroup, Form } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
 import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
 import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
 import RecipeCalculator from '../components/calculator/RecipeCalculator';
@@ -11,18 +11,20 @@ import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
-import { FaPlus, FaUtensils, FaFilter, FaTimes, FaCalculator, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaUtensils, FaTimes, FaCalculator, FaEdit, FaExclamationTriangle } from 'react-icons/fa';
 import SelectDropdown from '../components/SelectDropdown';
+import { formatCount } from '../utils/pluralize';
 
 const Recipes: React.FC = () => {
   const { auth } = useAuth();
-  const { t, lang } = useTranslation('common');
+  const { t } = useTranslation('common');
   const { success, error: showError } = useNotification();
   const router = useRouter();
   const [recipes, setRecipes] = useState<any[]>([]);
-  const [filterName, setFilterName] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterIngredient, setFilterIngredient] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
@@ -31,11 +33,11 @@ const Recipes: React.FC = () => {
   const [calculatorRecipe, setCalculatorRecipe] = useState<any>(null);
 
   // Fetch списков рецептов и ингредиентов
-  const { data: recipeNames, error: recipeNamesError } = useSWR(
+  const { data: recipeNames } = useSWR(
     auth.isAuthenticated ? '/api/recipes' : null,
     fetcher
   );
-  const { data: ingredients, error: ingredientsError } = useSWR(
+  const { data: ingredients } = useSWR(
     auth.isAuthenticated ? '/api/ingredients' : null,
     fetcher
   );
@@ -47,16 +49,36 @@ const Recipes: React.FC = () => {
   }, [recipeNames, ingredients]);
 
   useEffect(() => {
-    if (filterName || filterIngredient) {
+    if (filterIngredient) {
       loadRecipes();
     } else {
       setRecipes(recipeNames || []);
     }
-  }, [filterName, filterIngredient, recipeNames]);
+  }, [filterIngredient, recipeNames]);
+
+  const filteredRecipes = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return recipes;
+
+    return recipes.filter((recipe) =>
+      String(recipe.name || '').toLowerCase().includes(normalizedSearch)
+    );
+  }, [recipes, searchTerm]);
+
+  useEffect(() => {
+    if (filteredRecipes.length === 0) {
+      setSelectedRecipeId(null);
+      return;
+    }
+
+    const selectedRecipeIsVisible = filteredRecipes.some((recipe) => recipe.id === selectedRecipeId);
+    if (!selectedRecipeIsVisible) {
+      setSelectedRecipeId(filteredRecipes[0].id);
+    }
+  }, [filteredRecipes, selectedRecipeId]);
 
   const loadRecipes = async () => {
     const query = new URLSearchParams();
-    if (filterName) query.append('recipe_id', filterName);
     if (filterIngredient) query.append('ingredient_id', filterIngredient);
 
     try {
@@ -172,7 +194,7 @@ const Recipes: React.FC = () => {
     try {
       if (!auth.isAuthenticated || !auth.token) {
         router.push('/auth/signin');
-        return;
+        throw new Error('Authentication required');
       }
 
       const response = await fetcher('/api/recipes', {
@@ -188,24 +210,36 @@ const Recipes: React.FC = () => {
         const createdRecipe = response;
         const recipeId = createdRecipe.id;
 
-        for (const ingredient of ingredients) {
-          const ingredientResponse = await fetcher(`/api/recipes/${recipeId}/ingredients`, {
-            method: 'POST',
+        try {
+          for (const ingredient of ingredients) {
+            const ingredientResponse = await fetcher(`/api/recipes/${recipeId}/ingredients`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${auth.token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ingredient_id: ingredient.id,
+                quantity: ingredient.quantity,
+                unit: ingredient.unit.value,
+              }),
+            });
+
+            if (!ingredientResponse) {
+              throw new Error('Failed to add ingredient');
+            }
+          }
+        } catch (ingredientError) {
+          await fetcher(`/api/recipes/${recipeId}`, {
+            method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              ingredient_id: ingredient.id,
-              quantity: ingredient.quantity,
-              unit: ingredient.unit.value,
-            }),
-          });
+          }).catch(() => undefined);
 
-          if (!ingredientResponse) {
-            showError(t('failedToAddIngredient'));
-            return;
-          }
+          showError(t('failedToAddIngredient'));
+          throw new Error('Failed to add ingredient');
         }
 
         loadRecipes();
@@ -213,37 +247,143 @@ const Recipes: React.FC = () => {
         success(t('recipeCreated'));
       } else {
         showError(t('failedToCreateRecipe'));
+        throw new Error('Failed to create recipe');
       }
     } catch (error) {
-      showError(t('failedToCreateRecipe'));
+      if (!(error instanceof Error && error.message === 'Failed to add ingredient')) {
+        showError(t('failedToCreateRecipe'));
+      }
+      throw error;
     }
   };
 
   const clearFilters = () => {
-    setFilterName('');
+    setSearchTerm('');
     setFilterIngredient('');
   };
 
-  const hasActiveFilters = filterName || filterIngredient;
+  const selectedRecipe = useMemo(
+    () => filteredRecipes.find((recipe) => recipe.id === selectedRecipeId) || null,
+    [filteredRecipes, selectedRecipeId]
+  );
+
+  const hasActiveFilters = searchTerm.trim() || filterIngredient;
+  const ingredientFilterLabel = filterIngredient
+    ? ingredients?.find((ingredient: any) => ingredient.id === parseInt(filterIngredient))?.name
+    : '';
+
+  const getRecipeIngredients = (recipe: any) =>
+    Array.isArray(recipe?.recipe_ingredients) ? recipe.recipe_ingredients : [];
+
+  const isMissingCost = (value: any) => {
+    const numericValue = typeof value === 'number' ? value : parseFloat(value);
+    return !Number.isFinite(numericValue) || numericValue <= 0;
+  };
+
+  const formatCost = (value: any) => {
+    if (isMissingCost(value)) {
+      return `N/A ${t('currency')}`;
+    }
+
+    const numericValue = typeof value === 'number' ? value : parseFloat(value);
+    return `${numericValue.toFixed(2)} ${t('currency')}`;
+  };
+
+  const getMissingCostCount = (recipe: any) =>
+    getRecipeIngredients(recipe).filter((ingredient: any) => isMissingCost(ingredient.calculated_cost)).length;
+
+  const renderRecipeDetails = (recipe: any, variant: 'desktop' | 'mobile') => {
+    const recipeIngredients = getRecipeIngredients(recipe);
+    const missingCostCount = getMissingCostCount(recipe);
+
+    return (
+      <div className={`recipe-detail-panel recipe-detail-panel-${variant}`}>
+        <div className="recipe-detail-header">
+          <div>
+            <h2 className="recipe-detail-title">{recipe.name}</h2>
+            <div className="recipe-detail-meta">
+              <span>{formatCount(t, recipeIngredients.length, 'ingredient')}</span>
+              {missingCostCount > 0 && (
+                <span className="recipe-warning-chip">
+                  <FaExclamationTriangle size={12} />
+                  {formatCount(t, missingCostCount, 'missingCost')}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="recipe-detail-cost">
+            <span className="recipe-cost-label">{t('totalCost')}</span>
+            <strong>{formatCost(recipe.total_cost)}</strong>
+          </div>
+        </div>
+
+        {recipeIngredients.length > 0 ? (
+          <div className="recipe-detail-table">
+            <div className="recipe-detail-table-head">
+              <span>{t('ingredient')}</span>
+              <span>{t('quantity')}</span>
+              <span>{t('cost')}</span>
+            </div>
+            {recipeIngredients.map((ri: any) => (
+              <div key={ri.id || ri.ingredient_id} className="recipe-detail-row">
+                <span className="recipe-detail-ingredient">{ri.ingredient?.name || t('unknown')}</span>
+                <span className="recipe-detail-quantity">{ri.quantity} {ri.unit}</span>
+                <span className={isMissingCost(ri.calculated_cost) ? 'recipe-detail-cost-missing' : ''}>
+                  {formatCost(ri.calculated_cost)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-ingredients">{t('noIngredientsAvailable')}</div>
+        )}
+
+        <div className="recipe-detail-actions">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={() => {
+              setCalculatorRecipe(recipe);
+              setShowCalculator(true);
+            }}
+          >
+            <FaCalculator className="me-2" />
+            {t('calculate')}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingRecipe(recipe);
+              setShowModal(true);
+            }}
+          >
+            <FaEdit className="me-2" />
+            {t('edit')}
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="page-container">
       {/* Page Header */}
-      <div className="page-header">
-        <div>
+      <div className="page-header recipe-page-header">
+        <div className="recipe-page-heading">
           <h1 className="page-title d-flex align-items-center gap-3">
             <FaUtensils className="text-primary" />
             {t('recipes')}
           </h1>
           <div className="page-subtitle">
-            {t('total')}: {recipes?.length || 0} {t('recipes').toLowerCase()}
+            {t('total')}: {formatCount(t, recipeNames?.length || 0, 'recipe')}
             {hasActiveFilters && (
               <span className="text-tertiary"> / {t('filtered').toLowerCase()}</span>
             )}
           </div>
         </div>
         <Button
-          className="btn btn-primary"
+          className="btn btn-primary recipe-page-add-button"
           onClick={() => setShowCreateModal(true)}
         >
           <FaPlus className="me-2" />
@@ -251,27 +391,14 @@ const Recipes: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filter Section */}
-      <div className="filter-bar">
+      <div className="recipe-filter-strip">
         <div className="filter-group">
-          <SelectDropdown
-            value={
-              filterName
-                ? { value: filterName, label: recipeNames?.find((recipe: any) => recipe.id === parseInt(filterName))?.name }
-                : null
-            }
-            onChange={(selectedOption: any) => setFilterName(selectedOption ? selectedOption.value : '')}
-            options={
-              recipeNames
-                ? recipeNames.map((recipeName: any) => ({
-                    value: recipeName.id,
-                    label: recipeName.name,
-                  }))
-                : []
-            }
-            isClearable
-            placeholder={t('allRecipes')}
-            label={t('recipe')}
+          <Form.Label>{t('searchRecipes')}</Form.Label>
+          <Form.Control
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={t('searchByName')}
           />
         </div>
         <div className="filter-group">
@@ -295,6 +422,9 @@ const Recipes: React.FC = () => {
             label={t('ingredient')}
           />
         </div>
+        <div className="recipe-filter-summary">
+          {filteredRecipes.length} {t('of')} {formatCount(t, recipeNames?.length || 0, 'recipe')}
+        </div>
         {hasActiveFilters && (
           <Button
             variant="outline-secondary"
@@ -310,12 +440,12 @@ const Recipes: React.FC = () => {
 
       {/* Recipes Grid */}
       {isLoading ? (
-        <div className="recipe-grid">
+        <div className="recipe-workbench recipe-workbench-loading">
           {Array.from({ length: 6 }).map((_, index) => (
             <RecipeCardSkeleton key={index} />
           ))}
         </div>
-      ) : recipes.length === 0 ? (
+      ) : filteredRecipes.length === 0 ? (
         <EmptyState
           type="recipes"
           message={hasActiveFilters ? t('noRecipesFound') : t('noRecipes')}
@@ -323,65 +453,48 @@ const Recipes: React.FC = () => {
           onAction={() => setShowCreateModal(true)}
         />
       ) : (
-        <div className="recipe-grid">
-          {recipes.map((recipe) => (
-              <div key={recipe.id} className="recipe-card">
-                <div className="recipe-card-header">
-                  <h3 className="recipe-card-title">{recipe.name}</h3>
-                  <div className="recipe-card-cost">
-                    <span className="recipe-cost-label">{t("totalCost")}:</span>
-                    <span className="recipe-cost-value">{recipe.total_cost ? recipe.total_cost.toFixed(2) : 'N/A'} {t("currency")}</span>
-                  </div>
-                </div>
-                <div className="recipe-card-body">
-                  <div className="recipe-ingredients-list">
-                    {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
-                      recipe.recipe_ingredients.map((ri: any) => (
-                        <div key={ri.id} className="recipe-ingredient-item">
-                          <div className="ingredient-name">{ri.ingredient.name}</div>
-                          <div className="ingredient-details">
-                            <span className="ingredient-quantity">{ri.quantity} {ri.unit}</span>
-                            <span className="ingredient-price">
-                              ({ri.calculated_cost
-                                ? parseFloat(ri.calculated_cost).toFixed(2)
-                                : 'N/A'} {t("currency")})
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-ingredients">{t("noIngredientsAvailable")}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="recipe-card-footer">
-                  <div className="d-flex justify-content-start gap-2">
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => {
-                        setCalculatorRecipe(recipe);
-                        setShowCalculator(true);
-                      }}
-                      title={t("calculate")}
-                    >
-                      <FaCalculator size={14} />
-                    </button>
-                    <div className="ms-auto">
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => {
-                          setEditingRecipe(recipe);
-                          setShowModal(true);
-                        }}
-                        title={t("edit")}
-                      >
-                        <FaEdit size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+        <div className="recipe-workbench">
+          <div className="recipe-list-panel" aria-label={t('recipes')}>
+            {hasActiveFilters && (
+              <div className="recipe-active-filters">
+                {searchTerm.trim() && (
+                  <span>{t('search')}: {searchTerm.trim()}</span>
+                )}
+                {ingredientFilterLabel && (
+                  <span>{t('ingredient')}: {ingredientFilterLabel}</span>
+                )}
               </div>
-            ))}
+            )}
+            {filteredRecipes.map((recipe) => {
+              const recipeIngredients = getRecipeIngredients(recipe);
+              const missingCostCount = getMissingCostCount(recipe);
+              const isSelected = recipe.id === selectedRecipeId;
+
+              return (
+                <div
+                  key={recipe.id}
+                  className={`recipe-list-item ${isSelected ? 'is-selected' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="recipe-list-button"
+                    onClick={() => setSelectedRecipeId(recipe.id)}
+                    aria-pressed={isSelected}
+                  >
+                    <span className="recipe-list-name">{recipe.name}</span>
+                    <span className="recipe-list-cost">{formatCost(recipe.total_cost)}</span>
+                    <span className="recipe-list-meta">
+                      {formatCount(t, recipeIngredients.length, 'ingredient')}
+                      {missingCostCount > 0 && ` · ${formatCount(t, missingCostCount, 'missingCost')}`}
+                    </span>
+                  </button>
+                  {isSelected && renderRecipeDetails(recipe, 'mobile')}
+                </div>
+              );
+            })}
+          </div>
+
+          {selectedRecipe && renderRecipeDetails(selectedRecipe, 'desktop')}
         </div>
       )}
 
