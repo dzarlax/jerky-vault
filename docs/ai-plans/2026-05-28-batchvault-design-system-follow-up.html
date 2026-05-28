@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: BatchVault Design-System Follow-up</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #fff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #d8dde5;
+      --code: #eef1f5;
+      --accent: #8b2635;
+      --accent-soft: #ead7dc;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --ok: #047857;
+      --info: #0369a1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; margin-bottom: 6px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 22px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid var(--border); padding: 9px 10px; vertical-align: top; text-align: left; }
+    th { background: #f3f4f6; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta { color: var(--muted); margin-top: 6px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfd;
+    }
+    .approval { border-left: 4px solid var(--warning); }
+    .risk { border-left: 4px solid var(--danger); }
+    .decision { border-left: 4px solid var(--info); }
+    .ok { border-left: 4px solid var(--ok); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Implementation Plan: BatchVault Design-System Follow-up</h1>
+    <span class="badge">Approval required before implementation</span>
+    <p class="meta">Created 2026-05-28 from <code>D:\Projects\Code\Personal\jerky-vault</code>. This plan addresses the open Todoist task <code>BatchVault: design-system follow-up</code>.</p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>Close the remaining BatchVault design-system follow-up by running a focused dark-mode QA pass, reducing CSS overlap between the adapter and legacy component stylesheet, documenting reusable UI conventions, deciding what should be upstreamed to the shared design system, and verifying Docker dev-server hot reload behavior.</p>
+    <p>This is a stabilization pass, not a second visual redesign. API behavior, backend contracts, auth behavior, and user-facing copy should remain unchanged unless a bug is found during QA.</p>
+  </section>
+
+  <section>
+    <h2>Current Behavior</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Previous migration state</h3>
+        <p>The existing 2026-05-24 migration plan records completed slices for the adapter, dashboard/app shell, orders, products/recipes, CRUD pages, modals, auth/profile, and wide-screen dashboard checks.</p>
+      </div>
+      <div class="card">
+        <h3>CSS import order</h3>
+        <p><code>src/pages/_app.tsx</code> imports <code>design-system.css</code>, then <code>batchvault-adapter.css</code>, then <code>components.css</code>. Because <code>components.css</code> loads last, adapter rules sometimes rely on specificity and <code>!important</code> to survive.</p>
+      </div>
+      <div class="card">
+        <h3>Style overlap</h3>
+        <p><code>components.css</code> and <code>batchvault-adapter.css</code> both define major selectors such as <code>.card</code>, <code>.stat-card</code>, <code>.sidebar</code>, <code>.page-container</code>, <code>.filter-bar</code>, <code>.table</code>, <code>.modal-*</code>, <code>.react-select__*</code>, <code>.profile-*</code>, <code>.order-item-*</code>, <code>.product-card</code>, and <code>.recipe-card</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Docker dev server</h3>
+        <p>The dev compose file runs <code>npm run dev -- -H 0.0.0.0 -p 3000</code>, but previous memory notes mention flaky HMR with repeated <code>webpack.hot-update.json</code> 404s. No polling-related env variables are currently visible in the tracked compose example.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="decision">
+    <h2>Recommended Approach</h2>
+    <p>Use a narrow "stabilize and document" approach instead of broad refactoring.</p>
+    <ol>
+      <li>Move the adapter import after legacy component styles so adapter rules become the final product-level layer.</li>
+      <li>Delete adapter overrides that only exist because of the current import order, but keep product-level overrides in the adapter.</li>
+      <li>Document current BatchVault UI conventions from the code that already exists instead of inventing a new component system.</li>
+      <li>Add explicit Docker watch polling settings only if live verification shows HMR still misses changes.</li>
+    </ol>
+    <p>This keeps the pass reviewable and avoids mixing QA cleanup with a second redesign.</p>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Dark mode remains readable and consistent across dashboard, orders, products, recipes, clients, ingredients, prices, profile, auth pages, and representative create/edit modals.</li>
+      <li>The CSS layering is easier to reason about: base tokens first, legacy component definitions second, BatchVault adapter last.</li>
+      <li>The adapter owns product-level decisions: brand colors, dark-mode bridge, app density, sidebar/footer fixes, dashboard/card refinements, modal containment, and mobile overflow fixes.</li>
+      <li>Legacy <code>components.css</code> remains the broad component source during this pass; high-risk selector moves are avoided unless they are trivial and directly reduce duplication.</li>
+      <li>A short durable doc records table, form, modal, card, state, and shell conventions for future BatchVault work.</li>
+      <li>Docker dev-server behavior is verified with a real source edit. If HMR is unreliable, the compose example gets explicit polling env vars and the plan records the result.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>src/pages/_app.tsx</code></td><td>Change CSS import order to load <code>batchvault-adapter.css</code> after <code>components.css</code>.</td></tr>
+        <tr><td><code>src/styles/batchvault-adapter.css</code></td><td>Trim or simplify overrides after import-order change; keep product-level app-shell, dark-mode, table, modal, and card refinements.</td></tr>
+        <tr><td><code>src/styles/components.css</code></td><td>Only small cleanup if an obviously duplicated rule can move out without changing behavior. Avoid broad rewrites.</td></tr>
+        <tr><td><code>docker-compose.dev.yml.example</code></td><td>Add polling env vars only if HMR verification proves they are needed.</td></tr>
+        <tr><td><code>docker-compose.dev.yml</code></td><td>Local ignored file may need the same HMR settings for local validation; it should stay untracked.</td></tr>
+        <tr><td><code>docs/batchvault-ui-conventions.md</code></td><td>New short convention doc for reusable BatchVault UI patterns and upstream candidates.</td></tr>
+        <tr><td><code>docs/ai-plans/2026-05-28-batchvault-design-system-follow-up.html</code></td><td>Update after implementation with actual changes, checks, and known limitations.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Capture the current git diff and preserve the untracked <code>AGENTS.md</code> as user-owned unless explicitly asked to stage it.</li>
+      <li>Run baseline checks: <code>npm run lint</code> and <code>npm run build:docker</code>.</li>
+      <li>Start the Docker dev stack if it is not already running, then load representative pages in the browser.</li>
+      <li>Run dark-mode QA on representative routes and modals, recording issues before editing CSS.</li>
+      <li>Change CSS import order so the adapter loads last, then inspect resulting visual differences.</li>
+      <li>Remove redundant adapter specificity or <code>!important</code> where the new layer order makes it unnecessary, but keep behavior stable.</li>
+      <li>Verify a real HMR edit against the Docker frontend. If the page does not refresh reliably, add watch polling settings and verify again.</li>
+      <li>Write <code>docs/batchvault-ui-conventions.md</code> with current reusable conventions and upstream candidates.</li>
+      <li>Run final lint/build and browser QA. Update this plan with results and residual risks.</li>
+      <li>If all checks pass, complete the Todoist task only after explicit confirmation or as part of the final cleanup request.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code> - static frontend check.</li>
+      <li><code>npm run build:docker</code> - production-style Next build with env validation skipped.</li>
+      <li><code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code> - restart local dev frontend after compose or env changes.</li>
+      <li>Browser QA on <code>http://127.0.0.1:3000/ru</code>, <code>/ru/orders</code>, <code>/ru/products</code>, <code>/ru/recipes</code>, <code>/ru/clients</code>, <code>/ru/ingredients</code>, <code>/ru/prices</code>, <code>/ru/profile</code>, and auth pages.</li>
+      <li>Viewport checks at approximately 390px, 900px, and 1440px, including dark mode.</li>
+      <li>Open representative create/edit modals without saving production data.</li>
+      <li>HMR check: make a harmless temporary CSS change, confirm the browser updates, then revert the temporary change before final diff.</li>
+      <li>Search check: <code>rg -n "!important|translateY|letter-spacing|position: sticky|overflow" src/styles/batchvault-adapter.css src/styles/components.css</code> to review high-risk style overrides before finalizing.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Dark sidebar footer stays pinned and its nav area scrolls independently.</li>
+      <li>Dark-mode form inputs, selects, dropdown portals, modal headers, modal bodies, and modal footers have readable contrast.</li>
+      <li>Orders table remains horizontally scrollable on mobile and status/action controls remain usable.</li>
+      <li>Cards do not jump or overlap on hover at desktop or mobile widths.</li>
+      <li>Dashboard charts and metric cards remain stable at 390px, 900px, and wide desktop.</li>
+      <li>Russian, English, and Serbian labels do not overflow common buttons, tabs, filters, or modal footers.</li>
+      <li>Browser console has no new warnings or errors during the checked flows.</li>
+    </ul>
+  </section>
+
+  <section class="ok">
+    <h2>Implementation Results</h2>
+    <ul>
+      <li>Changed global CSS import order in <code>src/pages/_app.tsx</code> so the BatchVault adapter loads after legacy component styles.</li>
+      <li>Kept the adapter as the final product-level CSS layer and avoided a broad legacy stylesheet rewrite.</li>
+      <li>Verified Docker dev-server HMR with a temporary CSS custom-property probe in <code>src/styles/batchvault-adapter.css</code>. The browser observed the updated value after roughly one second; the probe was removed afterward.</li>
+      <li>Verified dark mode across the main Russian routes at 390px, 900px, and 1440px viewport widths: dashboard, orders, products, recipes, clients, ingredients, prices, profile, sign in, and sign up.</li>
+      <li>Verified representative create modals on mobile dark mode for clients, ingredients, prices, products, recipes, and orders. Each modal opened, stayed within the viewport, kept the footer visible, and avoided document-level horizontal overflow.</li>
+      <li>Added <code>docs/batchvault-ui-conventions.md</code> with durable BatchVault UI conventions and upstream design-system candidates.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>npm run lint</code> passed before and after the implementation.</li>
+      <li><code>npm run build:docker</code> passed before and after the implementation.</li>
+      <li><code>docker compose -f docker-compose.dev.yml up -d --force-recreate frontend</code> restarted the local dev frontend successfully.</li>
+      <li>Browser QA found no console errors or warnings after the dark-mode and modal smoke passes.</li>
+      <li>Dark-mode viewport sweep found no horizontal overflow on the checked routes.</li>
+      <li>Mobile modal smoke found scrollable modal bodies and visible footers for the checked create flows.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Upstream Design-System Candidates</h2>
+    <ul>
+      <li>Application shell pattern: fixed sidebar, scrollable nav, pinned footer.</li>
+      <li>Dense CRUD table pattern with mobile horizontal scrolling.</li>
+      <li>CRUD modal pattern with constrained viewport height and scrollable body.</li>
+      <li>Operational card pattern: restrained hover, compact metadata, stable mobile columns.</li>
+      <li>React-select visual bridge, documented as implementation guidance rather than design-system JavaScript.</li>
+      <li>App typography preset: system sans headings, compact line heights, no editorial serif base import.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>Changing import order can reveal hidden dependencies on the current cascade. Browser QA is required before calling it safe.</li>
+      <li>Removing <code>!important</code> too aggressively can regress Bootstrap tables, modals, or react-select portals.</li>
+      <li>Docker HMR behavior may depend on Docker Desktop file-watching quirks on Windows, so the result should be documented as environment-specific.</li>
+      <li>Dark-mode QA can tempt broad restyling. This pass should fix clear regressions only.</li>
+      <li>The local ignored <code>docker-compose.dev.yml</code> may contain machine-specific secrets or database URLs and must not be staged.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>Rollback is a normal git revert of this follow-up branch. If the CSS import order change causes broad visual regressions, revert <code>_app.tsx</code> first and keep only the documentation/HMR findings. If a specific selector cleanup regresses one page, restore that selector from the previous adapter or component stylesheet.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should Todoist completion happen automatically after this pass verifies cleanly, or should it wait for your manual review?</li>
+      <li>Should upstream design-system candidates become a separate Todoist task after this pass, or just stay documented for now?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>Implementation must not start until the user explicitly approves this plan. Approval means proceeding with the stabilization pass above, including CSS import-order cleanup, dark-mode/browser QA, Docker HMR verification, and a short BatchVault UI conventions document.</p>
+  </section>
+</main>
+</body>
+</html>
