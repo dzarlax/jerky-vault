@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: Workspace Ingredients Frontend</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f1ed;
+      --card: #ffffff;
+      --ink: #2d2522;
+      --muted: #6f625c;
+      --line: #e4d7cf;
+      --brand: #8b2635;
+      --brand-soft: rgba(139, 38, 53, 0.1);
+      --amber: #b66a2c;
+      --green: #14735f;
+      --red: #a43b32;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    h1, h2, h3 {
+      line-height: 1.2;
+      margin-top: 0;
+    }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    code {
+      background: #f5ede8;
+      border: 1px solid #eaded7;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.94em;
+    }
+    ul, ol {
+      padding-left: 22px;
+    }
+    li {
+      margin: 6px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .meta {
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .callout {
+      border-left: 4px solid var(--brand);
+    }
+    .risk {
+      border-left: 4px solid var(--red);
+    }
+    .approval {
+      border-left: 4px solid var(--amber);
+    }
+    .ok {
+      color: var(--green);
+      font-weight: 700;
+    }
+    .warn {
+      color: var(--amber);
+      font-weight: 700;
+    }
+    @media (max-width: 800px) {
+      main {
+        padding: 20px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Implementation Plan: Workspace Ingredients Frontend</h1>
+  <p>
+    <span class="badge">Approval required</span>
+    <span class="badge">Frontend repository</span>
+    <span class="badge">Backend contract inspected</span>
+  </p>
+  <p class="meta">
+    Date: 2026-05-29. Frontend branch inspected:
+    <code>codex/workspace-ingredients-frontend-plan</code>. Backend branch inspected:
+    <code>codex/workspace-ingredients-strict-mode-plan</code>.
+  </p>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>
+      Bring the frontend ingredients and pricing workflow in line with the new workspace-aware backend.
+      The backend now supports workspace resolution through <code>X-Workspace-ID</code>, workspace
+      ingredient membership, and workspace-scoped prices. The frontend already has an initial
+      workspace context and partial page migrations, but the ingredients screen still needs to become
+      a workspace ingredient workbench instead of a lightly modified legacy ingredient table.
+    </p>
+  </section>
+
+  <section>
+    <h2>Inspected Current State</h2>
+    <div class="grid">
+      <div>
+        <h3>Backend facts</h3>
+        <ul>
+          <li><code>GET /api/workspaces</code> is JWT-only and bootstraps accessible workspaces.</li>
+          <li>Most protected routes run through <code>WorkspaceMiddleware</code>.</li>
+          <li><code>X-Workspace-ID</code> selects workspace; if absent, backend falls back to personal workspace.</li>
+          <li><code>GET /api/workspace-ingredients</code> returns active workspace ingredients with nested <code>ingredient</code> and optional <code>latest_price</code>.</li>
+          <li><code>POST /api/workspace-ingredients</code> links an existing global ingredient to the current workspace.</li>
+          <li><code>DELETE /api/workspace-ingredients/:id</code> deactivates workspace membership.</li>
+          <li><code>POST /api/ingredients</code> creates a global ingredient and links it to the current workspace; if the name exists it returns <code>workspace_linked</code> metadata.</li>
+          <li><code>GET /api/prices</code> and <code>POST /api/prices</code> are workspace-scoped.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Frontend facts</h3>
+        <ul>
+          <li><code>WorkspaceProvider</code> fetches <code>/api/workspaces</code>, stores selected workspace per user, and marks it validated in <code>sessionStorage</code>.</li>
+          <li><code>fetcher</code> sends <code>X-Workspace-ID</code> after workspace validation.</li>
+          <li>Dashboard, clients, recipes, products, orders, prices, and ingredients use <code>workspaceKey</code> in several places.</li>
+          <li><code>src/pages/ingredients.tsx</code> already fetches <code>/api/workspace-ingredients</code>.</li>
+          <li><code>AddIngredientModal</code> already searches global ingredients and can add an existing ingredient to the workspace.</li>
+          <li><code>src/pages/prices.tsx</code> already uses workspace ingredients as the ingredient source.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Current Gaps</h2>
+    <ul>
+      <li>The ingredients page primary action is still <code>Add Ingredient</code>; the frequent workflow should be <code>Update Price</code>.</li>
+      <li>The page still uses a type dropdown. Prior design discussion chose separate filter axes: ingredient type and price state.</li>
+      <li>There is no price-state filter such as all, missing, current, stale.</li>
+      <li>The table shows latest price but does not expose the expected fast row action for creating a new price.</li>
+      <li>Deactivate is shown as a direct row action; this needs clearer wording and probably confirmation because it archives workspace membership.</li>
+      <li>The add ingredient modal mixes "create new dictionary ingredient" and "add existing to workspace" in one form, but it needs clearer search-first UX and copy.</li>
+      <li>The prices page remains a historical prices table; it can stay, but the ingredients page should launch price creation with the selected ingredient prefilled.</li>
+      <li>Some comments in touched frontend files are Russian. Existing code already has this, but any new code comments should be English.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>The ingredients screen defaults to the current workspace working set, not the global ingredient dictionary.</li>
+      <li>The header uses user-facing language: <code>Add Ingredient</code> for adding to the current workspace working set.</li>
+      <li>Search filters only the current workspace ingredient list.</li>
+      <li>Type and price state are separate filter rows or segmented controls.</li>
+      <li>Each row shows ingredient name, type, latest workspace price, price state, latest price date, and row actions.</li>
+      <li>Row action <code>New Price</code> opens the price modal with the ingredient preselected.</li>
+      <li>Ingredients with no latest price show a clear <code>Add Price</code> action.</li>
+      <li>Removing an ingredient from the workspace is presented as archive/deactivate, not deleting the global ingredient.</li>
+      <li>The add-to-workspace flow searches the global dictionary first, filters out already active workspace ingredients, and falls back to creating a new shared ingredient.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Likely File Changes</h2>
+    <ul>
+      <li><code>src/pages/ingredients.tsx</code> - main screen layout, filter axes, price state calculation, row actions, price modal integration.</li>
+      <li><code>src/components/modal/Ingredients/AddIngredientModal.tsx</code> - clarify search-first workspace add flow and copy.</li>
+      <li><code>src/components/modal/Prices/AddPriceModal.tsx</code> - support optional preselected ingredient and possibly a tighter "new price for X" mode.</li>
+      <li><code>src/pages/prices.tsx</code> - align any shared price modal changes and avoid regressions in historical price workflow.</li>
+      <li><code>src/types/api.ts</code> - refine workspace and workspace ingredient types if backend fields differ from frontend assumptions.</li>
+      <li><code>locales/*/common.json</code> - add labels for add ingredient, open prices/history, remove from working list, price state filters, stale/current/missing state.</li>
+      <li><code>src/styles/batchvault-adapter.css</code> or existing style files - scoped table/filter styles for the workbench if existing utilities are insufficient.</li>
+      <li><code>docs/ai-plans/2026-05-29-workspace-ingredients-frontend.html</code> - update after implementation with actual changes and verification results.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Normalize frontend types for <code>Workspace</code>, <code>WorkspaceIngredient</code>, and <code>Price</code> against the inspected backend models.</li>
+      <li>Refactor <code>AddPriceModal</code> to accept an optional preselected ingredient ID and lock or initialize the ingredient field when launched from an ingredient row.</li>
+      <li>Update <code>ingredients.tsx</code> state: text search, type filter, price-state filter, selected ingredient for price modal, and pending archive action.</li>
+      <li>Compute latest price state from <code>workspaceIngredient.latest_price</code>. Start with <code>missing</code> and <code>has price</code>; if "stale" is implemented, use a clearly named constant until backend/config supports a threshold.</li>
+      <li>Replace the type dropdown with filter chips/segmented controls for type and price state.</li>
+      <li>Change header action copy to <code>Add Ingredient</code>, while keeping the backend operation as workspace membership creation.</li>
+      <li>Add row-level <code>New Price</code>/<code>Add Price</code> actions.</li>
+      <li>Change deactivate wording to archive/remove from workspace and add confirmation if implementation scope allows.</li>
+      <li>Polish the add-to-workspace modal copy so users understand existing dictionary reuse versus creating a new shared ingredient.</li>
+      <li>Run typecheck/build/lint checks and manually verify workspace switching, add existing ingredient, create new ingredient, add price, and archive membership.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>UX Notes</h2>
+    <ul>
+      <li>No ingredient IDs in the normal list.</li>
+      <li>No KPI blocks above the table for this pass.</li>
+      <li>Keep the UI dense and operational, not dashboard-like.</li>
+      <li>Use workspace wording carefully in internal code, but prefer user-facing copy such as "ingredients", "working list", and "current space" where possible.</li>
+      <li>Do not show "my ingredient" when the actual scope is workspace.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code> - existing Next lint command.</li>
+      <li><code>npm run build</code> or <code>npm run build:no-ssg</code> if normal build requires unavailable environment values.</li>
+      <li>Run frontend dev server and manually inspect <code>/ingredients</code> and <code>/prices</code>.</li>
+      <li>If backend is available locally, verify requests include <code>X-Workspace-ID</code> after workspace bootstrap.</li>
+      <li>Check all three locale JSON files still parse.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Sign in and confirm the sidebar shows the selected workspace.</li>
+      <li>Switch workspace and confirm ingredients list refetches and cache does not show stale workspace data.</li>
+      <li>Search workspace ingredients by name.</li>
+      <li>Filter by type and price state independently.</li>
+      <li>Add an existing global ingredient to the workspace.</li>
+      <li>Create a new ingredient and confirm it appears in the workspace list.</li>
+      <li>Open prices from an ingredient row and confirm the prices page is filtered to that ingredient.</li>
+      <li>Add a price from the prices page and confirm latest price updates after mutate.</li>
+      <li>Archive/deactivate a workspace ingredient and confirm it leaves the active list without deleting the global dictionary entry.</li>
+      <li>Check mobile width for filter wrapping and row action readability.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li><span class="warn">Workspace bootstrap race:</span> <code>fetcher</code> only sends the header after validation. Pages must wait for <code>isWorkspaceReady</code> and selected workspace where required.</li>
+      <li><span class="warn">Fallback masking bugs:</span> backend can fall back to personal workspace without a header. Manual QA should confirm selected workspace requests send the header.</li>
+      <li><span class="warn">Stale price definition:</span> there is no inspected backend setting for stale threshold. Any frontend-only stale logic must be explicit and easy to change.</li>
+      <li><span class="warn">Global dictionary duplicates:</span> search-first flow helps but global <code>ingredients.name</code> uniqueness still shapes behavior.</li>
+      <li><span class="warn">Archive semantics:</span> deleting workspace membership is really deactivation. The UI must not imply global deletion.</li>
+      <li><span class="warn">Existing dirty files:</span> frontend repo has untracked <code>AGENTS.md</code> and <code>.superpowers/</code>; implementation should avoid touching unrelated files unless requested.</li>
+      <li><span class="warn">Backend repo dirty file:</span> backend has a modified <code>.claude/settings.local.json</code>; this frontend pass should not modify it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <ul>
+      <li>Keep backend endpoints unchanged during this frontend pass.</li>
+      <li>Keep the historical <code>/prices</code> page functional while adding row-level navigation from ingredients.</li>
+      <li>If the new workbench layout causes problems, revert only <code>ingredients.tsx</code>, modal changes, locale additions, and scoped CSS from this branch.</li>
+      <li>Do not remove old ingredient or price translation keys in the same pass.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>What threshold should define a stale price: 30 days, 60 days, custom, or not included in this pass?</li>
+      <li>Should archive/deactivate require a confirmation modal in this first implementation?</li>
+      <li>Should <code>Open prices</code> also prefill the add-price modal when the user clicks <code>Add Price</code> on the prices page?</li>
+      <li>Should adding an ingredient to workspace immediately prompt for first price, or leave that as a separate action on the prices page?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>
+      Implementation must not start until this plan is explicitly approved or revised. After approval,
+      the implementation should update this same file with actual changes, checks run, known limitations,
+      and follow-up recommendations.
+    </p>
+  </section>
+
+  <section>
+    <h2>Implementation Update</h2>
+    <p><span class="badge">Implemented 2026-05-29</span> The production frontend now keeps ingredients and prices as separate screens.</p>
+    <ul>
+      <li><code>/ingredients</code> manages the active workspace ingredient list, with name search, type chips, and price-state chips.</li>
+      <li>Ingredient rows show latest price, price state, and an <code>Open prices</code> action that links to <code>/prices?ingredient_id=...</code>.</li>
+      <li>Ingredient row removal is a secondary action with confirmation and deactivates only the workspace membership.</li>
+      <li><code>/prices</code> reads the <code>ingredient_id</code> query param and filters the workspace price list immediately.</li>
+      <li>The old apply-filters price flow was replaced with immediate client-side filtering and sorting over the fetched workspace prices.</li>
+      <li>The add-ingredient modal now says "search existing ingredients" instead of "global ingredients" in user-facing copy.</li>
+      <li>Translation keys were added for English, Russian, and Serbian; no user-facing copy says "add to workspace".</li>
+    </ul>
+    <h3>Checks Run</h3>
+    <ul>
+      <li><code>node -e ...JSON.parse...</code>: all three locale JSON files parsed successfully.</li>
+      <li><code>npm run lint</code>: passed with no warnings or errors. Next still reports the existing config warning that the Next.js ESLint plugin was not detected.</li>
+      <li><code>npm run build</code>: passed. The project build skips type validation and linting by configuration.</li>
+      <li><code>npx tsc --noEmit</code>: blocked by pre-existing unrelated type errors in calculator, DonutChart, SelectDropdown, index, orders, and products.</li>
+      <li><code>npx tsc --noEmit --pretty false | Select-String ...</code>: no type errors were reported for the modified ingredients/prices/modal files.</li>
+    </ul>
+    <h3>Known Limitations</h3>
+    <ul>
+      <li>No stale-price threshold was implemented because the product rule is still open.</li>
+      <li>The prices page filter is client-side over the fetched workspace price list; if price history becomes very large, this should move to a server-backed paginated filter.</li>
+      <li>The add-price modal is not preselected from the query-filtered ingredient yet.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

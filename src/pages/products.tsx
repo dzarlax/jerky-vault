@@ -56,7 +56,7 @@ const Products = () => {
     let filtered = products || [];
     if (selectedRecipe) {
       filtered = filtered.filter(product =>
-        product.options.some(option => option.recipe_id === selectedRecipe.value)
+        (product.options || []).some(option => option.recipe_id === selectedRecipe.value)
       );
     }
 
@@ -81,12 +81,12 @@ const Products = () => {
 
     setEditingProduct(product);
     setName(product.name);
-    setDescription(product.description);
+    setDescription(product.description || '');
     setPrice(product.price.toString());
     setCost(product.cost.toString());
-    setImage(product.image);
+    setImage(product.image || product.image_url || '');
 
-    const selected = product.options.map(option => {
+    const selected = (product.options || []).map(option => {
       const recipe = recipes?.find(recipe => recipe.id === option.recipe_id);
       return recipe ? { value: recipe.id, label: recipe.name } : null;
     }).filter(option => option !== null) as { value: number; label: string }[];

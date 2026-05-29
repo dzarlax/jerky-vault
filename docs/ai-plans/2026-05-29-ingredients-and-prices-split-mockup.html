@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Mockup: Ingredients and Prices Split</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f1ed;
+      --panel: #ffffff;
+      --soft: #fbf7f4;
+      --line: #e4d7cf;
+      --text: #2d2522;
+      --muted: #73645d;
+      --brand: #8b2635;
+      --brand-soft: rgba(139, 38, 53, 0.1);
+      --green: #14735f;
+      --red: #9d342d;
+      --amber: #93570d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    .intro {
+      margin-bottom: 22px;
+      max-width: 980px;
+    }
+    .intro p, .muted { color: var(--muted); }
+    .screens {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .screen-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .screen-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--soft);
+    }
+    .screen-head h2 {
+      font-size: 19px;
+      margin-bottom: 4px;
+    }
+    .screen-head p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+    .mock-shell {
+      background: #f4eee9;
+      padding: 14px;
+    }
+    .app {
+      background: #fff;
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      min-height: 650px;
+      padding: 14px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 21px;
+      font-weight: 850;
+      margin-bottom: 3px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn {
+      border: 1px solid #d7c8c0;
+      background: #fff;
+      color: #5b4b45;
+      border-radius: 7px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .btn.primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      background: var(--soft);
+      margin-bottom: 10px;
+    }
+    .toolbar.three {
+      grid-template-columns: minmax(0, 1fr) minmax(130px, 0.45fr) auto;
+    }
+    .label {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 9px;
+      font-weight: 850;
+      margin-bottom: 4px;
+    }
+    .input {
+      height: 31px;
+      display: flex;
+      align-items: center;
+      padding: 0 9px;
+      border: 1px solid #d7c8c0;
+      border-radius: 7px;
+      background: #fff;
+      color: #88776f;
+      font-size: 12px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .filter-block {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .filter-row {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 7px;
+      align-items: center;
+    }
+    .axis {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 9px;
+      font-weight: 850;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      border: 1px solid #eadfd8;
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: #fff;
+      color: #65564f;
+      font-size: 11px;
+      font-weight: 750;
+    }
+    .chip.active {
+      border-color: rgba(139, 38, 53, 0.28);
+      background: var(--brand-soft);
+      color: var(--brand);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      text-align: left;
+      color: #85746d;
+      background: #f7f1ed;
+      padding: 8px 7px;
+      font-size: 9px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td {
+      padding: 8px 7px;
+      border-bottom: 1px solid #f0e6e1;
+      vertical-align: middle;
+    }
+    .type, .state {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 7px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .base { background: #ede7ff; color: #5742a6; }
+    .spice { background: #fff1d6; color: var(--amber); }
+    .sauce { background: #ddf7f2; color: #16756a; }
+    .fresh { background: #ddf7f2; color: var(--green); }
+    .stale { background: #fff1d6; color: var(--amber); }
+    .missing { background: #f8e0dd; color: var(--red); }
+    .row-btn {
+      border: 1px solid #d7c8c0;
+      background: #fff;
+      border-radius: 6px;
+      color: #5b4b45;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 7px;
+      white-space: nowrap;
+    }
+    .row-btn.primary {
+      border-color: rgba(139, 38, 53, 0.3);
+      color: var(--brand);
+      background: rgba(139, 38, 53, 0.06);
+    }
+    .summary {
+      border-top: 1px solid var(--line);
+      padding: 14px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .summary strong {
+      color: var(--text);
+    }
+    @media (max-width: 1180px) {
+      .screens { grid-template-columns: 1fr; }
+      .app { min-height: auto; }
+    }
+    @media (max-width: 720px) {
+      main { padding: 16px; }
+      .toolbar, .toolbar.three { grid-template-columns: 1fr; }
+      .filter-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="intro">
+    <h1>Два экрана: ингредиенты и цены</h1>
+    <p>
+      Идея: не смешивать. Экран ингредиентов управляет рабочим набором текущего пространства
+      и только показывает состояние цены. Экран цен управляет созданием и историей price records.
+    </p>
+  </div>
+
+  <div class="screens">
+    <section class="screen-card">
+      <div class="screen-head">
+        <h2>Ингредиенты</h2>
+        <p>Операционный список: какие ингредиенты используются и какое у них состояние цены.</p>
+      </div>
+      <div class="mock-shell">
+        <div class="app">
+          <div class="top">
+            <div>
+              <div class="title">Ингредиенты</div>
+              <div class="subtitle">184 ингредиента · последние цены текущего пространства</div>
+            </div>
+            <div class="actions">
+              <button class="btn primary">+ Добавить ингредиент</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div>
+              <div class="label">Поиск в рабочем наборе</div>
+              <div class="input">Название ингредиента</div>
+            </div>
+            <button class="btn">Очистить</button>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-row">
+              <div class="axis">Тип</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">База</span>
+                <span class="chip">Специи</span>
+                <span class="chip">Соусы</span>
+              </div>
+            </div>
+            <div class="filter-row">
+              <div class="axis">Цена</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">Без цены</span>
+                <span class="chip">Устаревшие</span>
+                <span class="chip">Актуальные</span>
+              </div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Ингредиент</th>
+                <th>Тип</th>
+                <th>Последняя цена</th>
+                <th>Состояние</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Говядина верхний круг</strong></td>
+                <td><span class="type base">База</span></td>
+                <td><strong>820 RSD / 1 kg</strong><br><span class="muted">28.05.2026 · 5 записей</span></td>
+                <td><span class="state fresh">Актуальная</span></td>
+                <td><button class="row-btn primary">Открыть цены</button></td>
+              </tr>
+              <tr>
+                <td><strong>Копченая паприка</strong></td>
+                <td><span class="type spice">Специя</span></td>
+                <td><strong>18 RSD / 100 g</strong><br><span class="muted">03.04.2026 · 3 записи</span></td>
+                <td><span class="state stale">Устарела</span></td>
+                <td><button class="row-btn primary">Открыть цены</button></td>
+              </tr>
+              <tr>
+                <td><strong>Вустерширский соус</strong></td>
+                <td><span class="type sauce">Соус</span></td>
+                <td><strong>7 RSD / 100 ml</strong><br><span class="muted">21.05.2026 · 8 записей</span></td>
+                <td><span class="state fresh">Актуальная</span></td>
+                <td><button class="row-btn primary">Открыть цены</button></td>
+              </tr>
+              <tr>
+                <td><strong>Сушеный чеснок</strong></td>
+                <td><span class="type spice">Специя</span></td>
+                <td><span class="muted">Нет цены</span></td>
+                <td><span class="state missing">Без цены</span></td>
+                <td><button class="row-btn primary">Открыть цены</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="summary">
+        <strong>Назначение:</strong> быстрый рабочий список. Здесь принимаем решения:
+        добавить ингредиент, увидеть price status, открыть историю цен, убрать из рабочего списка.
+      </div>
+    </section>
+
+    <section class="screen-card">
+      <div class="screen-head">
+        <h2>Цены</h2>
+        <p>Журнал истории: все price records текущего пространства с фильтрами и аудитом.</p>
+      </div>
+      <div class="mock-shell">
+        <div class="app">
+          <div class="top">
+            <div>
+              <div class="title">Цены</div>
+              <div class="subtitle">6 902 записи истории · текущее пространство</div>
+            </div>
+            <div class="actions">
+              <button class="btn primary">+ Добавить цену</button>
+            </div>
+          </div>
+
+          <div class="toolbar three">
+            <div>
+              <div class="label">Ингредиент</div>
+              <div class="input">Все ингредиенты или выбранный из экрана ингредиентов</div>
+            </div>
+            <div>
+              <div class="label">Дата</div>
+              <div class="input">Любая дата</div>
+            </div>
+            <button class="btn">Применить</button>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-row">
+              <div class="axis">Тип</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">База</span>
+                <span class="chip">Специи</span>
+                <span class="chip">Соусы</span>
+              </div>
+            </div>
+            <div class="filter-row">
+              <div class="axis">Период</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">Сегодня</span>
+                <span class="chip">7 дней</span>
+                <span class="chip">30 дней</span>
+              </div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Ингредиент</th>
+                <th>Тип</th>
+                <th>Цена</th>
+                <th>Кол-во</th>
+                <th>Ед.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="muted">28.05.2026</span></td>
+                <td><strong>Говядина верхний круг</strong></td>
+                <td><span class="type base">База</span></td>
+                <td><strong>820 RSD</strong></td>
+                <td>1</td>
+                <td>kg</td>
+              </tr>
+              <tr>
+                <td><span class="muted">21.05.2026</span></td>
+                <td><strong>Вустерширский соус</strong></td>
+                <td><span class="type sauce">Соус</span></td>
+                <td><strong>7 RSD</strong></td>
+                <td>100</td>
+                <td>ml</td>
+              </tr>
+              <tr>
+                <td><span class="muted">12.05.2026</span></td>
+                <td><strong>Говядина верхний круг</strong></td>
+                <td><span class="type base">База</span></td>
+                <td><strong>790 RSD</strong></td>
+                <td>1</td>
+                <td>kg</td>
+              </tr>
+              <tr>
+                <td><span class="muted">03.04.2026</span></td>
+                <td><strong>Копченая паприка</strong></td>
+                <td><span class="type spice">Специя</span></td>
+                <td><strong>18 RSD</strong></td>
+                <td>100</td>
+                <td>g</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="summary">
+        <strong>Назначение:</strong> создание, аудит и история цен. Здесь добавляем новую цену,
+        смотрим, когда и как менялись цены, фильтруем по ингредиенту/дате/типу, но не управляем рабочим набором ингредиентов.
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

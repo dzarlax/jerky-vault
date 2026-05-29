@@ -53,6 +53,11 @@ export interface ProductPackage {
   weight: number;
 }
 
+export interface ProductOption {
+  recipe_id: number;
+  recipe?: Recipe;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -61,7 +66,9 @@ export interface Product {
   cost: number;
   package_id: number;
   package?: ProductPackage;
+  image?: string;
   image_url?: string;
+  options: ProductOption[];
   created_at?: string;
 }
 
@@ -119,6 +126,7 @@ export interface Recipe {
   servings: number;
   created_at?: string;
   ingredients?: RecipeIngredient[];
+  recipe_ingredients?: RecipeIngredient[];
 }
 
 // ===================== PRICE TYPES =====================

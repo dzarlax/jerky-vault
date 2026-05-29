@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { Form, Button, Table, InputGroup } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
@@ -6,30 +6,39 @@ import fetcher from '../utils/fetcher';
 import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
-import { FaPlus, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint, FaHistory } from 'react-icons/fa';
 import AddIngredientModal from '../components/modal/Ingredients/AddIngredientModal';
-import { Ingredient, WorkspaceIngredient } from '../types/api';
-import SelectDropdown from '../components/SelectDropdown';
+import { WorkspaceIngredient } from '../types/api';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+
+type PriceStateFilter = 'all' | 'missing' | 'priced';
 
 const Ingredients: React.FC = () => {
   const { auth } = useAuth();
   const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
-  const { data: workspaceIngredients, error, mutate } = useSWR<WorkspaceIngredient[]>(
+  const { data: workspaceIngredients, mutate } = useSWR<WorkspaceIngredient[]>(
     workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
     workspaceFetcher
   );
   const { t } = useTranslation('common');
   const [filter, setFilter] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterPriceState, setFilterPriceState] = useState<PriceStateFilter>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
 
   const ingredientTypeOptions = [
+    { value: 'all', label: t('allTypes'), icon: FaList },
     { value: 'base', label: t('base'), icon: FaUtensils },
     { value: 'spice', label: t('spice'), icon: FaFlask },
     { value: 'sauce', label: t('sauce'), icon: FaTint },
+  ];
+
+  const priceStateOptions: { value: PriceStateFilter; label: string }[] = [
+    { value: 'all', label: t('allPriceStates') },
+    { value: 'missing', label: t('missingPrice') },
+    { value: 'priced', label: t('hasPrice') },
   ];
 
   const getTypeIcon = (type: string) => {
@@ -84,8 +93,12 @@ const Ingredients: React.FC = () => {
     return fetcher(`/api/ingredients/search?query=${encodeURIComponent(query)}`);
   }, []);
 
-  const handleDeactivateIngredient = async (workspaceIngredientId: number) => {
-    await fetcher(`/api/workspace-ingredients/${workspaceIngredientId}`, {
+  const handleDeactivateIngredient = async (workspaceIngredient: WorkspaceIngredient) => {
+    if (!window.confirm(t('confirmRemoveIngredientFromList', { name: workspaceIngredient.ingredient.name }))) {
+      return;
+    }
+
+    await fetcher(`/api/workspace-ingredients/${workspaceIngredient.id}`, {
       method: 'DELETE',
     });
     mutate();
@@ -93,28 +106,37 @@ const Ingredients: React.FC = () => {
 
   const clearFilters = () => {
     setFilter('');
-    setFilterType('');
+    setFilterType('all');
+    setFilterPriceState('all');
   };
 
-  const isLoading = !workspaceIngredients;
-
-  const filteredIngredients = workspaceIngredients?.filter((workspaceIngredient) => {
-    const nameMatch = workspaceIngredient.ingredient.name.toLowerCase().includes(filter.toLowerCase());
-    const typeMatch = !filterType || workspaceIngredient.ingredient.type === filterType;
-    return nameMatch && typeMatch;
-  });
-
-  const hasActiveFilters = filter || filterType;
-  const getStats = () => {
-    if (!ingredients || ingredients.length === 0) return {};
-    const stats = ingredients.reduce((acc, ingredient) => {
-      acc[ingredient.type] = (acc[ingredient.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    return stats;
+  const openPrices = (ingredientId: number) => {
+    router.push(
+      {
+        pathname: '/prices',
+        query: { ingredient_id: String(ingredientId) },
+      },
+      undefined,
+      { locale: router.locale }
+    );
   };
 
-  const stats = getStats();
+  const isLoading = !isWorkspaceReady || !workspaceIngredients;
+
+  const filteredIngredients = useMemo(() => {
+    return workspaceIngredients?.filter((workspaceIngredient) => {
+      const nameMatch = workspaceIngredient.ingredient.name.toLowerCase().includes(filter.toLowerCase());
+      const typeMatch = filterType === 'all' || workspaceIngredient.ingredient.type === filterType;
+      const priceStateMatch =
+        filterPriceState === 'all' ||
+        (filterPriceState === 'missing' && !workspaceIngredient.latest_price) ||
+        (filterPriceState === 'priced' && !!workspaceIngredient.latest_price);
+
+      return nameMatch && typeMatch && priceStateMatch;
+    }) || [];
+  }, [filter, filterPriceState, filterType, workspaceIngredients]);
+
+  const hasActiveFilters = !!filter || filterType !== 'all' || filterPriceState !== 'all';
 
   return (
     <div className="page-container">
@@ -161,14 +183,38 @@ const Ingredients: React.FC = () => {
           </InputGroup>
         </div>
         <div className="filter-group">
-          <SelectDropdown
-            value={ingredientTypeOptions.find(option => option.value === filterType) || null}
-            onChange={(option) => setFilterType(option ? option.value : '')}
-            options={ingredientTypeOptions}
-            isClearable
-            placeholder={t('allTypes')}
-            label={t('type')}
-          />
+          <label className="filter-label">{t('type')}</label>
+          <div className="filter-chip-row" role="group" aria-label={t('type')}>
+            {ingredientTypeOptions.map((option) => {
+              const IconComponent = option.icon;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`filter-chip ${filterType === option.value ? 'is-active' : ''}`}
+                  onClick={() => setFilterType(option.value)}
+                >
+                  <IconComponent className="me-1" />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="filter-group">
+          <label className="filter-label">{t('priceState')}</label>
+          <div className="filter-chip-row" role="group" aria-label={t('priceState')}>
+            {priceStateOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`filter-chip ${filterPriceState === option.value ? 'is-active' : ''}`}
+                onClick={() => setFilterPriceState(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
         {hasActiveFilters && (
           <Button
@@ -203,6 +249,7 @@ const Ingredients: React.FC = () => {
                 <th>{t('name')}</th>
                 <th>{t('type')}</th>
                 <th>{t('latestPrice')}</th>
+                <th>{t('priceState')}</th>
                 <th>{t('actions')}</th>
               </tr>
             </thead>
@@ -222,21 +269,43 @@ const Ingredients: React.FC = () => {
                   </td>
                   <td>
                     {workspaceIngredient.latest_price ? (
-                      <span className="text-secondary small">
-                        {workspaceIngredient.latest_price.price} {t('currency')} / {workspaceIngredient.latest_price.quantity} {t(workspaceIngredient.latest_price.unit)}
-                      </span>
+                      <div className="text-secondary small">
+                        <div>
+                          {workspaceIngredient.latest_price.price} {t('currency')} / {workspaceIngredient.latest_price.quantity} {t(workspaceIngredient.latest_price.unit)}
+                        </div>
+                        <div className="text-tertiary">
+                          {t('latestPriceDate', {
+                            date: new Date(workspaceIngredient.latest_price.date).toLocaleDateString(router.locale),
+                          })}
+                        </div>
+                      </div>
                     ) : (
                       <span className="text-tertiary small">{t('noLatestPrice')}</span>
                     )}
                   </td>
                   <td>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => handleDeactivateIngredient(workspaceIngredient.id)}
-                    >
-                      {t('deactivate')}
-                    </Button>
+                    <span className={`price-state-badge ${workspaceIngredient.latest_price ? 'is-priced' : 'is-missing'}`}>
+                      {workspaceIngredient.latest_price ? t('hasPrice') : t('missingPrice')}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="ingredient-actions">
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => openPrices(workspaceIngredient.ingredient.id)}
+                      >
+                        <FaHistory className="me-2" />
+                        {t('openPrices')}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => handleDeactivateIngredient(workspaceIngredient)}
+                      >
+                        {t('removeFromIngredientList')}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

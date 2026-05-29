@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Mockups: Workspace Ingredients</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f1ed;
+      --panel: #ffffff;
+      --soft: #fbf7f4;
+      --line: #e4d7cf;
+      --text: #2d2522;
+      --muted: #73645d;
+      --brand: #8b2635;
+      --brand-soft: rgba(139, 38, 53, 0.1);
+      --copper: #b86d35;
+      --green: #14735f;
+      --red: #9d342d;
+      --blue: #385f9c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    .intro {
+      margin-bottom: 22px;
+    }
+    .intro p {
+      color: var(--muted);
+      max-width: 920px;
+    }
+    .mockups {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+    .option {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .option.recommended {
+      border-color: rgba(139, 38, 53, 0.45);
+      box-shadow: 0 0 0 3px rgba(139, 38, 53, 0.1);
+    }
+    .option-head {
+      padding: 14px 16px;
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+    }
+    .option-head h2 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .option-head p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+    .screen {
+      padding: 14px;
+      background: #f4eee9;
+    }
+    .app {
+      background: #fff;
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      min-height: 620px;
+      overflow: hidden;
+    }
+    .app-pad { padding: 14px; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 850;
+      margin-bottom: 3px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn {
+      border-radius: 7px;
+      border: 1px solid #d7c8c0;
+      background: #fff;
+      color: #5b4b45;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .btn.primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      background: var(--soft);
+      margin-bottom: 10px;
+    }
+    .label {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 9px;
+      font-weight: 850;
+      margin-bottom: 4px;
+    }
+    .input {
+      height: 31px;
+      display: flex;
+      align-items: center;
+      padding: 0 9px;
+      border: 1px solid #d7c8c0;
+      border-radius: 7px;
+      background: #fff;
+      color: #88776f;
+      font-size: 12px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .filter-block {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .filter-row {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 7px;
+      align-items: center;
+    }
+    .axis {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 9px;
+      font-weight: 850;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      border: 1px solid #eadfd8;
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: #fff;
+      color: #65564f;
+      font-size: 11px;
+      font-weight: 750;
+    }
+    .chip.active {
+      border-color: rgba(139, 38, 53, 0.28);
+      background: var(--brand-soft);
+      color: var(--brand);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      text-align: left;
+      color: #85746d;
+      background: #f7f1ed;
+      padding: 8px 7px;
+      font-size: 9px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td {
+      padding: 8px 7px;
+      border-bottom: 1px solid #f0e6e1;
+      vertical-align: middle;
+    }
+    .type, .state {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 7px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .base { background: #ede7ff; color: #5742a6; }
+    .spice { background: #fff1d6; color: #93570d; }
+    .sauce { background: #ddf7f2; color: #16756a; }
+    .fresh { background: #ddf7f2; color: #16756a; }
+    .stale { background: #fff1d6; color: #93570d; }
+    .missing { background: #f8e0dd; color: var(--red); }
+    .muted { color: var(--muted); }
+    .row-btn {
+      border: 1px solid #d7c8c0;
+      background: #fff;
+      border-radius: 6px;
+      color: #5b4b45;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 7px;
+      white-space: nowrap;
+    }
+    .row-btn.primary {
+      border-color: rgba(139, 38, 53, 0.3);
+      color: var(--brand);
+      background: rgba(139, 38, 53, 0.06);
+    }
+    .caption {
+      padding: 14px 16px;
+      border-top: 1px solid var(--line);
+    }
+    .caption ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .split-app {
+      display: grid;
+      grid-template-columns: 1fr 190px;
+      min-height: 620px;
+    }
+    .side {
+      border-left: 1px solid #eadfd8;
+      background: #fbf7f4;
+      padding: 12px;
+    }
+    .side h3 {
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+    .side-card {
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .queue-layout {
+      display: grid;
+      grid-template-columns: 165px 1fr;
+      min-height: 620px;
+    }
+    .queue {
+      border-right: 1px solid #eadfd8;
+      background: #fbf7f4;
+      padding: 12px;
+    }
+    .queue-item {
+      border: 1px solid #eadfd8;
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .queue-item.active {
+      border-color: rgba(139, 38, 53, 0.3);
+      background: var(--brand-soft);
+    }
+    @media (max-width: 1220px) {
+      .mockups { grid-template-columns: 1fr; }
+      .app { min-height: auto; }
+      .split-app, .queue-layout { min-height: auto; }
+    }
+    @media (max-width: 720px) {
+      main { padding: 16px; }
+      .split-app, .queue-layout { grid-template-columns: 1fr; }
+      .side, .queue { border-left: 0; border-right: 0; border-top: 1px solid #eadfd8; }
+      .filter-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="intro">
+    <h1>Мокапы: Workspace Ingredients</h1>
+    <p>
+      Три варианта одного направления: рабочий набор ингредиентов текущего workspace,
+      частое обновление цен, общий справочник только в flow добавления. ID в рабочем списке не показываем.
+    </p>
+  </div>
+
+  <div class="mockups">
+    <article class="option recommended">
+      <div class="option-head">
+        <h2>A. Плотный workbench</h2>
+        <p>Рекомендованный вариант: максимум пользы без лишней панели.</p>
+      </div>
+      <div class="screen">
+        <div class="app app-pad">
+          <div class="top">
+            <div>
+              <div class="title">Ингредиенты</div>
+              <div class="subtitle">184 в workspace · цены текущего workspace</div>
+            </div>
+            <div class="actions">
+              <button class="btn primary">+ Обновить цену</button>
+              <button class="btn">+ Добавить ингредиент</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div>
+              <div class="label">Поиск в рабочем наборе</div>
+              <div class="input">Название ингредиента</div>
+            </div>
+            <button class="btn">Очистить</button>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-row">
+              <div class="axis">Тип</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">База</span>
+                <span class="chip">Специи</span>
+                <span class="chip">Соусы</span>
+              </div>
+            </div>
+            <div class="filter-row">
+              <div class="axis">Цена</div>
+              <div class="chips">
+                <span class="chip active">Все</span>
+                <span class="chip">Без цены</span>
+                <span class="chip">Устаревшие</span>
+                <span class="chip">Актуальные</span>
+              </div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Ингредиент</th>
+                <th>Тип</th>
+                <th>Последняя цена</th>
+                <th>Состояние</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Говядина верхний круг</strong></td>
+                <td><span class="type base">База</span></td>
+                <td><strong>820 RSD / 1 kg</strong><br><span class="muted">28.05.2026 · 5 записей</span></td>
+                <td><span class="state fresh">Актуальная</span></td>
+                <td><button class="row-btn primary">Новая цена</button></td>
+              </tr>
+              <tr>
+                <td><strong>Копченая паприка</strong></td>
+                <td><span class="type spice">Специя</span></td>
+                <td><strong>18 RSD / 100 g</strong><br><span class="muted">03.04.2026 · 3 записи</span></td>
+                <td><span class="state stale">Устарела</span></td>
+                <td><button class="row-btn primary">Новая цена</button></td>
+              </tr>
+              <tr>
+                <td><strong>Вустерширский соус</strong></td>
+                <td><span class="type sauce">Соус</span></td>
+                <td><strong>7 RSD / 100 ml</strong><br><span class="muted">21.05.2026 · 8 записей</span></td>
+                <td><span class="state fresh">Актуальная</span></td>
+                <td><button class="row-btn primary">Новая цена</button></td>
+              </tr>
+              <tr>
+                <td><strong>Сушеный чеснок</strong></td>
+                <td><span class="type spice">Специя</span></td>
+                <td><span class="muted">Нет цены</span></td>
+                <td><span class="state missing">Без цены</span></td>
+                <td><button class="row-btn primary">Добавить цену</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="caption">
+        <strong>Почему A:</strong>
+        <ul>
+          <li>Самый близкий к текущему приложению и проще внедрить.</li>
+          <li>Не создает dashboard-шум сверху.</li>
+          <li>Две оси фильтров видны, но таблица остается главным рабочим инструментом.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="option">
+      <div class="option-head">
+        <h2>B. Таблица + detail panel</h2>
+        <p>История цены и архивирование живут в боковой панели выбранной строки.</p>
+      </div>
+      <div class="screen">
+        <div class="app split-app">
+          <div class="app-pad">
+            <div class="top">
+              <div>
+                <div class="title">Ингредиенты</div>
+                <div class="subtitle">184 в workspace</div>
+              </div>
+              <button class="btn primary">+ Обновить цену</button>
+            </div>
+            <div class="toolbar">
+              <div>
+                <div class="label">Поиск</div>
+                <div class="input">Название ингредиента</div>
+              </div>
+              <button class="btn">+ Добавить ингредиент</button>
+            </div>
+            <div class="filter-block">
+              <div class="filter-row">
+                <div class="axis">Тип</div>
+                <div class="chips"><span class="chip active">Все</span><span class="chip">База</span><span class="chip">Специи</span><span class="chip">Соусы</span></div>
+              </div>
+              <div class="filter-row">
+                <div class="axis">Цена</div>
+                <div class="chips"><span class="chip active">Все</span><span class="chip">Без цены</span><span class="chip">Устаревшие</span></div>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Ингредиент</th><th>Тип</th><th>Цена</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Говядина верхний круг</strong></td>
+                  <td><span class="type base">База</span></td>
+                  <td><strong>820 RSD / 1 kg</strong></td>
+                  <td><button class="row-btn">Открыть</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Копченая паприка</strong></td>
+                  <td><span class="type spice">Специя</span></td>
+                  <td><strong>18 RSD / 100 g</strong></td>
+                  <td><button class="row-btn">Открыть</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Сушеный чеснок</strong></td>
+                  <td><span class="type spice">Специя</span></td>
+                  <td><span class="state missing">Без цены</span></td>
+                  <td><button class="row-btn">Открыть</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <aside class="side">
+            <h3>Говядина верхний круг</h3>
+            <div class="side-card">
+              <strong>Последняя цена</strong><br>
+              820 RSD / 1 kg<br>
+              <span class="muted">28.05.2026</span>
+            </div>
+            <div class="side-card">
+              <strong>История</strong><br>
+              790 RSD / 1 kg<br>
+              760 RSD / 1 kg
+            </div>
+            <button class="btn primary" style="width:100%">Новая цена</button>
+            <button class="btn" style="width:100%; margin-top:7px">Архивировать</button>
+          </aside>
+        </div>
+      </div>
+      <div class="caption">
+        <strong>Когда B лучше:</strong>
+        <ul>
+          <li>Если история цен должна быть доступна постоянно.</li>
+          <li>Если архивирование требует контекста и подтверждения.</li>
+          <li>Минус: меньше места таблице, на мобильном панель станет отдельным режимом.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="option">
+      <div class="option-head">
+        <h2>C. Price queue</h2>
+        <p>Фокус на очереди обновления цен: “без цены” и “устаревшие” становятся входной очередью.</p>
+      </div>
+      <div class="screen">
+        <div class="app queue-layout">
+          <aside class="queue">
+            <h3 style="font-size:13px">Очередь цен</h3>
+            <div class="queue-item active">
+              <strong>Без цены</strong><br>
+              <span class="muted">Сушеный чеснок</span>
+            </div>
+            <div class="queue-item">
+              <strong>Устарела</strong><br>
+              <span class="muted">Копченая паприка</span>
+            </div>
+            <div class="queue-item">
+              <strong>Устарела</strong><br>
+              <span class="muted">Кайенский перец</span>
+            </div>
+            <button class="btn" style="width:100%">Все ингредиенты</button>
+          </aside>
+          <div class="app-pad">
+            <div class="top">
+              <div>
+                <div class="title">Обновление цены</div>
+                <div class="subtitle">Сушеный чеснок · Специя · workspace ingredient</div>
+              </div>
+              <button class="btn">+ Добавить ингредиент</button>
+            </div>
+            <div class="side-card">
+              <div class="label">Ингредиент</div>
+              <div class="input">Сушеный чеснок</div>
+            </div>
+            <div class="side-card">
+              <div class="label">Цена</div>
+              <div class="input">0.00 RSD</div>
+            </div>
+            <div class="side-card">
+              <div class="label">Количество и единица</div>
+              <div class="input">100 g</div>
+            </div>
+            <button class="btn primary" style="width:100%; margin-bottom:12px">Сохранить новую цену</button>
+            <table>
+              <thead>
+                <tr><th>Ингредиент</th><th>Тип</th><th>Состояние</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Сушеный чеснок</strong></td><td><span class="type spice">Специя</span></td><td><span class="state missing">Без цены</span></td></tr>
+                <tr><td><strong>Копченая паприка</strong></td><td><span class="type spice">Специя</span></td><td><span class="state stale">Устарела</span></td></tr>
+                <tr><td><strong>Говядина верхний круг</strong></td><td><span class="type base">База</span></td><td><span class="state fresh">Актуальная</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <strong>Когда C лучше:</strong>
+        <ul>
+          <li>Если реальная работа часто выглядит как “пройтись по ценам”.</li>
+          <li>Сильно ускоряет price maintenance.</li>
+          <li>Минус: это уже отдельный workflow, может быть слишком резким первым шагом.</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+</body>
+</html>

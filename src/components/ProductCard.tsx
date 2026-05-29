@@ -1,35 +1,12 @@
 import React from 'react';
 import useTranslation from 'next-translate/useTranslation';
 import { FaEdit, FaBoxOpen } from 'react-icons/fa';
-
-interface Recipe {
-  id: number;
-  name: string;
-}
-
-interface Package {
-  id: number;
-  name: string;
-}
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  cost: number;
-  image: string;
-  package_id: number;
-  options: {
-    recipe_id: number;
-    recipe?: Recipe;
-  }[];
-}
+import { Product, ProductPackage, Recipe } from '../types/api';
 
 interface ProductCardProps {
   product: Product;
   recipes: Recipe[];
-  packages: Package[];
+  packages: ProductPackage[];
   onEdit: (product: Product) => void;
 }
 
@@ -43,7 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const packageName = packages?.find(pkg => pkg.id === product.package_id)?.name || t('unknownPackage');
 
-  const recipeNames = product.options
+  const recipeNames = (product.options || [])
     .map(option => {
       const recipe = recipes?.find(r => r.id === option.recipe_id);
       return recipe ? recipe.name : t('unknownRecipe');
@@ -55,9 +32,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div className="product-card">
-      {product.image ? (
+      {product.image || product.image_url ? (
         <img
-          src={product.image}
+          src={product.image || product.image_url}
           alt={product.name}
           className="product-card-image"
           loading="lazy"

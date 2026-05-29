@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Modal, Form, Button, Row, Col, Alert, Badge } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import { FaPlus, FaTag, FaUtensils, FaFlask, FaTint } from 'react-icons/fa';
 import { Ingredient } from '../../../types/api';
@@ -35,10 +35,18 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const ingredientNameRef = useRef<HTMLInputElement>(null);
+  const workspaceIngredientIds = useMemo(
+    () => new Set(existingIngredients.map((ingredient) => ingredient.id)),
+    [existingIngredients]
+  );
+  const normalizedIngredientName = ingredientName.trim().toLowerCase();
+  const exactExistingIngredient = normalizedIngredientName
+    ? searchResults.find((ingredient) => ingredient.name.trim().toLowerCase() === normalizedIngredientName)
+    : undefined;
+  const isCreatingNewIngredient = !exactExistingIngredient;
 
   useEffect(() => {
     if (!show) {
-      // Сброс формы при закрытии модального окна
       setIngredientType('');
       setIngredientName('');
       setErrorMessage('');
@@ -59,8 +67,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setIsSearching(true);
       try {
         const results = await onSearchGlobalIngredients(query);
-        const workspaceIngredientIds = new Set(existingIngredients.map((ingredient) => ingredient.id));
-        setSearchResults(results.filter((ingredient) => !workspaceIngredientIds.has(ingredient.id)));
+        setSearchResults(results);
       } catch {
         setSearchResults([]);
       } finally {
@@ -69,7 +76,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [existingIngredients, ingredientName, onSearchGlobalIngredients, show]);
+  }, [ingredientName, onSearchGlobalIngredients, show]);
 
   const ingredientTypeOptions = [
     { value: 'base', label: t('base'), icon: FaUtensils },
@@ -82,6 +89,14 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     
     if (!trimmedName) {
       setErrorMessage(t('ingredientNameRequired'));
+      setShowError(true);
+      ingredientNameRef.current?.focus();
+      return false;
+    }
+
+    if (exactExistingIngredient) {
+      setErrorMessage(t('ingredientExistsUseSuggestion'));
+      setErrorField('name');
       setShowError(true);
       ingredientNameRef.current?.focus();
       return false;
@@ -110,7 +125,6 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         name: ingredientName.trim()
       });
       
-      // Сброс формы после успешного сохранения
       setIngredientType('');
       setIngredientName('');
       setErrorMessage('');
@@ -126,7 +140,6 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         return;
       }
 
-      // Обработка структурированной ошибки от сервера
       if (error?.message === 'Ingredient with this name already exists' || 
           error?.message?.includes('already exists')) {
         setErrorMessage(t('ingredientExistsServer', { 
@@ -193,25 +206,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
           )}
 
           <Row className="g-3">
-            <Col md={6}>
-              <SelectDropdown
-                value={ingredientTypeOptions.find(option => option.value === ingredientType) || null}
-                onChange={(option) => {
-                  setIngredientType(option ? option.value : '');
-                  if (showError) {
-                    setShowError(false);
-                    setErrorField('');
-                  }
-                }}
-                options={ingredientTypeOptions}
-                isClearable
-                placeholder={t('chooseType')}
-                label={t('ingredientType')}
-                required
-                icon={FaTag}
-              />
-            </Col>
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group controlId="ingredientName">
                 <Form.Label className="fw-semibold">
                   <FaUtensils className="me-1 text-primary" />
@@ -236,55 +231,83 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                   {errorMessage}
                 </Form.Control.Feedback>
               </Form.Group>
-            </Col>
-          </Row>
 
-          {(isSearching || searchResults.length > 0) && (
-            <div className="mt-3 p-3 bg-light rounded">
-              <h6 className="text-muted mb-2">{t('searchGlobalIngredients')}</h6>
-              {isSearching ? (
-                <small className="text-muted">{t('loading')}...</small>
-              ) : (
-                <div className="d-flex flex-column gap-2">
-                  {searchResults.map((ingredient) => (
-                    <div key={ingredient.id} className="d-flex align-items-center justify-content-between gap-2">
-                      <div>
-                        <strong>{ingredient.name}</strong>
-                        <small className="text-muted ms-2">{t(ingredient.type)}</small>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => handleAddExisting(ingredient)}
-                        disabled={isLoading}
-                      >
-                        {t('addExistingIngredient')}
-                      </Button>
+              {(ingredientName.trim().length >= 2 || isSearching || searchResults.length > 0) && (
+                <div className="mt-2 p-2 bg-light rounded">
+                  {isSearching ? (
+                    <small className="text-muted">{t('loading')}...</small>
+                  ) : searchResults.length === 0 ? (
+                    <small className="text-muted">{t('noExistingIngredientsFound')}</small>
+                  ) : (
+                    <div className="d-flex flex-column gap-1">
+                      {searchResults.map((ingredient) => {
+                        const isAlreadyInList = workspaceIngredientIds.has(ingredient.id);
+                        return (
+                          <button
+                            key={ingredient.id}
+                            type="button"
+                            className="btn btn-light d-flex align-items-center justify-content-between gap-2 text-start"
+                            onClick={() => handleAddExisting(ingredient)}
+                            disabled={isLoading || isAlreadyInList}
+                          >
+                            <span className="d-flex align-items-center flex-wrap gap-2">
+                              <strong>{ingredient.name}</strong>
+                              <small className="text-muted">{t(ingredient.type)}</small>
+                              {isAlreadyInList && (
+                                <Badge bg="secondary">{t('alreadyInIngredientList')}</Badge>
+                              )}
+                            </span>
+                            <small className={isAlreadyInList ? 'text-muted' : 'text-primary'}>
+                              {isAlreadyInList ? t('alreadyAdded') : t('addExistingIngredient')}
+                            </small>
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
-            </div>
-          )}
+            </Col>
 
-          <div className="mt-3 p-3 bg-light rounded">
-            <h6 className="text-muted mb-2">{t('ingredientTypes')}:</h6>
-            <div className="d-flex flex-wrap gap-2">
-              {ingredientTypeOptions.map(option => (
-                <div key={option.value} className="d-flex align-items-center">
-                  {getTypeIcon(option.value)}
-                  <small className="text-muted">{option.label}</small>
+            {isCreatingNewIngredient && (
+              <Col md={12}>
+                <SelectDropdown
+                  value={ingredientTypeOptions.find(option => option.value === ingredientType) || null}
+                  onChange={(option) => {
+                    setIngredientType(option ? option.value : '');
+                    if (showError) {
+                      setShowError(false);
+                      setErrorField('');
+                    }
+                  }}
+                  options={ingredientTypeOptions}
+                  isClearable
+                  placeholder={t('chooseType')}
+                  label={t('ingredientType')}
+                  required
+                  icon={FaTag}
+                />
+
+                <div className="mt-3 p-3 bg-light rounded">
+                  <h6 className="text-muted mb-2">{t('ingredientTypes')}:</h6>
+                  <div className="d-flex flex-wrap gap-2">
+                    {ingredientTypeOptions.map(option => (
+                      <div key={option.value} className="d-flex align-items-center">
+                        {getTypeIcon(option.value)}
+                        <small className="text-muted">{option.label}</small>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </Col>
+            )}
+          </Row>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={onClose} disabled={isLoading}>
             {t('cancel')}
           </Button>
-          <Button variant="primary" type="submit" disabled={isLoading}>
+          <Button variant="primary" type="submit" disabled={isLoading || !!exactExistingIngredient}>
             {isLoading ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
