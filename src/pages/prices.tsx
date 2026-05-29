@@ -6,7 +6,7 @@ import { Form, Button, Table } from 'react-bootstrap';
 import TableSkeleton from '../components/skeletons/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
-import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
+import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
 import { Ingredient, Price, WorkspaceIngredient } from '../types/api';
@@ -76,6 +76,17 @@ const Prices = () => {
   const ingredientOptions = useMemo(
     () => ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })),
     [ingredients]
+  );
+  const priceSortOptions = useMemo(
+    () => [
+      { value: 'ingredient.type', label: t('ingredientType') },
+      { value: 'ingredient.name', label: t('ingredientName') },
+      { value: 'price', label: t('price') },
+      { value: 'quantity', label: t('quantity') },
+      { value: 'unit', label: t('unit') },
+      { value: 'date', label: t('date') },
+    ],
+    [t]
   );
 
   useEffect(() => {
@@ -255,6 +266,33 @@ const Prices = () => {
             {t('clear')}
           </Button>
         )}
+      </div>
+
+      <div className="mobile-sort-bar">
+        <div className="filter-group">
+          <SelectDropdown
+            value={priceSortOptions.find(option => option.value === sortColumn) || null}
+            onChange={(option) => {
+              setSortColumn(option ? option.value : '');
+              setSortDirection('asc');
+            }}
+            options={priceSortOptions}
+            isClearable
+            placeholder={t('chooseSort')}
+            label={t('sortBy')}
+          />
+        </div>
+        <Button
+          variant="outline-secondary"
+          type="button"
+          onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+          disabled={!sortColumn}
+          className="mobile-sort-direction"
+          aria-label={sortDirection === 'asc' ? t('ascending') : t('descending')}
+        >
+          {sortDirection === 'asc' ? <FaSortAmountUp className="me-2" /> : <FaSortAmountDown className="me-2" />}
+          {sortDirection === 'asc' ? t('ascending') : t('descending')}
+        </Button>
       </div>
 
       {/* Prices Table */}
