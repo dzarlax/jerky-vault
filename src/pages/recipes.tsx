@@ -14,9 +14,13 @@ import { useNotification } from '../hooks/useNotification';
 import { FaPlus, FaUtensils, FaTimes, FaCalculator, FaEdit, FaExclamationTriangle } from 'react-icons/fa';
 import SelectDropdown from '../components/SelectDropdown';
 import { formatCount } from '../utils/pluralize';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { WorkspaceIngredient } from '../types/api';
 
 const Recipes: React.FC = () => {
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { t } = useTranslation('common');
   const { success, error: showError } = useNotification();
   const router = useRouter();
@@ -34,19 +38,23 @@ const Recipes: React.FC = () => {
 
   // Fetch списков рецептов и ингредиентов
   const { data: recipeNames } = useSWR(
-    auth.isAuthenticated ? '/api/recipes' : null,
-    fetcher
+    workspaceKey('/api/recipes', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
-  const { data: ingredients } = useSWR(
-    auth.isAuthenticated ? '/api/ingredients' : null,
-    fetcher
+  const { data: workspaceIngredients } = useSWR<WorkspaceIngredient[]>(
+    workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
+  );
+  const ingredients = useMemo(
+    () => workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [],
+    [workspaceIngredients]
   );
 
   useEffect(() => {
-    if (recipeNames && ingredients) {
+    if (recipeNames && workspaceIngredients) {
       setIsLoading(false);
     }
-  }, [recipeNames, ingredients]);
+  }, [recipeNames, workspaceIngredients]);
 
   useEffect(() => {
     if (filterIngredient) {

@@ -17,24 +17,27 @@ import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Order, OrderItem, Client, Product, ORDER_STATUSES } from '../types/api';
 import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaTimes } from "react-icons/fa";
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Orders = () => {
   const { t } = useTranslation("common");
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { success, error: showError } = useNotification();
   const router = useRouter();
 
   const { data: ordersData, mutate: mutateOrders } = useSWR<Order[]>(
-    auth.isAuthenticated ? "/api/orders" : null,
-    fetcher
+    workspaceKey("/api/orders", selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const { data: clientsData = [], mutate: mutateClients } = useSWR<Client[]>(
-    auth.isAuthenticated ? "/api/clients" : null,
-    fetcher
+    workspaceKey("/api/clients", selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const { data: productsData = [], mutate: mutateProducts } = useSWR<Product[]>(
-    auth.isAuthenticated ? "/api/products" : null,
-    fetcher
+    workspaceKey("/api/products", selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
 
   const orders = ordersData ?? [];

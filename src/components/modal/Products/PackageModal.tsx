@@ -5,6 +5,8 @@ import useTranslation from "next-translate/useTranslation";
 import fetcher from "../../../utils/fetcher";
 import { useAuth } from "../../../utils/authContext";
 import useSWR from "swr";
+import { useWorkspace } from "../../../utils/workspaceContext";
+import { workspaceFetcher, workspaceKey } from "../../../utils/workspaceSWR";
 
 interface PackageModalProps {
   show: boolean;
@@ -19,9 +21,13 @@ const PackageModal: React.FC<PackageModalProps> = ({
 }) => {
   const { t } = useTranslation("common");
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const [packageName, setPackageName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { mutate: mutatePackages } = useSWR('/api/packages', fetcher);
+  const { mutate: mutatePackages } = useSWR(
+    workspaceKey('/api/packages', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
+  );
 
   const handleSubmit = async () => {
     if (!packageName.trim()) {

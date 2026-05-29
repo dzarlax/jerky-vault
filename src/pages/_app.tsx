@@ -10,13 +10,13 @@ import Script from 'next/script';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import useTranslation from 'next-translate/useTranslation';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import { AuthProvider } from '../utils/authContext';
 import { useAuthHandler } from '../utils/useAuthHandler';
 import { NotificationProvider } from '../components/NotificationToast';
+import { WorkspaceProvider } from '../utils/workspaceContext';
 
-// Component to handle auth logic inside AuthProvider
-function AppContent({ Component, pageProps }: AppProps) {
+function AppShell({ Component, pageProps }: AppProps) {
   const { t } = useTranslation('common');
   const router = useRouter();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -48,7 +48,6 @@ function AppContent({ Component, pageProps }: AppProps) {
     };
   }, []);
   
-  // Wrap the content with AuthProvider
   const content = isAuthPage ? (
     <>
       <Header toggleMobileSidebar={() => setShowMobileSidebar(!showMobileSidebar)} showNavLinks={true} />
@@ -114,6 +113,11 @@ function AppContent({ Component, pageProps }: AppProps) {
     </>
   );
 
+  return <>{content}</>;
+}
+
+// Component to handle auth logic inside AuthProvider
+function AppContent(props: AppProps) {
   // Initialize auth context for SSR
   const initialAuthState = {
     isAuthenticated: false,
@@ -124,13 +128,15 @@ function AppContent({ Component, pageProps }: AppProps) {
   // Wrap everything with AuthProvider and NotificationProvider
   return (
     <AuthProvider initialState={initialAuthState}>
-      <NotificationProvider>
-        <Head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        </Head>
-        <Script src="/config.js" strategy="beforeInteractive" />
-        {content}
-      </NotificationProvider>
+      <WorkspaceProvider>
+        <NotificationProvider>
+          <Head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          </Head>
+          <Script src="/config.js" strategy="beforeInteractive" />
+          <AppShell {...props} />
+        </NotificationProvider>
+      </WorkspaceProvider>
     </AuthProvider>
   );
 }

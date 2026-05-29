@@ -18,9 +18,12 @@ import {
   FaSignOutAlt,
   FaGlobe,
   FaIndustry,
-  FaStore
+  FaStore,
+  FaBriefcase
 } from 'react-icons/fa';
 import { useAuth } from '../utils/authContext';
+import { useWorkspace } from '../utils/workspaceContext';
+import SelectDropdown from './SelectDropdown';
 
 const ThemeToggle: React.FC = () => {
   const { t } = useTranslation('common');
@@ -69,6 +72,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { t, lang } = useTranslation('common');
   const router = useRouter();
   const { logout } = useAuth();
+  const {
+    workspaces,
+    selectedWorkspaceId,
+    selectedWorkspace,
+    setSelectedWorkspaceId,
+    isWorkspaceReady,
+  } = useWorkspace();
 
   const isActive = (path: string) => router.pathname === path;
 
@@ -254,6 +264,35 @@ const Sidebar: React.FC<SidebarProps> = ({
               <img src="/flags/rs.png" alt="RS" width={20} height={14} className="rounded" />
             </button>
           </div>
+        </div>
+
+        <div className="sidebar-footer-section">
+          <div className="sidebar-footer-label">
+            <FaBriefcase size={14} />
+            <span>{t('workspace')}</span>
+          </div>
+          {workspaces.length > 1 ? (
+            <SelectDropdown
+              value={
+                selectedWorkspaceId
+                  ? { value: selectedWorkspaceId, label: selectedWorkspace?.name || selectedWorkspaceId }
+                  : null
+              }
+              onChange={(option) => option && setSelectedWorkspaceId(String(option.value))}
+              options={workspaces.map((workspace) => ({
+                value: String(workspace.id),
+                label: workspace.name,
+              }))}
+              isSearchable={false}
+              placeholder={isWorkspaceReady ? t('chooseWorkspace') : t('loading')}
+              label=""
+              className="sidebar-workspace-select"
+            />
+          ) : (
+            <div className="sidebar-workspace-readonly">
+              {selectedWorkspace?.name || (isWorkspaceReady ? t('defaultWorkspace') : t('loading'))}
+            </div>
+          )}
         </div>
 
         <div className="sidebar-signout-row">

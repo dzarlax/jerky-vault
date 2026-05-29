@@ -78,6 +78,27 @@ export interface Ingredient {
   created_at?: string;
 }
 
+export interface Workspace {
+  id: number;
+  name: string;
+  slug: string;
+  account_id?: number;
+  role: string;
+}
+
+export interface WorkspaceIngredient {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  workspace_id: number;
+  ingredient_id: number;
+  active: boolean;
+  alias?: string;
+  category?: string;
+  ingredient: Ingredient;
+  latest_price?: Price;
+}
+
 // ===================== RECIPE TYPES =====================
 
 export interface RecipeIngredient {
@@ -104,11 +125,16 @@ export interface Recipe {
 
 export interface Price {
   id: number;
-  product_id: number;
+  ingredient_id: number;
+  ingredient: Ingredient;
   price: number;
-  cost_price: number;
-  effective_date: string;
+  unit: string;
+  quantity: number;
+  date: string;
+  user_id?: number;
+  workspace_id?: number;
   created_at?: string;
+  updated_at?: string;
 }
 
 // ===================== DASHBOARD TYPES =====================

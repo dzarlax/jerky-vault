@@ -1685,3 +1685,26 @@ h6,
     font-size: var(--text-sm);
   }
 }
+
+.sidebar-workspace-select .react-select__control {
+  min-height: 36px;
+  border-color: var(--border-primary);
+  background: var(--surface-primary);
+  font-size: 0.875rem;
+}
+
+.sidebar-workspace-select .react-select__single-value {
+  color: var(--text-primary);
+}
+
+.sidebar-workspace-readonly {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
