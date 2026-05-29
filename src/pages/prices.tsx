@@ -14,6 +14,18 @@ import SelectDropdown from '../components/SelectDropdown';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
+const formatLocalDateInputValue = (dateValue: string) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const Prices = () => {
   const { t, lang } = useTranslation('common');
   const { auth } = useAuth();
@@ -144,7 +156,7 @@ const Prices = () => {
   const filteredPrices = useMemo(() => {
     const rows = [...(prices || [])].filter((price) => {
       const ingredientMatch = !filterIngredientId || String(price.ingredient_id) === filterIngredientId;
-      const dateMatch = !filterDate || price.date.slice(0, 10) === filterDate;
+      const dateMatch = !filterDate || formatLocalDateInputValue(price.date) === filterDate;
       return ingredientMatch && dateMatch;
     });
 
