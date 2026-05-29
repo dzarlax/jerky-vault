@@ -197,7 +197,7 @@ const Prices = () => {
   }, [filterDate, filterIngredientId, prices, router.locale, sortColumn, sortDirection]);
 
   return (
-    <div className="page-container">
+    <div className="page-container prices-page">
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -258,7 +258,7 @@ const Prices = () => {
       </div>
 
       {/* Prices Table */}
-      <div className="table-responsive">
+      <div className="table-responsive prices-table-wrap">
         {hasError ? (
           <div className="text-center py-5">
             <p className="text-error">
@@ -289,7 +289,7 @@ const Prices = () => {
             <tbody>
               {filteredPrices.map((price: Price) => (
               <tr key={price.id}>
-                <td>
+                <td data-label={t('ingredientType')}>
                   <span className={`badge badge-${
                     price.ingredient.type === 'base' ? 'primary' :
                     price.ingredient.type === 'spice' ? 'warning' :
@@ -299,11 +299,11 @@ const Prices = () => {
                     {t(price.ingredient.type)}
                   </span>
                 </td>
-                <td>{price.ingredient.name}</td>
-                <td className="fw-semibold">{price.price} {t("currency")}</td>
-                <td>{price.quantity}</td>
-                <td>{t(price.unit)}</td>
-                <td className="text-secondary small">
+                <td data-label={t('ingredientName')}>{price.ingredient.name}</td>
+                <td className="fw-semibold" data-label={t('price')}>{price.price} {t("currency")}</td>
+                <td data-label={t('quantity')}>{price.quantity}</td>
+                <td data-label={t('unit')}>{t(price.unit)}</td>
+                <td className="text-secondary small" data-label={t('date')}>
                   {new Date(price.date).toLocaleDateString()}
                 </td>
               </tr>

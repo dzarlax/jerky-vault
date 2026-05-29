@@ -139,7 +139,7 @@ const Ingredients: React.FC = () => {
   const hasActiveFilters = !!filter || filterType !== 'all' || filterPriceState !== 'all';
 
   return (
-    <div className="page-container">
+    <div className="page-container ingredients-page">
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -242,8 +242,8 @@ const Ingredients: React.FC = () => {
           onAction={() => setShowAddModal(true)}
         />
       ) : (
-        <div className="table-responsive">
-          <Table className="table">
+        <div className="table-responsive ingredients-table-wrap">
+          <Table className="table workspace-ingredients-table">
             <thead>
               <tr>
                 <th>{t('name')}</th>
@@ -256,8 +256,8 @@ const Ingredients: React.FC = () => {
             <tbody>
               {filteredIngredients.map((workspaceIngredient) => (
                 <tr key={workspaceIngredient.id}>
-                  <td className="fw-medium">{workspaceIngredient.ingredient.name}</td>
-                  <td>
+                  <td className="fw-medium" data-label={t('name')}>{workspaceIngredient.ingredient.name}</td>
+                  <td data-label={t('type')}>
                     <span className={`badge ${
                       workspaceIngredient.ingredient.type === 'base' ? 'badge-primary' :
                       workspaceIngredient.ingredient.type === 'spice' ? 'badge-warning' :
@@ -267,7 +267,7 @@ const Ingredients: React.FC = () => {
                       {t(workspaceIngredient.ingredient.type)}
                     </span>
                   </td>
-                  <td>
+                  <td data-label={t('latestPrice')}>
                     {workspaceIngredient.latest_price ? (
                       <div className="text-secondary small">
                         <div>
@@ -283,12 +283,12 @@ const Ingredients: React.FC = () => {
                       <span className="text-tertiary small">{t('noLatestPrice')}</span>
                     )}
                   </td>
-                  <td>
+                  <td data-label={t('priceState')}>
                     <span className={`price-state-badge ${workspaceIngredient.latest_price ? 'is-priced' : 'is-missing'}`}>
                       {workspaceIngredient.latest_price ? t('hasPrice') : t('missingPrice')}
                     </span>
                   </td>
-                  <td>
+                  <td data-label={t('actions')}>
                     <div className="ingredient-actions">
                       <Button
                         variant="outline-primary"
