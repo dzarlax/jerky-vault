@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import useSWR from 'swr';
 import { Form, Button, Table, InputGroup } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
@@ -8,14 +8,17 @@ import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
 import { FaPlus, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint } from 'react-icons/fa';
 import AddIngredientModal from '../components/modal/Ingredients/AddIngredientModal';
-import { Ingredient } from '../types/api';
+import { Ingredient, WorkspaceIngredient } from '../types/api';
 import SelectDropdown from '../components/SelectDropdown';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Ingredients: React.FC = () => {
   const { auth } = useAuth();
-  const { data: ingredients, error, mutate } = useSWR<Ingredient[]>(
-    auth.isAuthenticated ? '/api/ingredients' : null,
-    fetcher
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
+  const { data: workspaceIngredients, error, mutate } = useSWR<WorkspaceIngredient[]>(
+    workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const { t } = useTranslation('common');
   const [filter, setFilter] = useState('');
@@ -38,6 +41,8 @@ const Ingredients: React.FC = () => {
     return <FaTag className="me-1" />;
   };
 
+  const ingredients = workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [];
+
   const handleAddIngredient = async (ingredientData: {
     type: string;
     name: string;
@@ -50,10 +55,6 @@ const Ingredients: React.FC = () => {
     try {
       const response = await fetcher('/api/ingredients', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
         body: JSON.stringify(ingredientData),
       });
 
@@ -62,9 +63,32 @@ const Ingredients: React.FC = () => {
       }
 
       mutate();
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.workspace_linked) {
+        mutate();
+        return;
+      }
       throw error;
     }
+  };
+
+  const handleAddExistingIngredient = async (ingredientId: number) => {
+    await fetcher('/api/workspace-ingredients', {
+      method: 'POST',
+      body: JSON.stringify({ ingredient_id: ingredientId }),
+    });
+    mutate();
+  };
+
+  const handleSearchGlobalIngredients = useCallback(async (query: string) => {
+    return fetcher(`/api/ingredients/search?query=${encodeURIComponent(query)}`);
+  }, []);
+
+  const handleDeactivateIngredient = async (workspaceIngredientId: number) => {
+    await fetcher(`/api/workspace-ingredients/${workspaceIngredientId}`, {
+      method: 'DELETE',
+    });
+    mutate();
   };
 
   const clearFilters = () => {
@@ -72,11 +96,11 @@ const Ingredients: React.FC = () => {
     setFilterType('');
   };
 
-  const isLoading = !ingredients;
+  const isLoading = !workspaceIngredients;
 
-  const filteredIngredients = ingredients?.filter((ingredient) => {
-    const nameMatch = ingredient.name.toLowerCase().includes(filter.toLowerCase());
-    const typeMatch = !filterType || ingredient.type === filterType;
+  const filteredIngredients = workspaceIngredients?.filter((workspaceIngredient) => {
+    const nameMatch = workspaceIngredient.ingredient.name.toLowerCase().includes(filter.toLowerCase());
+    const typeMatch = !filterType || workspaceIngredient.ingredient.type === filterType;
     return nameMatch && typeMatch;
   });
 
@@ -178,21 +202,41 @@ const Ingredients: React.FC = () => {
               <tr>
                 <th>{t('name')}</th>
                 <th>{t('type')}</th>
+                <th>{t('latestPrice')}</th>
+                <th>{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {filteredIngredients.map((ingredient) => (
-                <tr key={ingredient.id}>
-                  <td className="fw-medium">{ingredient.name}</td>
+              {filteredIngredients.map((workspaceIngredient) => (
+                <tr key={workspaceIngredient.id}>
+                  <td className="fw-medium">{workspaceIngredient.ingredient.name}</td>
                   <td>
                     <span className={`badge ${
-                      ingredient.type === 'base' ? 'badge-primary' :
-                      ingredient.type === 'spice' ? 'badge-warning' :
-                      ingredient.type === 'sauce' ? 'badge-info' : 'badge-secondary'
+                      workspaceIngredient.ingredient.type === 'base' ? 'badge-primary' :
+                      workspaceIngredient.ingredient.type === 'spice' ? 'badge-warning' :
+                      workspaceIngredient.ingredient.type === 'sauce' ? 'badge-info' : 'badge-secondary'
                     }`}>
-                      {getTypeIcon(ingredient.type)}
-                      {t(ingredient.type)}
+                      {getTypeIcon(workspaceIngredient.ingredient.type)}
+                      {t(workspaceIngredient.ingredient.type)}
                     </span>
+                  </td>
+                  <td>
+                    {workspaceIngredient.latest_price ? (
+                      <span className="text-secondary small">
+                        {workspaceIngredient.latest_price.price} {t('currency')} / {workspaceIngredient.latest_price.quantity} {t(workspaceIngredient.latest_price.unit)}
+                      </span>
+                    ) : (
+                      <span className="text-tertiary small">{t('noLatestPrice')}</span>
+                    )}
+                  </td>
+                  <td>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => handleDeactivateIngredient(workspaceIngredient.id)}
+                    >
+                      {t('deactivate')}
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -205,6 +249,8 @@ const Ingredients: React.FC = () => {
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleAddIngredient}
+        onAddExisting={handleAddExistingIngredient}
+        onSearchGlobalIngredients={handleSearchGlobalIngredients}
         existingIngredients={ingredients || []}
       />
     </div>

@@ -16,22 +16,25 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { Product, Recipe, ProductPackage } from '../types/api';
 import { useNotification } from '../hooks/useNotification';
 import SelectDropdown from '../components/SelectDropdown';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Products = () => {
   const { t } = useTranslation('common');
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { success, error: showError } = useNotification();
   const { data: products, mutate: mutateProducts, error: productsError } = useSWR<Product[]>(
-    auth.isAuthenticated ? '/api/products' : null,
-    fetcher
+    workspaceKey('/api/products', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const { data: recipes, error: recipesError } = useSWR<Recipe[]>(
-    auth.isAuthenticated ? '/api/recipes' : null,
-    fetcher
+    workspaceKey('/api/recipes', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const { data: packages, mutate: mutatePackages, error: packagesError } = useSWR<ProductPackage[]>(
-    auth.isAuthenticated ? '/api/packages' : null,
-    fetcher
+    workspaceKey('/api/packages', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const router = useRouter();
 

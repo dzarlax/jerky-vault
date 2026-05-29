@@ -33,20 +33,23 @@ import {
   FaPencilAlt,
   FaTrash
 } from 'react-icons/fa';
-import { Order, Client, Product, Ingredient, OrderItem, DashboardStats, ProfitData, ORDER_STATUSES } from '../types/api';
+import { Order, Client, Product, Ingredient, OrderItem, DashboardStats, ProfitData, ORDER_STATUSES, WorkspaceIngredient } from '../types/api';
 import { calculateTotalPrice, calculateTotalCostPrice, groupOrderItems, createEmptyOrderItem, createOrderItemFromProduct, updateOrderItem, removeOrderItem, addOrderItem } from '../utils/orderHelpers';
 import { formatDate } from '../utils/contactHelpers';
 import { useNotification } from '../hooks/useNotification';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Dashboard = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { success, error: showError } = useNotification();
 
   const { data: dashboardStats, error: dashboardError, mutate: mutateDashboardStats } = useSWR<DashboardStats>(
-    auth.isAuthenticated ? '/api/dashboard' : null,
-    fetcher,
+    workspaceKey('/api/dashboard', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     {
       ...swrConfigs.dashboard,
       fallbackData: {
@@ -61,32 +64,33 @@ const Dashboard = () => {
   );
 
   const { data: clients = [] } = useSWR<Client[]>(
-    auth.isAuthenticated ? '/api/clients' : null,
-    fetcher,
+    workspaceKey('/api/clients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     swrConfigs.static
   );
 
   const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(
-    auth.isAuthenticated ? '/api/orders' : null,
-    fetcher,
+    workspaceKey('/api/orders', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     swrConfigs.list
   );
 
-  const { data: ingredients = [] } = useSWR<Ingredient[]>(
-    auth.isAuthenticated ? '/api/ingredients' : null,
-    fetcher,
+  const { data: workspaceIngredients = [] } = useSWR<WorkspaceIngredient[]>(
+    workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     swrConfigs.static
   );
+  const ingredients: Ingredient[] = workspaceIngredients.map((workspaceIngredient) => workspaceIngredient.ingredient);
 
   const { data: recipes = [] } = useSWR(
-    auth.isAuthenticated ? '/api/recipes' : null,
-    fetcher,
+    workspaceKey('/api/recipes', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     swrConfigs.static
   );
 
   const { data: products = [] } = useSWR<Product[]>(
-    auth.isAuthenticated ? '/api/products' : null,
-    fetcher,
+    workspaceKey('/api/products', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher,
     swrConfigs.static
   );
 
@@ -110,8 +114,8 @@ const Dashboard = () => {
   const [deleteOrderId, setDeleteOrderId] = React.useState<number | null>(null);
 
   const { data: profitData, error: profitError } = useSWR<ProfitData>(
-    auth.isAuthenticated || typeof window === 'undefined' ? '/api/dashboard/profit' : null,
-    fetcher,
+    workspaceKey('/api/dashboard/profit', selectedWorkspaceId, (auth.isAuthenticated || typeof window === 'undefined') && isWorkspaceReady),
+    workspaceFetcher,
     {
       ...swrConfigs.dashboard,
       fallbackData: {

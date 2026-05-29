@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: Workspace Ingredients Frontend Phase 3B</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f6f7f9; color: #1f2937; line-height: 1.5; }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    section { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    code { background: #f3f4f6; padding: 2px 5px; border-radius: 4px; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 6px 0; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #e5e7eb; font-size: 12px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; background: #fafafa; }
+    .risk { border-left: 4px solid #dc2626; }
+    .note { border-left: 4px solid #2563eb; }
+    .approval { border-left: 4px solid #d97706; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Implementation Plan: Workspace Ingredients Frontend Phase 3B</h1>
+  <p class="badge">Approval required before implementation</p>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>
+      Backend Phase 3A is deployed and exposes the compatibility API for workspace ingredient membership:
+      <code>GET /api/workspace-ingredients</code>, <code>POST/PATCH/DELETE /api/workspace-ingredients</code>,
+      <code>GET /api/ingredients/search</code>, and compatibility auto-linking on price and recipe ingredient writes.
+    </p>
+    <p>
+      Phase 3B should migrate the web frontend to this contract without breaking the current production workflows.
+      The primary goal is to make the Ingredients page a workspace working-set screen and to move price and recipe
+      pickers from the global dictionary to the active workspace ingredient set.
+    </p>
+  </section>
+
+  <section>
+    <h2>Current Behavior Confirmed From Code</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Web Frontend</h3>
+        <ul>
+          <li><code>src/utils/fetcher.ts</code> sends JWT auth but does not send <code>X-Workspace-ID</code>.</li>
+          <li><code>src/pages/ingredients.tsx</code> reads <code>/api/ingredients</code> and displays the global dictionary.</li>
+          <li><code>src/pages/prices.tsx</code> reads <code>/api/ingredients</code> for the price picker and posts to <code>/api/prices</code>.</li>
+          <li><code>src/pages/recipes.tsx</code>, <code>CreateRecipeModal</code>, and <code>EditRecipeModal</code> use global ingredients for recipe ingredient writes.</li>
+          <li><code>fetcher.ts</code> builds default headers, then spreads <code>options</code>; caller-provided <code>options.headers</code> can replace default auth/content headers.</li>
+          <li><code>FetchError</code> currently preserves <code>field</code>, <code>value</code>, and <code>existing_id</code>, but not <code>workspace_linked</code> or <code>workspace_ingredient</code> metadata.</li>
+          <li>There is no current workspace selector or workspace persistence in the web auth context.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Mobile App</h3>
+        <ul>
+          <li><code>BatchVault/APIService.swift</code> sends JWT auth but does not send <code>X-Workspace-ID</code>.</li>
+          <li>The current Swift client mostly reads recipes, products, orders, clients, dashboard, and profit data.</li>
+          <li>No active mobile write path for prices, ingredients, or adding recipe ingredients was found in <code>APIService.swift</code>.</li>
+          <li>Mobile still depends on backend personal-workspace fallback until it gets workspace selection.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Keep <code>GET /api/ingredients</code> as global dictionary compatibility; do not use it as the default web working list.</li>
+      <li>Use <code>GET /api/workspace-ingredients</code> for the Ingredients page, price picker, recipe create/edit pickers, and ingredient filters tied to workspace data.</li>
+      <li>Add a global search/add flow so a user can add an existing global ingredient to the workspace without seeing technical ids.</li>
+      <li>Keep the current price and recipe writes working; backend auto-link remains a fallback, not the primary UX.</li>
+      <li>Introduce a web workspace context that calls <code>GET /api/workspaces</code> and sends <code>X-Workspace-ID</code> when a user selects a non-default workspace.</li>
+      <li>Defer strict backend non-member rejection until web and mobile clients both use scoped pickers.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Recommended Scope Split</h2>
+    <ul>
+      <li><strong>Phase 3B web PR:</strong> web workspace context, scoped ingredient working set, global search/add, picker migration, visual QA.</li>
+      <li><strong>Phase 3C mobile PR:</strong> Swift workspace model/context/header, cache invalidation, and parity for any ingredient/price workflow the mobile app exposes.</li>
+      <li><strong>Later backend tightening:</strong> switch write paths from compatibility auto-link to strict non-member rejection only after both clients are scoped.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely to Change</h2>
+    <ul>
+      <li><code>src/types/api.ts</code> - add <code>Workspace</code>, <code>WorkspaceIngredient</code>, latest price, and corrected price shape types.</li>
+      <li><code>src/utils/fetcher.ts</code> - merge default headers with caller headers, include selected workspace header, and preserve structured error fields including workspace link metadata.</li>
+      <li><code>src/utils/authContext.tsx</code> or new <code>src/utils/workspaceContext.tsx</code> - load workspaces, store user-scoped selected workspace id, validate it against <code>GET /api/workspaces</code> before sending the header, expose current workspace, and clear on logout.</li>
+      <li><code>src/pages/_app.tsx</code> - wrap the app with workspace provider if a separate provider is added.</li>
+      <li><code>src/components/Header.tsx</code> and/or <code>src/components/Sidebar.tsx</code> - add a compact workspace selector without cluttering navigation.</li>
+      <li><code>src/pages/ingredients.tsx</code> - convert from global dictionary table to workspace working-set screen.</li>
+      <li><code>src/components/modal/Ingredients/AddIngredientModal.tsx</code> - support global search/add existing ingredient plus create-new flow.</li>
+      <li><code>src/pages/prices.tsx</code> and <code>src/components/modal/Prices/AddPriceModal.tsx</code> - use workspace ingredients for filters and picker; preserve price creation UX.</li>
+      <li><code>src/pages/recipes.tsx</code>, <code>CreateRecipeModal</code>, and <code>EditRecipeModal</code> - use workspace ingredients for recipe ingredient selection.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, <code>locales/rs/common.json</code> - add translated copy for workspace, add-to-workspace, deactivate, and empty states.</li>
+      <li><code>src/styles/*.css</code> - style any new working-set controls and responsive states using existing design tokens.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Add typed API models for workspaces and workspace ingredients.</li>
+      <li>Add workspace provider or auth-adjacent state: fetch workspaces after login, choose default/current workspace, persist selected workspace in <code>localStorage</code> under a user-scoped key, validate the stored id against <code>GET /api/workspaces</code>, and clear it on logout. During bootstrap, do not send the persisted <code>X-Workspace-ID</code> until that id has been validated; otherwise the current global <code>403</code> handler can treat a stale workspace id as an auth failure and log the user out.</li>
+      <li>Teach <code>fetcher</code> to send <code>X-Workspace-ID</code> for authenticated calls when a selected workspace exists. Header composition must merge <code>Content-Type</code>, <code>Authorization</code>, <code>X-Workspace-ID</code>, and caller headers instead of allowing <code>options.headers</code> to replace defaults. Gradually remove manual <code>Authorization</code> headers from pages where the shared fetcher can own them.</li>
+      <li>Use tuple SWR keys for workspace-scoped reads: <code>[endpoint, selectedWorkspaceId]</code>, handled by a wrapper fetcher that passes only the endpoint to the shared <code>fetcher</code>. Bootstrap workspace discovery, auth, and other non-workspace endpoints stay on ordinary string keys and must not send a persisted workspace header before validation. This makes cache bleed between workspaces impossible by construction instead of relying on a manually maintained global invalidation list.</li>
+      <li>Build the Ingredients working-set screen on <code>/api/workspace-ingredients</code> with type filters, latest price signal, deactivate action, and empty state.</li>
+      <li>Add global search/add flow using <code>/api/ingredients/search</code> and <code>POST /api/workspace-ingredients</code>.</li>
+      <li>Extend <code>FetchError</code> and frontend API types to preserve <code>workspace_linked</code>, <code>workspace_ingredient_id</code>, and any returned <code>workspace_ingredient</code> metadata. Keep create-new ingredient flow on <code>POST /api/ingredients</code>; treat <code>409</code> with <code>workspace_linked</code> as a successful workspace-link outcome.</li>
+      <li>Move price filters and Add Price picker to workspace ingredient options.</li>
+      <li>Move recipe create/edit ingredient pickers to workspace ingredient options, while preserving already-used inactive ingredients in edit views so existing recipes remain readable and editable after a membership is deactivated.</li>
+      <li>Run desktop and mobile browser QA, including workspace switching and ingredient add/deactivate flows.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Mobile Phase 3C Notes</h2>
+    <ul>
+      <li>Add <code>Workspace</code> and selected workspace state to the Swift app before backend strict mode.</li>
+      <li>Update <code>APIService.makeRequest</code> to send <code>X-Workspace-ID</code> after a workspace is selected.</li>
+      <li>Invalidate cached clients/orders/products/recipes/dashboard/profit when workspace changes.</li>
+      <li>Because this Windows workspace cannot run Xcode builds, final mobile verification must happen on macOS/Xcode or Xcode Cloud.</li>
+      <li>Before changing shared Swift files, verify <code>BatchVault.xcodeproj/project.pbxproj</code> target membership for app and widget targets.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code> - static checks if current repo lint remains usable.</li>
+      <li><code>npm run build</code> or <code>npm run build:docker</code> - production build path.</li>
+      <li>Browser QA with authenticated user on desktop viewport: ingredients, prices, recipes, workspace selector.</li>
+      <li>Browser QA with mobile viewport: sidebar/header workspace selector does not overlap content and ingredient flows remain usable.</li>
+      <li>Network inspection: scoped calls send <code>X-Workspace-ID</code> after selection and omit or default safely before selection.</li>
+      <li>Regression: stale persisted workspace id is ignored during bootstrap until workspaces are fetched, and does not trigger automatic logout via the global <code>403</code> handler.</li>
+      <li>Regression: old personal workspace default still shows the same existing ingredients inferred by backend backfill.</li>
+      <li>Regression: page-level POST/DELETE calls that pass custom headers still include auth and <code>X-Workspace-ID</code>.</li>
+      <li>Regression: <code>409 workspace_linked</code> from <code>POST /api/ingredients</code> is handled as successful add-to-workspace, not as a blocking form error.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Log in and verify default workspace data appears without manual workspace selection.</li>
+      <li>Switch workspace and verify recipes, prices, products, clients, orders, and dashboard revalidate.</li>
+      <li>Open Ingredients and confirm only active workspace ingredients are listed.</li>
+      <li>Search global dictionary for an ingredient not in the workspace and add it.</li>
+      <li>Create a brand-new ingredient and confirm it appears in the workspace list.</li>
+      <li>Create a price using a workspace ingredient and confirm price list refreshes.</li>
+      <li>Create/edit a recipe using workspace ingredients and confirm cost lookup still works.</li>
+      <li>Deactivate a workspace ingredient and confirm historical prices/recipes still display where expected.</li>
+      <li>Edit a recipe that already uses a now-inactive workspace ingredient and confirm the ingredient remains visible in the recipe composition instead of disappearing from the edit surface.</li>
+      <li>Log out, log in as a different user in the same browser, and confirm stale selected workspace id is cleared or rejected after <code>GET /api/workspaces</code>.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li><strong>Cache bleed:</strong> workspace-scoped SWR reads must use tuple keys that include the selected workspace id. Reusing string-only keys for scoped data can show data from the previous workspace after switching.</li>
+      <li><strong>Picker mismatch:</strong> price and recipe pages must not use global dictionary options after the scoped working set is introduced.</li>
+      <li><strong>Header loss:</strong> existing callers pass custom <code>options.headers</code>; fetcher changes must merge headers so auth and workspace context are not dropped.</li>
+      <li><strong>Stale selected workspace:</strong> selected workspace persistence must be user-scoped and validated after workspace fetch, otherwise another browser user can inherit an invalid workspace id. The provider must not send an unvalidated persisted id, because <code>fetcher</code> currently logs out on any <code>403</code>.</li>
+      <li><strong>403 semantics:</strong> if implementation needs to distinguish workspace-forbidden from auth-forbidden, change <code>fetcher</code> deliberately rather than accidentally weakening auth logout behavior.</li>
+      <li><strong>Mobile lag:</strong> backend strict mode must wait until mobile also sends workspace context.</li>
+      <li><strong>Empty workspace:</strong> new workspace with no ingredients needs a useful add/search empty state, not a dead table.</li>
+      <li><strong>409 semantics:</strong> existing ingredient creation now returns conflict plus workspace link metadata; the UI should treat that as a recoverable/successful add-to-workspace path.</li>
+      <li><strong>Inactive used ingredients:</strong> hiding inactive workspace ingredients from picker options is fine, but already-used recipe ingredients must still render and remain editable/removable.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <ul>
+      <li>Backend Phase 3A remains compatible, so the web frontend can temporarily fall back to <code>GET /api/ingredients</code> and auto-link writes.</li>
+      <li>If workspace switching causes cache bleed, hide selector and keep personal workspace fallback while preserving scoped ingredients page work.</li>
+      <li>Do not request backend strict mode until web and mobile parity are both verified.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li><strong>Workspace selector placement:</strong> resolved for Phase 3B: place a compact selector near account/workspace identity, not in the main navigation list. If the user has only one workspace, show readonly identity or suppress dropdown affordance.</li>
+      <li><strong>Deactivate visibility:</strong> resolved for Phase 3B: hide inactive workspace ingredients from the default working-set list and add/picker flows, while preserving already-used inactive ingredients as historical references in recipes and price history.</li>
+      <li><strong>Latest price UI:</strong> resolved for Phase 3B: show missing/latest price signal on the Ingredients page only. Do not add price chips to compact recipe or price pickers in this phase.</li>
+      <li><strong>SWR strategy:</strong> resolved for Phase 3B: use tuple keys for workspace-scoped reads with a wrapper fetcher. Keep bootstrap discovery and auth endpoints on string keys.</li>
+      <li><strong>Mobile timing:</strong> resolved for Phase 3B: mobile workspace header lands after web 3B and before backend strict mode.</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>
+      Implementation must not start until this plan is explicitly approved. Web implementation should happen on
+      <code>codex/workspace-ingredients-frontend-plan</code> or a fresh branch created from it. Mobile changes should be planned and implemented separately in <code>Jerky-Vault-mob</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Post-Implementation Notes</h2>
+    <ul>
+      <li>Added workspace API types, <code>WorkspaceProvider</code>, selected workspace persistence, and guarded validation so persisted workspace ids are not sent before <code>GET /api/workspaces</code> succeeds.</li>
+      <li>Updated shared <code>fetcher</code> to merge caller headers with auth/content/workspace headers and preserve workspace-link metadata on structured errors.</li>
+      <li>Added tuple-key workspace SWR helpers and migrated workspace-scoped reads for dashboard, clients, orders, products, packages, prices, recipes, and ingredients.</li>
+      <li>Converted Ingredients to <code>/api/workspace-ingredients</code>, with latest-price display, global dictionary search/add, create-new handling for <code>409 workspace_linked</code>, and membership deactivation.</li>
+      <li>Moved price and recipe ingredient pickers/filters to the active workspace ingredient set while keeping existing write endpoints.</li>
+      <li>Added a compact workspace identity/selector in the sidebar footer and added required locale keys for English, Russian, and Serbian.</li>
+      <li>During compose QA, the existing browser session stored only <code>username</code> in <code>localStorage.user</code>; the workspace provider now also derives the stable user id from JWT payload <code>userID</code>, and the fetcher uses the validated user id written by the provider instead of deriving a separate id from <code>localStorage.user</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>npm run lint</code> passed.</li>
+      <li><code>npm run build</code> passed.</li>
+      <li>Locale JSON parse check passed for <code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code>.</li>
+      <li><code>npx tsc --noEmit</code> still fails on pre-existing project type debt in recipe calculator, D3 chart typing, react-select wrapper typing, product option typing, and order helper argument types. The new AddPrice/Prices type errors from this change were fixed.</li>
+      <li>Dev compose QA used <code>docker-compose.dev.yml</code>. The frontend responded at <code>http://localhost:3000</code>; backend restart was required so the already-present <code>/api/workspace-ingredients</code> route was loaded.</li>
+      <li>Browser QA covered desktop Ingredients, Prices, Recipes and mobile Ingredients. No console errors remained on these pages after adding the missing <code>type</code> translation key.</li>
+      <li>Network QA confirmed <code>GET /api/workspaces</code> is sent without <code>X-Workspace-ID</code>, while <code>GET /api/workspace-ingredients</code> is sent with <code>X-Workspace-ID</code> after workspace validation, even when <code>localStorage.user</code> contains only <code>username</code>.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

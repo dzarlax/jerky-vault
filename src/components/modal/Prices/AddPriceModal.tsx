@@ -9,7 +9,7 @@ interface AddPriceModalProps {
   show: boolean;
   onClose: () => void;
   onSave: (priceData: {
-    ingredient_id: string;
+    ingredient_id: number;
     price: string;
     quantity: string;
     unit: string;
@@ -116,7 +116,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
       setUnit('');
       setErrors([]);
       onClose();
-    } catch (error: unknown) {
+    } catch (error: any) {
       
       // Обработка структурированной ошибки от сервера
       if (error?.field) {
@@ -265,4 +265,4 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
   );
 };
 
-export default AddPriceModal; 
+export default AddPriceModal;

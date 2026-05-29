@@ -12,14 +12,17 @@ import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Client } from '../types/api';
 import { getMapboxToken } from '../utils/runtimeConfig';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { success, error: showError } = useNotification();
   const { data: clients, mutate } = useSWR<Client[]>(
-    auth.isAuthenticated ? '/api/clients' : null,
-    fetcher
+    workspaceKey('/api/clients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
   const router = useRouter();
 

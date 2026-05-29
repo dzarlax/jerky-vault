@@ -10,21 +10,25 @@ import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } fro
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
-import { Ingredient, Price } from '../types/api';
+import { Ingredient, Price, WorkspaceIngredient } from '../types/api';
 import SelectDropdown from '../components/SelectDropdown';
+import { useWorkspace } from '../utils/workspaceContext';
+import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 
 const Prices = () => {
   const { t, lang } = useTranslation('common');
   const { auth } = useAuth();
+  const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
   const { success, error: showError } = useNotification();
-  const { data: ingredients, error: ingredientsError } = useSWR(
-    auth.isAuthenticated ? '/api/ingredients' : null,
-    fetcher
+  const { data: workspaceIngredients, error: ingredientsError } = useSWR<WorkspaceIngredient[]>(
+    workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
-  const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR(
-    auth.isAuthenticated ? '/api/prices' : null,
-    fetcher
+  const { data: prices, error: pricesError, mutate: mutatePrices } = useSWR<Price[]>(
+    workspaceKey('/api/prices', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
+    workspaceFetcher
   );
+  const ingredients = workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [];
 
   const [filterIngredientId, setFilterIngredientId] = useState('');
   const [filterDate, setFilterDate] = useState('');
@@ -64,7 +68,7 @@ const Prices = () => {
   }, [lang, router]);
 
   const handleAddPrice = async (priceData: {
-    ingredient_id: string;
+    ingredient_id: number;
     price: string;
     quantity: string;
     unit: string;
@@ -79,7 +83,7 @@ const Prices = () => {
       const currentDate = new Date().toISOString();
 
       const requestData = {
-        ingredient_id: parseInt(priceData.ingredient_id, 10),
+        ingredient_id: priceData.ingredient_id,
         price: parseFloat(priceData.price),
         quantity: parseInt(priceData.quantity, 10),
         unit: priceData.unit,
@@ -136,7 +140,7 @@ const Prices = () => {
     loadPrices();
   };
 
-  const ingredientOptions = ingredients ? ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })) : [];
+  const ingredientOptions = ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name }));
 
   const hasActiveFilters = filterIngredientId || filterDate;
 
@@ -173,7 +177,7 @@ const Prices = () => {
       <div className="filter-bar">
         <div className="filter-group">
           <SelectDropdown
-            value={ingredientOptions.find(option => option.value === filterIngredientId) || null}
+            value={ingredientOptions.find(option => String(option.value) === filterIngredientId) || null}
             onChange={(option) => setFilterIngredientId(option ? option.value : '')}
             options={ingredientOptions}
             isClearable

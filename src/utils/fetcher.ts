@@ -13,6 +13,9 @@ class FetchError extends Error {
   field?: string;
   value?: string;
   existing_id?: number;
+  workspace_linked?: boolean;
+  workspace_ingredient_id?: number;
+  workspace_ingredient?: any;
   
   constructor(message: string, status: number, errorData?: any) {
     super(message);
@@ -24,11 +27,29 @@ class FetchError extends Error {
       this.field = errorData.field;
       this.value = errorData.value;
       this.existing_id = errorData.existing_id;
+      this.workspace_linked = errorData.workspace_linked;
+      this.workspace_ingredient_id = errorData.workspace_ingredient_id;
+      this.workspace_ingredient = errorData.workspace_ingredient;
     }
   }
 }
 
-export default async function fetcher(endpoint, options = {}) {
+const shouldSendWorkspaceHeader = (endpoint: string) => {
+  return endpoint !== '/api/workspaces' && !endpoint.startsWith('/api/auth/');
+};
+
+const getValidatedWorkspaceId = (endpoint: string) => {
+  if (typeof window === 'undefined' || !shouldSendWorkspaceHeader(endpoint)) {
+    return null;
+  }
+
+  const validatedUserId = sessionStorage.getItem('workspace:validated-user-id');
+  if (!validatedUserId) return null;
+
+  return localStorage.getItem(`workspace:selected:${validatedUserId}`);
+};
+
+export default async function fetcher(endpoint, options: any = {}) {
   const baseUrl = getApiUrl();
 
   const url = `${baseUrl}${endpoint}`;
@@ -36,17 +57,24 @@ export default async function fetcher(endpoint, options = {}) {
   // Get token if we're on the client side
   let token = null;
   if (typeof window !== 'undefined') {
-    token = localStorage.getItem('token');
+      token = localStorage.getItem('token');
   }
+
+  const workspaceId = getValidatedWorkspaceId(endpoint);
+  const callerHeaders = options.headers || {};
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...(workspaceId && { 'X-Workspace-ID': workspaceId }),
+    ...callerHeaders,
+  };
+  const { headers: _ignoredHeaders, ...requestOptions } = options;
 
   try {
     const response = await fetch(url, {
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      ...options,
+      ...requestOptions,
+      headers,
     });
 
     // Handle authentication errors

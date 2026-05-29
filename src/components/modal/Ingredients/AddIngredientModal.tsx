@@ -12,6 +12,8 @@ interface AddIngredientModalProps {
     type: string;
     name: string;
   }) => Promise<void>;
+  onAddExisting: (ingredientId: number) => Promise<void>;
+  onSearchGlobalIngredients: (query: string) => Promise<Ingredient[]>;
   existingIngredients: Ingredient[];
 }
 
@@ -19,6 +21,8 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   show, 
   onClose, 
   onSave, 
+  onAddExisting,
+  onSearchGlobalIngredients,
   existingIngredients = [] 
 }) => {
   const { t } = useTranslation('common');
@@ -28,6 +32,8 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   const [showError, setShowError] = useState(false);
   const [errorField, setErrorField] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
   const ingredientNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,8 +44,32 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setErrorMessage('');
       setShowError(false);
       setErrorField('');
+      setSearchResults([]);
     }
   }, [show]);
+
+  useEffect(() => {
+    const query = ingredientName.trim();
+    if (!show || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await onSearchGlobalIngredients(query);
+        const workspaceIngredientIds = new Set(existingIngredients.map((ingredient) => ingredient.id));
+        setSearchResults(results.filter((ingredient) => !workspaceIngredientIds.has(ingredient.id)));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [existingIngredients, ingredientName, onSearchGlobalIngredients, show]);
 
   const ingredientTypeOptions = [
     { value: 'base', label: t('base'), icon: FaUtensils },
@@ -86,7 +116,16 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setErrorMessage('');
       setShowError(false);
       onClose();
-    } catch (error: unknown) {
+    } catch (error: any) {
+      if (error?.workspace_linked) {
+        setIngredientType('');
+        setIngredientName('');
+        setErrorMessage('');
+        setShowError(false);
+        onClose();
+        return;
+      }
+
       // Обработка структурированной ошибки от сервера
       if (error?.message === 'Ingredient with this name already exists' || 
           error?.message?.includes('already exists')) {
@@ -105,6 +144,23 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         setErrorField('');
       }
       
+      setShowError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddExisting = async (ingredient: Ingredient) => {
+    setIsLoading(true);
+    try {
+      await onAddExisting(ingredient.id);
+      setIngredientType('');
+      setIngredientName('');
+      setSearchResults([]);
+      onClose();
+    } catch (error: any) {
+      setErrorMessage(error?.message || t('failedToAddIngredient'));
+      setErrorField('');
       setShowError(true);
     } finally {
       setIsLoading(false);
@@ -183,6 +239,35 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             </Col>
           </Row>
 
+          {(isSearching || searchResults.length > 0) && (
+            <div className="mt-3 p-3 bg-light rounded">
+              <h6 className="text-muted mb-2">{t('searchGlobalIngredients')}</h6>
+              {isSearching ? (
+                <small className="text-muted">{t('loading')}...</small>
+              ) : (
+                <div className="d-flex flex-column gap-2">
+                  {searchResults.map((ingredient) => (
+                    <div key={ingredient.id} className="d-flex align-items-center justify-content-between gap-2">
+                      <div>
+                        <strong>{ingredient.name}</strong>
+                        <small className="text-muted ms-2">{t(ingredient.type)}</small>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => handleAddExisting(ingredient)}
+                        disabled={isLoading}
+                      >
+                        {t('addExistingIngredient')}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-3 p-3 bg-light rounded">
             <h6 className="text-muted mb-2">{t('ingredientTypes')}:</h6>
             <div className="d-flex flex-wrap gap-2">
@@ -218,4 +303,4 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
   );
 };
 
-export default AddIngredientModal; 
+export default AddIngredientModal;
