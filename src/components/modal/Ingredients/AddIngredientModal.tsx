@@ -233,7 +233,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               </Form.Group>
 
               {(ingredientName.trim().length >= 2 || isSearching || searchResults.length > 0) && (
-                <div className="mt-2 p-2 bg-light rounded">
+                <div className="existing-ingredient-suggestions mt-2 p-2 bg-light rounded">
                   {isSearching ? (
                     <small className="text-muted">{t('loading')}...</small>
                   ) : searchResults.length === 0 ? (
@@ -246,7 +246,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                           <button
                             key={ingredient.id}
                             type="button"
-                            className="btn btn-light d-flex align-items-center justify-content-between gap-2 text-start"
+                            className="btn btn-light existing-ingredient-suggestion d-flex align-items-center justify-content-between gap-2 text-start"
                             onClick={() => handleAddExisting(ingredient)}
                             disabled={isLoading || isAlreadyInList}
                           >

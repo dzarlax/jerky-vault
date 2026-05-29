@@ -6,7 +6,7 @@ import { Form, Button, Table } from 'react-bootstrap';
 import TableSkeleton from '../components/skeletons/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
-import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
+import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
 import { Ingredient, Price, WorkspaceIngredient } from '../types/api';
@@ -76,6 +76,17 @@ const Prices = () => {
   const ingredientOptions = useMemo(
     () => ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })),
     [ingredients]
+  );
+  const priceSortOptions = useMemo(
+    () => [
+      { value: 'ingredient.type', label: t('ingredientType') },
+      { value: 'ingredient.name', label: t('ingredientName') },
+      { value: 'price', label: t('price') },
+      { value: 'quantity', label: t('quantity') },
+      { value: 'unit', label: t('unit') },
+      { value: 'date', label: t('date') },
+    ],
+    [t]
   );
 
   useEffect(() => {
@@ -197,7 +208,7 @@ const Prices = () => {
   }, [filterDate, filterIngredientId, prices, router.locale, sortColumn, sortDirection]);
 
   return (
-    <div className="page-container">
+    <div className="page-container prices-page">
       {/* Page Header */}
       <div className="page-header">
         <div>
@@ -257,8 +268,35 @@ const Prices = () => {
         )}
       </div>
 
+      <div className="mobile-sort-bar">
+        <div className="filter-group">
+          <SelectDropdown
+            value={priceSortOptions.find(option => option.value === sortColumn) || null}
+            onChange={(option) => {
+              setSortColumn(option ? option.value : '');
+              setSortDirection('asc');
+            }}
+            options={priceSortOptions}
+            isClearable
+            placeholder={t('chooseSort')}
+            label={t('sortBy')}
+          />
+        </div>
+        <Button
+          variant="outline-secondary"
+          type="button"
+          onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+          disabled={!sortColumn}
+          className="mobile-sort-direction"
+          aria-label={sortDirection === 'asc' ? t('ascending') : t('descending')}
+        >
+          {sortDirection === 'asc' ? <FaSortAmountUp className="me-2" /> : <FaSortAmountDown className="me-2" />}
+          {sortDirection === 'asc' ? t('ascending') : t('descending')}
+        </Button>
+      </div>
+
       {/* Prices Table */}
-      <div className="table-responsive">
+      <div className="table-responsive prices-table-wrap">
         {hasError ? (
           <div className="text-center py-5">
             <p className="text-error">
@@ -289,7 +327,7 @@ const Prices = () => {
             <tbody>
               {filteredPrices.map((price: Price) => (
               <tr key={price.id}>
-                <td>
+                <td data-label={t('ingredientType')}>
                   <span className={`badge badge-${
                     price.ingredient.type === 'base' ? 'primary' :
                     price.ingredient.type === 'spice' ? 'warning' :
@@ -299,11 +337,11 @@ const Prices = () => {
                     {t(price.ingredient.type)}
                   </span>
                 </td>
-                <td>{price.ingredient.name}</td>
-                <td className="fw-semibold">{price.price} {t("currency")}</td>
-                <td>{price.quantity}</td>
-                <td>{t(price.unit)}</td>
-                <td className="text-secondary small">
+                <td data-label={t('ingredientName')}>{price.ingredient.name}</td>
+                <td className="fw-semibold" data-label={t('price')}>{price.price} {t("currency")}</td>
+                <td data-label={t('quantity')}>{price.quantity}</td>
+                <td data-label={t('unit')}>{t(price.unit)}</td>
+                <td className="text-secondary small" data-label={t('date')}>
                   {new Date(price.date).toLocaleDateString()}
                 </td>
               </tr>
