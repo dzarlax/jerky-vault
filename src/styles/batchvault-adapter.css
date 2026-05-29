@@ -694,6 +694,68 @@ h6,
   min-width: min(260px, 100%);
 }
 
+.filter-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.filter-chip {
+  min-height: var(--app-control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+  border-color: var(--border-secondary);
+  background: var(--surface-tertiary);
+  color: var(--text-primary);
+}
+
+.filter-chip.is-active {
+  border-color: var(--brand-500);
+  background: var(--batchvault-burgundy-soft);
+  color: var(--brand-600);
+}
+
+.ingredient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.price-state-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.price-state-badge.is-priced {
+  background: var(--good-bg);
+  color: var(--good);
+}
+
+.price-state-badge.is-missing {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
 .client-card {
   border-color: var(--border-primary);
   box-shadow: var(--shadow-sm);

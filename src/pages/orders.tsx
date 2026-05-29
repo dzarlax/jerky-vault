@@ -427,7 +427,7 @@ const Orders = () => {
                       variant={
                         order.status === 'new' ? 'info' :
                         order.status === 'in_progress' ? 'warning' :
-                        order.status === 'delivery' ? 'error' :
+                        order.status === 'canceled' ? 'error' :
                         order.status === 'ready' ? 'info' : 'success'
                       }
                     />
@@ -449,15 +449,15 @@ const Orders = () => {
                   </td>
                   <td>
                     <span className="fw-semibold">
-                      {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0))}
+                      {formatCurrency(order.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0)}
                     </span>
                   </td>
                   <td className="text-secondary">
-                    {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0) || 0))}
+                    {formatCurrency(order.items?.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0) || 0)}
                   </td>
-                  <td className={parseFloat(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0) >= 0 ? 'text-success' : 'text-error'}>
+                  <td className={(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0) >= 0 ? 'text-success' : 'text-error'}>
                     <span className="fw-semibold">
-                      {formatCurrency(parseFloat(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0))}
+                      {formatCurrency(order.items?.reduce((sum, item) => sum + ((item.price - item.cost_price) * item.quantity), 0) || 0)}
                     </span>
                   </td>
                   <td>

@@ -55,7 +55,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
 
     const radius = size / 2;
     const colorScale = d3
-      .scaleOrdinal()
+      .scaleOrdinal<string, string>()
       .domain(data.map((d) => d.label))
       .range(data.map((d) => d.color || d3.schemeCategory10[data.indexOf(d) % 10]));
 
@@ -102,7 +102,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
 
         // Show tooltip
         const tooltip = d3.select(tooltipRef.current);
-        const percentage = ((d.data.value / data.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
+        const percentage = (d.data.value / data.reduce((sum, item) => sum + item.value, 0)) * 100;
 
         tooltip
           .style('opacity', '1')
@@ -117,7 +117,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
             </div>
             <div style="margin-top: 2px;">
               <span style="color: #9ca3af;">Процент:</span>
-              <span style="font-weight: 700; margin-left: 4px; color: ${percentage >= 20 ? '#10B981' : '#F59E0B'};">${percentage}%</span>
+              <span style="font-weight: 700; margin-left: 4px; color: ${percentage >= 20 ? '#10B981' : '#F59E0B'};">${percentage.toFixed(1)}%</span>
             </div>
           `);
       })

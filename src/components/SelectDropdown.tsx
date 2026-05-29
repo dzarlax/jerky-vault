@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
-import Select, { SelectInstance, Props as SelectProps } from 'react-select';
+import Select from 'react-select';
 
-export interface SelectDropdownProps extends Omit<SelectProps, 'loadingMessage' | 'noOptionsMessage' | 'styles'> {
+export interface SelectDropdownProps {
   label?: string;
   error?: string;
   required?: boolean;
@@ -10,9 +10,16 @@ export interface SelectDropdownProps extends Omit<SelectProps, 'loadingMessage' 
   loadingMessage?: string;
   noOptionsMessage?: string;
   menuPortalTarget?: HTMLElement | null;
+  className?: string;
+  classNamePrefix?: string;
+  instanceId?: string;
+  styles?: any;
+  [key: string]: any;
 }
 
-const SelectDropdown = forwardRef<SelectInstance<any>, SelectDropdownProps>(
+const SelectComponent = Select as unknown as React.ForwardRefExoticComponent<any>;
+
+const SelectDropdown = forwardRef<any, SelectDropdownProps>(
   ({
     label,
     error,
@@ -58,7 +65,7 @@ const SelectDropdown = forwardRef<SelectInstance<any>, SelectDropdownProps>(
             {required && <span className="text-error ms-1">*</span>}
           </label>
         )}
-        <Select
+        <SelectComponent
           ref={ref}
           className={`react-select-container ${error ? 'is-invalid' : ''} ${className || ''}`}
           classNamePrefix="react-select"

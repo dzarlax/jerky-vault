@@ -773,8 +773,8 @@ const Dashboard = () => {
                                 {isApiOrder 
                                   ? (order as any).client_name || t('unknownClient')
                                   : (() => {
-                                      const client = clients.find(c => c.id === (order as any).client_id) || {};
-                                      return client.name ? `${client.name} ${(client as any).surname || ''}`.trim() : t('unknownClient');
+                                      const client = clients.find(c => c.id === (order as any).client_id);
+                                      return client ? `${client.name} ${client.surname || ''}`.trim() : t('unknownClient');
                                     })()
                                 }
                               </td>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
@@ -9,7 +9,6 @@ import { useRouter } from 'next/router';
 import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
-import { useNotification } from '../hooks/useNotification';
 import { Ingredient, Price, WorkspaceIngredient } from '../types/api';
 import SelectDropdown from '../components/SelectDropdown';
 import { useWorkspace } from '../utils/workspaceContext';
@@ -19,7 +18,6 @@ const Prices = () => {
   const { t, lang } = useTranslation('common');
   const { auth } = useAuth();
   const { selectedWorkspaceId, isWorkspaceReady } = useWorkspace();
-  const { success, error: showError } = useNotification();
   const { data: workspaceIngredients, error: ingredientsError } = useSWR<WorkspaceIngredient[]>(
     workspaceKey('/api/workspace-ingredients', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
     workspaceFetcher
@@ -28,13 +26,15 @@ const Prices = () => {
     workspaceKey('/api/prices', selectedWorkspaceId, auth.isAuthenticated && isWorkspaceReady),
     workspaceFetcher
   );
-  const ingredients = workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [];
+  const ingredients = useMemo(
+    () => workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [],
+    [workspaceIngredients]
+  );
 
   const [filterIngredientId, setFilterIngredientId] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
-  const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const router = useRouter();
@@ -56,16 +56,29 @@ const Prices = () => {
   };
 
   useEffect(() => {
-    if (ingredients && prices) {
-      setIsLoading(false);
-    }
-  }, [ingredients, prices]);
-
-  useEffect(() => {
     if (router.locale !== lang) {
       router.push(router.pathname, router.asPath, { locale: lang });
     }
   }, [lang, router]);
+
+  const ingredientOptions = useMemo(
+    () => ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name })),
+    [ingredients]
+  );
+
+  useEffect(() => {
+    if (!router.isReady || ingredientOptions.length === 0) {
+      return;
+    }
+
+    const queryIngredientId = Array.isArray(router.query.ingredient_id)
+      ? router.query.ingredient_id[0]
+      : router.query.ingredient_id;
+
+    if (queryIngredientId && ingredientOptions.some(option => String(option.value) === queryIngredientId)) {
+      setFilterIngredientId(queryIngredientId);
+    }
+  }, [ingredientOptions, router.isReady, router.query.ingredient_id]);
 
   const handleAddPrice = async (priceData: {
     ingredient_id: number;
@@ -112,22 +125,6 @@ const Prices = () => {
   const clearFilters = () => {
     setFilterIngredientId('');
     setFilterDate('');
-    loadPrices();
-  };
-
-  const loadPrices = async () => {
-    const queryParams = new URLSearchParams();
-    if (filterIngredientId) queryParams.append('ingredient_id', filterIngredientId);
-    if (filterDate) queryParams.append('date', filterDate);
-    if (sortColumn) queryParams.append('sort_column', sortColumn);
-    if (sortDirection) queryParams.append('sort_direction', sortDirection);
-
-    try {
-      const data = await fetcher('/api/prices?' + queryParams.toString());
-      mutatePrices(data, false);
-    } catch (error) {
-      showError(t('failedToLoadPrices'));
-    }
   };
 
   const sortPrices = (column: string) => {
@@ -137,14 +134,55 @@ const Prices = () => {
       setSortColumn(column);
       setSortDirection('asc');
     }
-    loadPrices();
   };
-
-  const ingredientOptions = ingredients.map((ingredient: Ingredient) => ({ value: ingredient.id, label: ingredient.name }));
 
   const hasActiveFilters = filterIngredientId || filterDate;
 
   const hasError = ingredientsError || pricesError;
+  const isLoading = !isWorkspaceReady || !workspaceIngredients || !prices;
+
+  const filteredPrices = useMemo(() => {
+    const rows = [...(prices || [])].filter((price) => {
+      const ingredientMatch = !filterIngredientId || String(price.ingredient_id) === filterIngredientId;
+      const dateMatch = !filterDate || price.date.slice(0, 10) === filterDate;
+      return ingredientMatch && dateMatch;
+    });
+
+    if (!sortColumn) {
+      return rows;
+    }
+
+    const direction = sortDirection === 'asc' ? 1 : -1;
+    return rows.sort((a, b) => {
+      const getValue = (price: Price) => {
+        switch (sortColumn) {
+          case 'ingredient.type':
+            return price.ingredient.type;
+          case 'ingredient.name':
+            return price.ingredient.name;
+          case 'price':
+            return price.price;
+          case 'quantity':
+            return price.quantity;
+          case 'unit':
+            return price.unit;
+          case 'date':
+            return new Date(price.date).getTime();
+          default:
+            return '';
+        }
+      };
+
+      const left = getValue(a);
+      const right = getValue(b);
+
+      if (typeof left === 'number' && typeof right === 'number') {
+        return (left - right) * direction;
+      }
+
+      return String(left).localeCompare(String(right), router.locale) * direction;
+    });
+  }, [filterDate, filterIngredientId, prices, router.locale, sortColumn, sortDirection]);
 
   return (
     <div className="page-container">
@@ -159,7 +197,7 @@ const Prices = () => {
             <p className="page-subtitle">
               {t('total')}: {prices?.length || 0} {t('prices').toLowerCase()}
               {hasActiveFilters && (
-                <span className="text-tertiary"> / {t('filtered').toLowerCase()}</span>
+                <span className="text-tertiary"> / {filteredPrices.length} {t('filtered').toLowerCase()}</span>
               )}
             </p>
           )}
@@ -178,7 +216,7 @@ const Prices = () => {
         <div className="filter-group">
           <SelectDropdown
             value={ingredientOptions.find(option => String(option.value) === filterIngredientId) || null}
-            onChange={(option) => setFilterIngredientId(option ? option.value : '')}
+            onChange={(option) => setFilterIngredientId(option ? String(option.value) : '')}
             options={ingredientOptions}
             isClearable
             placeholder={t('allIngredients')}
@@ -194,18 +232,12 @@ const Prices = () => {
             className="form-control"
           />
         </div>
-        <Button
-          variant="primary"
-          onClick={loadPrices}
-          className="ms-auto"
-        >
-          {t('applyFilters')}
-        </Button>
         {hasActiveFilters && (
           <Button
             variant="outline-secondary"
             size="sm"
             onClick={clearFilters}
+            className="ms-auto"
           >
             <FaTimes className="me-2" />
             {t('clear')}
@@ -223,7 +255,7 @@ const Prices = () => {
           </div>
         ) : isLoading ? (
           <TableSkeleton rows={10} columns={6} />
-        ) : !prices || prices.length === 0 ? (
+        ) : filteredPrices.length === 0 ? (
           <EmptyState
             type="prices"
             message={hasActiveFilters ? t('noPricesFound') : t('noPrices')}
@@ -243,7 +275,7 @@ const Prices = () => {
               </tr>
             </thead>
             <tbody>
-              {prices.map((price: Price) => (
+              {filteredPrices.map((price: Price) => (
               <tr key={price.id}>
                 <td>
                   <span className={`badge badge-${
