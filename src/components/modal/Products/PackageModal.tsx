@@ -76,7 +76,7 @@ const PackageModal: React.FC<PackageModalProps> = ({
       </Modal.Header>
       <Modal.Body className="pt-0 px-3 px-md-4">
         <Form>
-          <div className="form-section p-3 rounded bg-light">
+          <div className="form-section p-3 rounded">
             <Form.Group controlId="packageName" className="mb-3">
               <Form.Label>{t("packageName")}</Form.Label>
               <Form.Control

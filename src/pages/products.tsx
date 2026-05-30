@@ -7,7 +7,8 @@ import { useAuth, withAuth } from '../utils/authContext';
 import { Button } from 'react-bootstrap';
 import { SingleValue } from 'react-select';
 import ProductModal from '../components/modal/Products/ProductModal';
-import { FaPlus, FaFilter, FaTag, FaTimes } from 'react-icons/fa';
+import PackageModal from '../components/modal/Products/PackageModal';
+import { FaPlus, FaTag, FaTimes } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
 import EmptyState from '../components/EmptyState';
@@ -47,6 +48,7 @@ const Products = () => {
   const [selectedRecipes, setSelectedRecipes] = useState<{ value: number; label: string }[]>([]);
   const [packageId, setPackageId] = useState<number | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<SingleValue<{ value: number; label: string }> | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<SingleValue<{ value: number; label: string }> | null>(null);
@@ -215,6 +217,16 @@ const Products = () => {
     }
   };
 
+  const handlePackageCreated = (newPackage: { id: number; name: string }) => {
+    const option = { value: newPackage.id, label: newPackage.name };
+    setSelectedPackage(option);
+    mutatePackages();
+  };
+
+  const handleSelectPackage = (option: { value: number; label: string } | null) => {
+    setSelectedPackage(option);
+  };
+
   const recipeOptions = recipes?.map(recipe => ({ value: recipe.id, label: recipe.name })) || [];
   const packageOptions = packages?.map(pkg => ({ value: pkg.id, label: pkg.name })) || [];
   const productOptions = products?.map(product => ({ value: product.id, label: product.name })) || [];
@@ -265,7 +277,7 @@ const Products = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-bar">
+      <div className="filter-bar products-filter-bar">
         <div className="filter-group">
           <SelectDropdown
             options={recipeOptions}
@@ -274,16 +286,6 @@ const Products = () => {
             placeholder={t('allRecipes')}
             isClearable
             label={t('recipe')}
-          />
-        </div>
-        <div className="filter-group">
-          <SelectDropdown
-            options={packageOptions}
-            onChange={setSelectedPackage}
-            value={selectedPackage}
-            placeholder={t('allPackages')}
-            isClearable
-            label={t('package')}
           />
         </div>
         <div className="filter-group">
@@ -312,6 +314,46 @@ const Products = () => {
           </Button>
         ) : null}
       </div>
+
+      {!isLoading && (
+        <div className="package-chip-strip" aria-label={t('package')}>
+          <button
+            type="button"
+            className={`package-chip ${selectedPackage ? '' : 'active'}`}
+            onClick={() => handleSelectPackage(null)}
+            aria-pressed={!selectedPackage}
+          >
+            {t('allPackages')}
+            <span className="package-chip-count">{products?.length || 0}</span>
+          </button>
+          {packageOptions.map((option) => {
+            const packageProductCount = products?.filter(product => product.package_id === option.value).length || 0;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={`package-chip ${selectedPackage?.value === option.value ? 'active' : ''}`}
+                onClick={() => handleSelectPackage(option)}
+                aria-pressed={selectedPackage?.value === option.value}
+                title={option.label}
+              >
+                <span className="package-chip-label">{option.label}</span>
+                <span className="package-chip-count">{packageProductCount}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="package-chip package-chip-add"
+            onClick={() => setShowPackageModal(true)}
+            title={t('addPackage')}
+            aria-label={t('addPackage')}
+          >
+            <FaPlus />
+          </button>
+        </div>
+      )}
 
       {/* Products Grid */}
       {isLoading ? (
@@ -365,6 +407,12 @@ const Products = () => {
         packageId={packageId}
         setPackageId={setPackageId}
         packageOptions={packageOptions}
+      />
+
+      <PackageModal
+        show={showPackageModal}
+        onClose={() => setShowPackageModal(false)}
+        onPackageCreated={handlePackageCreated}
       />
     </div>
   );

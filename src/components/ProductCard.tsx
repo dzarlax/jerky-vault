@@ -1,6 +1,6 @@
 import React from 'react';
 import useTranslation from 'next-translate/useTranslation';
-import { FaEdit, FaBoxOpen } from 'react-icons/fa';
+import { FaEdit, FaBoxOpen, FaUtensils } from 'react-icons/fa';
 import { Product, ProductPackage, Recipe } from '../types/api';
 
 interface ProductCardProps {
@@ -18,52 +18,79 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { t } = useTranslation('common');
 
-  const packageName = packages?.find(pkg => pkg.id === product.package_id)?.name || t('unknownPackage');
+  const packageName = product.package?.name || packages?.find(pkg => pkg.id === product.package_id)?.name || t('unknownPackage');
 
   const recipeNames = (product.options || [])
     .map(option => {
-      const recipe = recipes?.find(r => r.id === option.recipe_id);
-      return recipe ? recipe.name : t('unknownRecipe');
+      const embeddedRecipeName = option.recipe?.name?.trim();
+      if (embeddedRecipeName) return embeddedRecipeName;
+
+      const recipe = recipes?.find(r => Number(r.id) === Number(option.recipe_id));
+      return recipe?.name?.trim();
     })
-    .join(', ');
+    .filter((name): name is string => Boolean(name));
+  const visibleRecipeNames = recipeNames.slice(0, 2).join(', ');
+  const hiddenRecipeCount = Math.max(recipeNames.length - 2, 0);
 
   const profit = product.price - product.cost;
   const profitMargin = product.price > 0 ? ((profit / product.price) * 100).toFixed(1) : '0';
+  const currency = t('currency');
+  const formatMoney = (value: number) => `${value.toFixed(2)} ${currency}`;
 
   return (
     <div className="product-card">
-      {product.image || product.image_url ? (
-        <img
-          src={product.image || product.image_url}
-          alt={product.name}
-          className="product-card-image"
-          loading="lazy"
-        />
-      ) : (
-        <div className="product-card-image d-flex align-items-center justify-content-center">
-          <FaBoxOpen size={32} className="text-tertiary" />
-        </div>
-      )}
-
       <div className="product-card-content">
-        <h3 className="product-card-title">{product.name}</h3>
-        <p className="product-card-description">{product.description}</p>
+        <div className="product-card-header">
+          <div className="product-card-heading">
+            <h3 className="product-card-title">{product.name}</h3>
+            <div className="product-package-chip" title={packageName}>
+              <FaBoxOpen size={12} />
+              <span>{packageName}</span>
+            </div>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm product-card-edit"
+            onClick={() => onEdit(product)}
+            title={t("edit")}
+            aria-label={`${t("edit")} ${product.name}`}
+          >
+            <FaEdit size={14} />
+          </button>
+        </div>
+
+        <p className="product-card-description">
+          {product.description || t('noDescription')}
+        </p>
+
+        <div className="product-card-recipes">
+          <FaUtensils size={13} />
+          <span>
+            {recipeNames.length > 0 ? (
+              <>
+                {visibleRecipeNames}
+                {hiddenRecipeCount > 0 ? ` +${hiddenRecipeCount}` : ''}
+              </>
+            ) : (
+              t('noRecipes')
+            )}
+          </span>
+        </div>
 
         <div className="product-card-metrics">
           <div className="product-metric">
             <span className="product-metric-label">{t('price')}:</span>
-            <span className="product-metric-value price">₽{product.price}</span>
+            <span className="product-metric-value price">{formatMoney(product.price)}</span>
           </div>
 
           <div className="product-metric">
             <span className="product-metric-label">{t('cost')}:</span>
-            <span className="product-metric-value cost">₽{product.cost}</span>
+            <span className="product-metric-value cost">{formatMoney(product.cost)}</span>
           </div>
 
           <div className="product-metric">
             <span className="product-metric-label">{t('profit')}:</span>
             <span className={`product-metric-value ${profit >= 0 ? 'price' : 'cost'}`}>
-              ₽{profit.toFixed(2)}
+              {formatMoney(profit)}
             </span>
           </div>
 
@@ -73,19 +100,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {profitMargin}%
             </span>
           </div>
-        </div>
-
-        <div className="product-card-footer">
-          <div className="text-secondary small">
-            {t('package')}: {packageName}
-          </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onEdit(product)}
-            title={t("edit")}
-          >
-            <FaEdit size={14} />
-          </button>
         </div>
       </div>
     </div>
