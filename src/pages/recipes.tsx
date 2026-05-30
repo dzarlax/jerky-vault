@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
-import { Button, Form } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
 import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
 import RecipeCalculator from '../components/calculator/RecipeCalculator';
@@ -11,12 +11,13 @@ import EmptyState from '../components/EmptyState';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
-import { FaPlus, FaUtensils, FaTimes, FaCalculator, FaEdit, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlus, FaUtensils, FaCalculator, FaEdit, FaExclamationTriangle } from 'react-icons/fa';
 import SelectDropdown from '../components/SelectDropdown';
 import { formatCount } from '../utils/pluralize';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
 import { WorkspaceIngredient } from '../types/api';
+import { ClearFiltersButton, FilterBar, SearchFilter } from '../components/filters/FilterBar';
 
 const Recipes: React.FC = () => {
   const { auth } = useAuth();
@@ -399,16 +400,13 @@ const Recipes: React.FC = () => {
         </Button>
       </div>
 
-      <div className="recipe-filter-strip">
-        <div className="filter-group">
-          <Form.Label>{t('searchRecipes')}</Form.Label>
-          <Form.Control
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={t('searchByName')}
-          />
-        </div>
+      <FilterBar className="recipe-filter-strip">
+        <SearchFilter
+          label={t('searchRecipes')}
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder={t('searchByName')}
+        />
         <div className="filter-group">
           <SelectDropdown
             value={
@@ -433,18 +431,12 @@ const Recipes: React.FC = () => {
         <div className="recipe-filter-summary">
           {filteredRecipes.length} {t('of')} {formatCount(t, recipeNames?.length || 0, 'recipe')}
         </div>
-        {hasActiveFilters && (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={clearFilters}
-            className="ms-auto"
-          >
-            <FaTimes className="me-2" />
-            {t('clear')}
-          </Button>
-        )}
-      </div>
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={clearFilters}
+          visible={!!hasActiveFilters}
+        />
+      </FilterBar>
 
       {/* Recipes Grid */}
       {isLoading ? (

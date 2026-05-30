@@ -304,6 +304,48 @@ p {
   letter-spacing: 0.05em;
 }
 
+.input-group-text {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.input-group .form-control {
+  border-color: var(--border-primary);
+}
+
+.input-group .form-control:focus {
+  position: relative;
+  z-index: 3;
+}
+
+[data-theme="dark"] .input-group-text {
+  background: var(--surface-tertiary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .filter-bar .input-group-text,
+[data-theme="dark"] .modal-body .input-group-text {
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .filter-bar .form-control,
+[data-theme="dark"] .modal-body .form-control,
+[data-theme="dark"] .modal-body .form-select {
+  background: var(--surface-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .filter-bar .form-control::placeholder,
+[data-theme="dark"] .modal-body .form-control::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
 /* === TABLES === */
 .table {
   width: 100% !important;

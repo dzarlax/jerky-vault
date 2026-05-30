@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import {
   FaBoxOpen,
   FaUsers,
@@ -29,21 +29,21 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   const getDefaultIcon = () => {
     switch (type) {
       case 'products':
-        return <FaBoxOpen size={64} className="text-muted mb-3" />;
+        return <FaBoxOpen size={64} />;
       case 'clients':
-        return <FaUsers size={64} className="text-muted mb-3" />;
+        return <FaUsers size={64} />;
       case 'orders':
-        return <FaShoppingCart size={64} className="text-muted mb-3" />;
+        return <FaShoppingCart size={64} />;
       case 'recipes':
-        return <FaUtensils size={64} className="text-muted mb-3" />;
+        return <FaUtensils size={64} />;
       case 'ingredients':
-        return <FaClipboardList size={64} className="text-muted mb-3" />;
+        return <FaClipboardList size={64} />;
       case 'prices':
-        return <FaDollarSign size={64} className="text-muted mb-3" />;
+        return <FaDollarSign size={64} />;
       case 'packages':
-        return <FaTags size={64} className="text-muted mb-3" />;
+        return <FaTags size={64} />;
       default:
-        return <FaExclamationTriangle size={64} className="text-muted mb-3" />;
+        return <FaExclamationTriangle size={64} />;
     }
   };
 
@@ -72,17 +72,19 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   const displayMessage = message || getDefaultMessage();
 
   return (
-    <Alert variant="light" className="text-center py-5">
-      <div className="d-flex flex-column align-items-center">
+    <div className={`empty-state empty-state-${type}`} role="status">
+      <div className="empty-state-content">
+        <div className="empty-state-icon">
         {displayIcon}
-        <h5 className="text-muted mb-3">{displayMessage}</h5>
+        </div>
+        <h5 className="empty-state-title">{displayMessage}</h5>
         {actionLabel && onAction && (
-          <Button variant="primary" onClick={onAction} className="mt-2">
+          <Button variant="primary" onClick={onAction} className="empty-state-action">
             {actionLabel}
           </Button>
         )}
       </div>
-    </Alert>
+    </div>
   );
 };
 

@@ -1,16 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { Form, Button, Table, InputGroup } from 'react-bootstrap';
+import { Button, Table } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import fetcher from '../utils/fetcher';
 import EmptyState from '../components/EmptyState';
+import IngredientTypeBadge from '../components/IngredientTypeBadge';
 import { useRouter } from 'next/router';
 import { useAuth, withAuth } from '../utils/authContext';
-import { FaPlus, FaTimes, FaTag, FaSearch, FaList, FaFlask, FaUtensils, FaTint, FaHistory } from 'react-icons/fa';
+import { FaPlus, FaList, FaHistory } from 'react-icons/fa';
 import AddIngredientModal from '../components/modal/Ingredients/AddIngredientModal';
 import { WorkspaceIngredient } from '../types/api';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { getIngredientTypeOptions } from '../utils/ingredientTypes';
+import { ClearFiltersButton, FilterBar, FilterChipGroup, SearchFilter } from '../components/filters/FilterBar';
 
 type PriceStateFilter = 'all' | 'missing' | 'priced';
 
@@ -28,27 +31,13 @@ const Ingredients: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
 
-  const ingredientTypeOptions = [
-    { value: 'all', label: t('allTypes'), icon: FaList },
-    { value: 'base', label: t('base'), icon: FaUtensils },
-    { value: 'spice', label: t('spice'), icon: FaFlask },
-    { value: 'sauce', label: t('sauce'), icon: FaTint },
-  ];
+  const ingredientTypeOptions = useMemo(() => getIngredientTypeOptions(t, { includeAll: true }), [t]);
 
   const priceStateOptions: { value: PriceStateFilter; label: string }[] = [
     { value: 'all', label: t('allPriceStates') },
     { value: 'missing', label: t('missingPrice') },
     { value: 'priced', label: t('hasPrice') },
   ];
-
-  const getTypeIcon = (type: string) => {
-    const typeOption = ingredientTypeOptions.find(option => option.value === type);
-    if (typeOption) {
-      const IconComponent = typeOption.icon;
-      return <IconComponent className="me-1" />;
-    }
-    return <FaTag className="me-1" />;
-  };
 
   const ingredients = workspaceIngredients?.map((workspaceIngredient) => workspaceIngredient.ingredient) || [];
 
@@ -166,68 +155,35 @@ const Ingredients: React.FC = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-bar">
-        <div className="filter-group">
-          <label className="filter-label">{t('search')}</label>
-          <InputGroup>
-            <InputGroup.Text className="bg-transparent">
-              <FaSearch className="text-secondary" />
-            </InputGroup.Text>
-            <Form.Control
-              type="text"
-              placeholder={t('filterIngredients')}
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="form-control"
-            />
-          </InputGroup>
-        </div>
-        <div className="filter-group">
-          <label className="filter-label">{t('type')}</label>
-          <div className="filter-chip-row" role="group" aria-label={t('type')}>
-            {ingredientTypeOptions.map((option) => {
-              const IconComponent = option.icon;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`filter-chip ${filterType === option.value ? 'is-active' : ''}`}
-                  onClick={() => setFilterType(option.value)}
-                >
-                  <IconComponent className="me-1" />
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="filter-group">
-          <label className="filter-label">{t('priceState')}</label>
-          <div className="filter-chip-row" role="group" aria-label={t('priceState')}>
-            {priceStateOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`filter-chip ${filterPriceState === option.value ? 'is-active' : ''}`}
-                onClick={() => setFilterPriceState(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {hasActiveFilters && (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={clearFilters}
-            className="ms-auto"
-          >
-            <FaTimes className="me-2" />
-            {t('clear')}
-          </Button>
-        )}
-      </div>
+      <FilterBar className="ingredients-filter-bar">
+        <SearchFilter
+          label={t('search')}
+          value={filter}
+          onChange={setFilter}
+          placeholder={t('filterIngredients')}
+        />
+        <FilterChipGroup
+          label={t('type')}
+          options={ingredientTypeOptions}
+          value={filterType}
+          onChange={setFilterType}
+          ariaLabel={t('type')}
+          className="ingredients-chip-filter"
+        />
+        <FilterChipGroup
+          label={t('priceState')}
+          options={priceStateOptions}
+          value={filterPriceState}
+          onChange={(value) => setFilterPriceState(value as PriceStateFilter)}
+          ariaLabel={t('priceState')}
+          className="ingredients-chip-filter"
+        />
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={clearFilters}
+          visible={hasActiveFilters}
+        />
+      </FilterBar>
 
       {/* Ingredients List */}
       {isLoading ? (
@@ -258,14 +214,10 @@ const Ingredients: React.FC = () => {
                 <tr key={workspaceIngredient.id}>
                   <td className="fw-medium" data-label={t('name')}>{workspaceIngredient.ingredient.name}</td>
                   <td data-label={t('type')}>
-                    <span className={`badge ${
-                      workspaceIngredient.ingredient.type === 'base' ? 'badge-primary' :
-                      workspaceIngredient.ingredient.type === 'spice' ? 'badge-warning' :
-                      workspaceIngredient.ingredient.type === 'sauce' ? 'badge-info' : 'badge-secondary'
-                    }`}>
-                      {getTypeIcon(workspaceIngredient.ingredient.type)}
-                      {t(workspaceIngredient.ingredient.type)}
-                    </span>
+                    <IngredientTypeBadge
+                      type={workspaceIngredient.ingredient.type}
+                      label={t(workspaceIngredient.ingredient.type)}
+                    />
                   </td>
                   <td data-label={t('latestPrice')}>
                     {workspaceIngredient.latest_price ? (

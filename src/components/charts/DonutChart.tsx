@@ -90,7 +90,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
       .append('path')
       .attr('d', arc)
       .attr('fill', (d) => colorScale(d.data.label))
-      .attr('stroke', 'white')
+      .attr('stroke', 'var(--surface-primary)')
       .attr('stroke-width', '2')
       .style('opacity', 0.9)
       .on('mouseover', function (event, d) {
@@ -117,7 +117,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
             </div>
             <div style="margin-top: 2px;">
               <span style="color: #9ca3af;">Процент:</span>
-              <span style="font-weight: 700; margin-left: 4px; color: ${percentage >= 20 ? '#10B981' : '#F59E0B'};">${percentage.toFixed(1)}%</span>
+              <span style="font-weight: 700; margin-left: 4px; color: ${percentage >= 20 ? 'var(--chart-accent-good)' : 'var(--chart-accent-warn)'};">${percentage.toFixed(1)}%</span>
             </div>
           `);
       })

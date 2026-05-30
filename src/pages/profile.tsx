@@ -4,6 +4,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { Form, Button, Alert, InputGroup } from 'react-bootstrap';
 import { useAuth, withAuth } from '../utils/authContext';
 import { FaUser, FaLock, FaEye, FaEyeSlash, FaShieldAlt, FaCalendarAlt, FaIdCard, FaEnvelope } from 'react-icons/fa';
+import StatusBadge from '../components/StatusBadge';
 
 const Profile = () => {
   const { t } = useTranslation('common');
@@ -88,7 +89,7 @@ const Profile = () => {
       <div className="profile-grid">
         {/* Account Info Card */}
         <div className="profile-card">
-          <div className="profile-card-header bg-primary">
+          <div className="profile-card-header">
             <h5 className="profile-card-title">
               <FaIdCard className="me-2" />
               {t('accountInfo')}
@@ -119,7 +120,7 @@ const Profile = () => {
                 {t('accountStatus')}
               </div>
               <div className="info-value">
-                <span className="badge badge-success">{t('active')}</span>
+                <StatusBadge status={t('active')} variant="success" />
               </div>
             </div>
 
@@ -137,8 +138,8 @@ const Profile = () => {
 
         {/* Change Password Card */}
         <div className="profile-card profile-card-large">
-          <div className="profile-card-header bg-warning">
-            <h5 className="profile-card-title text-primary">
+          <div className="profile-card-header">
+            <h5 className="profile-card-title">
               <FaLock className="me-2" />
               {t('changePassword')}
             </h5>
@@ -151,7 +152,10 @@ const Profile = () => {
                     <FaLock className="me-2 text-primary" />
                     {t('currentPassword')} <span className="text-error">*</span>
                   </Form.Label>
-                  <InputGroup>
+                  <InputGroup className="profile-password-group">
+                    <InputGroup.Text>
+                      <FaLock />
+                    </InputGroup.Text>
                     <Form.Control
                       type={showCurrentPassword ? "text" : "password"}
                       value={currentPassword}
@@ -161,6 +165,7 @@ const Profile = () => {
                     />
                     <Button
                       variant="outline-secondary"
+                      className="profile-password-toggle"
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     >
@@ -175,7 +180,10 @@ const Profile = () => {
                       <FaLock className="me-2 text-primary" />
                       {t('newPassword')} <span className="text-error">*</span>
                     </Form.Label>
-                    <InputGroup>
+                    <InputGroup className="profile-password-group">
+                      <InputGroup.Text>
+                        <FaLock />
+                      </InputGroup.Text>
                       <Form.Control
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
@@ -186,6 +194,7 @@ const Profile = () => {
                       />
                       <Button
                         variant="outline-secondary"
+                        className="profile-password-toggle"
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                       >
@@ -202,7 +211,10 @@ const Profile = () => {
                       <FaLock className="me-2 text-primary" />
                       {t('confirmPassword')} <span className="text-error">*</span>
                     </Form.Label>
-                    <InputGroup>
+                    <InputGroup className="profile-password-group">
+                      <InputGroup.Text>
+                        <FaLock />
+                      </InputGroup.Text>
                       <Form.Control
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
@@ -212,6 +224,7 @@ const Profile = () => {
                       />
                       <Button
                         variant="outline-secondary"
+                        className="profile-password-toggle"
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >

@@ -16,9 +16,10 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Order, OrderItem, Client, Product, ORDER_STATUSES } from '../types/api';
-import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart, FaTimes } from "react-icons/fa";
+import { FaSync, FaPencilAlt, FaTrash, FaPlus, FaShoppingCart } from "react-icons/fa";
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { ClearFiltersButton, FilterBar } from '../components/filters/FilterBar';
 
 const Orders = () => {
   const { t } = useTranslation("common");
@@ -337,7 +338,7 @@ const Orders = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-bar">
+      <FilterBar>
         <div className="filter-group">
           <SelectDropdown
             options={statusOptions}
@@ -358,18 +359,12 @@ const Orders = () => {
             label={t('client')}
           />
         </div>
-        {hasActiveFilters && (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={clearFilters}
-            className="ms-auto"
-          >
-            <FaTimes className="me-2" />
-            {t('clear')}
-          </Button>
-        )}
-      </div>
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={clearFilters}
+          visible={!!hasActiveFilters}
+        />
+      </FilterBar>
 
       {/* Orders Table */}
       {isLoading ? (
@@ -425,7 +420,7 @@ const Orders = () => {
                     <StatusBadge
                       status={t(order.status)}
                       variant={
-                        order.status === 'new' ? 'info' :
+                        order.status === 'new' ? 'brand' :
                         order.status === 'in_progress' ? 'warning' :
                         order.status === 'canceled' ? 'error' :
                         order.status === 'ready' ? 'info' : 'success'

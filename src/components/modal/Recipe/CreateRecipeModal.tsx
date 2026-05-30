@@ -4,6 +4,7 @@ import { FaExclamationTriangle, FaLayerGroup, FaPlus, FaTrash } from 'react-icon
 import { Ingredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
 import { formatCount } from '../../../utils/pluralize';
+import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
 
 type UnitOption = {
   value: string;
@@ -29,20 +30,7 @@ type CreateRecipeModalProps = {
 const getUnitsForIngredient = (ingredient?: Ingredient) => {
   if (!ingredient) return [];
 
-  switch (ingredient.type) {
-    case 'base':
-      return ['kg', 'g'];
-    case 'spice':
-      return ['g'];
-    case 'sauce':
-      return ['ml'];
-    case 'electricity':
-      return ['hh'];
-    case 'packing':
-      return ['pieces'];
-    default:
-      return [];
-  }
+  return getUnitsForIngredientType(ingredient.type);
 };
 
 const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({

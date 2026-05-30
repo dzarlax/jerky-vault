@@ -185,7 +185,7 @@ const ClientModal = ({
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <FaUser className="text-muted" />
+                      <FaUser className="client-modal-field-icon" />
                     </InputGroup.Text>
                     <Form.Control 
                       type="text" 
@@ -209,7 +209,7 @@ const ClientModal = ({
                   </Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <FaUser className="text-muted" />
+                      <FaUser className="client-modal-field-icon" />
                     </InputGroup.Text>
                     <Form.Control 
                       type="text" 
@@ -240,7 +240,7 @@ const ClientModal = ({
                   <Form.Label>{t('phone')}</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <FaPhone className="text-muted" />
+                      <FaPhone className="client-modal-field-icon" />
                     </InputGroup.Text>
                     <Form.Control 
                       type="tel" 
@@ -264,7 +264,7 @@ const ClientModal = ({
                    <Form.Label>{t('telegram')}</Form.Label>
                    <InputGroup>
                      <InputGroup.Text>
-                       <FaTelegram className="text-primary" />
+                       <FaTelegram className="client-modal-field-icon" />
                      </InputGroup.Text>
                      <Form.Control 
                        type="text" 
@@ -290,7 +290,7 @@ const ClientModal = ({
                    <Form.Label>{t('instagram')}</Form.Label>
                    <InputGroup>
                      <InputGroup.Text>
-                       <FaInstagram className="text-danger" />
+                       <FaInstagram className="client-modal-field-icon" />
                      </InputGroup.Text>
                      <Form.Control 
                        type="text" 
@@ -314,7 +314,7 @@ const ClientModal = ({
                   <Form.Label>{t('source')}</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
-                      <FaTag className="text-muted" />
+                      <FaTag className="client-modal-field-icon" />
                     </InputGroup.Text>
                     <Form.Control 
                       type="text" 
@@ -350,11 +350,11 @@ const ClientModal = ({
                 )}
               </div>
               {address && (
-                <div className="mt-2 p-2 bg-light rounded">
+                <div className="modal-token-panel mt-2 p-2">
                   <small className="text-muted d-block">{t('selectedAddress')}:</small>
                   <div className="d-flex align-items-center">
-                    <FaMapMarkerAlt className="text-primary me-2" />
-                    <span className="text-dark">{address}</span>
+                    <FaMapMarkerAlt className="client-modal-field-icon me-2" />
+                    <span className="modal-selected-value">{address}</span>
                   </div>
                 </div>
               )}
@@ -375,8 +375,8 @@ const ClientModal = ({
         </Form>
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between">
-        <div className="d-flex align-items-center text-muted small">
-          <span className="text-danger me-1">*</span>
+        <div className="client-modal-required-note">
+          <span className="client-modal-required-mark me-1">*</span>
           {t('requiredFields')}
         </div>
         <Button 

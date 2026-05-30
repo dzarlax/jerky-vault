@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, Form, Button, Row, Col, Alert, Badge } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
-import { FaPlus, FaTag, FaUtensils, FaFlask, FaTint } from 'react-icons/fa';
+import { FaPlus, FaTag, FaUtensils } from 'react-icons/fa';
 import { Ingredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
+import { getIngredientTypeOptions } from '../../../utils/ingredientTypes';
 
 interface AddIngredientModalProps {
   show: boolean;
@@ -78,11 +79,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     return () => window.clearTimeout(timeoutId);
   }, [ingredientName, onSearchGlobalIngredients, show]);
 
-  const ingredientTypeOptions = [
-    { value: 'base', label: t('base'), icon: FaUtensils },
-    { value: 'spice', label: t('spice'), icon: FaFlask },
-    { value: 'sauce', label: t('sauce'), icon: FaTint },
-  ];
+  const ingredientTypeOptions = useMemo(() => getIngredientTypeOptions(t), [t]);
 
   const validateForm = () => {
     const trimmedName = ingredientName.trim();
@@ -180,15 +177,6 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    const typeOption = ingredientTypeOptions.find(option => option.value === type);
-    if (typeOption) {
-      const IconComponent = typeOption.icon;
-      return <IconComponent className="me-1" />;
-    }
-    return <FaTag className="me-1" />;
-  };
-
   return (
     <Modal show={show} onHide={onClose} size="lg" className="add-ingredient-modal">
       <Modal.Header closeButton>
@@ -233,7 +221,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               </Form.Group>
 
               {(ingredientName.trim().length >= 2 || isSearching || searchResults.length > 0) && (
-                <div className="existing-ingredient-suggestions mt-2 p-2 bg-light rounded">
+                <div className="existing-ingredient-suggestions modal-token-panel mt-2 p-2">
                   {isSearching ? (
                     <small className="text-muted">{t('loading')}...</small>
                   ) : searchResults.length === 0 ? (
@@ -246,7 +234,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                           <button
                             key={ingredient.id}
                             type="button"
-                            className="btn btn-light existing-ingredient-suggestion d-flex align-items-center justify-content-between gap-2 text-start"
+                            className="btn modal-token-option existing-ingredient-suggestion d-flex align-items-center justify-content-between gap-2 text-start"
                             onClick={() => handleAddExisting(ingredient)}
                             disabled={isLoading || isAlreadyInList}
                           >
@@ -288,15 +276,18 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                   icon={FaTag}
                 />
 
-                <div className="mt-3 p-3 bg-light rounded">
-                  <h6 className="text-muted mb-2">{t('ingredientTypes')}:</h6>
+                <div className="modal-token-panel mt-3 p-3">
+                  <h6 className="modal-section-title mb-2">{t('ingredientTypes')}:</h6>
                   <div className="d-flex flex-wrap gap-2">
-                    {ingredientTypeOptions.map(option => (
-                      <div key={option.value} className="d-flex align-items-center">
-                        {getTypeIcon(option.value)}
-                        <small className="text-muted">{option.label}</small>
-                      </div>
-                    ))}
+                    {ingredientTypeOptions.map(option => {
+                      const IconComponent = option.icon;
+                      return (
+                        <div key={option.value} className="d-flex align-items-center">
+                          <IconComponent className="me-1" />
+                          <small className="text-muted">{option.label}</small>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </Col>

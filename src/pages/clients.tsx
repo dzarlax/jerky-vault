@@ -3,17 +3,18 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { Button, InputGroup, FormControl, Col } from 'react-bootstrap';
+import { Button, Col } from 'react-bootstrap';
 import ClientModal from '../components/modal/Clients/ClientModal';
 import ClientCardSkeleton from '../components/skeletons/ClientCardSkeleton';
 import EmptyState from '../components/EmptyState';
-import { FaPlus, FaUsers, FaSearch, FaTimes, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaEdit } from 'react-icons/fa';
 import { useAuth } from '../utils/authContext';
 import { useNotification } from '../hooks/useNotification';
 import { Client } from '../types/api';
 import { getMapboxToken } from '../utils/runtimeConfig';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { ClearFiltersButton, FilterBar, SearchFilter } from '../components/filters/FilterBar';
 
 const Clients = ({ mapboxToken }) => {
   const { t, lang } = useTranslation('common');
@@ -166,33 +167,20 @@ const Clients = ({ mapboxToken }) => {
       </div>
 
       {/* Search Section */}
-      <div className="filter-bar">
-        <div className="filter-group flex-grow-1">
-          <label className="filter-label">{t('search')}</label>
-          <InputGroup>
-            <InputGroup.Text className="bg-transparent">
-              <FaSearch className="text-secondary" />
-            </InputGroup.Text>
-            <FormControl
-              placeholder={t('searchClientsPlaceholder')}
-              aria-label={t('search')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-control"
-            />
-            {searchTerm && (
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={clearSearch}
-                className="ms-2"
-              >
-                <FaTimes />
-              </Button>
-            )}
-          </InputGroup>
-        </div>
-      </div>
+      <FilterBar>
+        <SearchFilter
+          label={t('search')}
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder={t('searchClientsPlaceholder')}
+          ariaLabel={t('search')}
+        />
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={clearSearch}
+          visible={!!searchTerm}
+        />
+      </FilterBar>
 
       {/* Clients Grid */}
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
