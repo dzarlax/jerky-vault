@@ -464,14 +464,6 @@ const Dashboard = () => {
     label: product.name,
   }));
 
-  // Generate mock sparkline data (7 days trend)
-  const generateSparklineData = (baseValue: number, variance: number = 0.2): number[] => {
-    return Array.from({ length: 7 }, () => {
-      const change = (Math.random() - 0.5) * variance * baseValue;
-      return Math.max(0, baseValue + change);
-    });
-  };
-
   if (!auth.isAuthenticated) {
     return (
       <Container className="text-center py-5">
@@ -527,9 +519,6 @@ const Dashboard = () => {
               title={t('totalOrders')}
               value={orderStats.total || 0}
               icon={<FaShoppingCart size={20} />}
-              change={Math.round((orderStats.new / (orderStats.total || 1)) * 100)}
-              changeType="increase"
-              sparklineData={generateSparklineData(orderStats.total || 0)}
               iconVariant="primary"
             />
           </Col>
@@ -539,9 +528,6 @@ const Dashboard = () => {
               title={t('totalIngredients')}
               value={ingredients.length || 0}
               icon={<FaLeaf size={20} />}
-              change={Math.round((recipes.length / (ingredients.length || 1)) * 100)}
-              changeType="increase"
-              sparklineData={generateSparklineData(ingredients.length || 0)}
               iconVariant="success"
             />
           </Col>
@@ -551,9 +537,6 @@ const Dashboard = () => {
               title={t('totalClients')}
               value={clients.length}
               icon={<FaUsers size={20} />}
-              change={parseFloat(completionRate.toFixed(1))}
-              changeType="increase"
-              sparklineData={generateSparklineData(clients.length)}
               iconVariant="warning"
             />
           </Col>
@@ -563,9 +546,6 @@ const Dashboard = () => {
               title={t('totalProducts')}
               value={dashboardStats?.total_products || 0}
               icon={<FaBoxOpen size={20} />}
-              change={dashboardStats?.pending_orders || 0}
-              changeType="increase"
-              sparklineData={generateSparklineData(dashboardStats?.total_products || 0)}
               iconVariant="info"
             />
           </Col>
@@ -587,9 +567,6 @@ const Dashboard = () => {
                   title={t('totalRevenue')}
                   value={`${profitData.total_revenue?.toFixed(0) || '0'} ${t('currency')}`}
                   icon={<FaArrowUp size={20} />}
-                  change={profitData.order_count || 0}
-                  changeType="increase"
-                  sparklineData={generateSparklineData(profitData.total_revenue || 0, 0.3)}
                   iconVariant="success"
                 />
               </Col>
@@ -599,10 +576,6 @@ const Dashboard = () => {
                   title={t('totalCosts')}
                   value={`${profitData.total_costs?.toFixed(0) || '0'} ${t('currency')}`}
                   icon={<FaDollarSign size={20} />}
-                  change={parseFloat(profitData.total_revenue > 0 ? ((profitData.total_costs / profitData.total_revenue) * 100).toFixed(1) : '0')}
-                  changeType="decrease"
-                  sparklineData={generateSparklineData(profitData.total_costs || 0, 0.3)}
-                  sparklineColor="var(--warning-500)"
                   iconVariant="warning"
                 />
               </Col>
@@ -612,10 +585,6 @@ const Dashboard = () => {
                   title={t('totalProfit')}
                   value={`${profitData.total_profit?.toFixed(0) || '0'} ${t('currency')}`}
                   icon={<FaChartLine size={20} />}
-                  change={parseFloat(profitData.total_revenue > 0 ? ((profitData.total_profit / profitData.total_revenue) * 100).toFixed(1) : '0')}
-                  changeType={profitData.total_profit >= 0 ? 'increase' : 'decrease'}
-                  sparklineData={generateSparklineData(Math.abs(profitData.total_profit || 0), 0.4)}
-                  sparklineColor={profitData.total_profit >= 0 ? 'var(--success-500)' : 'var(--error-500)'}
                   iconVariant="success"
                 />
               </Col>
@@ -625,9 +594,6 @@ const Dashboard = () => {
                   title={`${t('profit')} / ${t('order').toLowerCase()}`}
                   value={`${profitData.order_count > 0 ? (profitData.total_profit / profitData.order_count).toFixed(0) : '0'} ${t('currency')}`}
                   icon={<FaCheckCircle size={20} />}
-                  change={parseFloat(profitData.order_count > 0 ? ((profitData.total_profit / profitData.order_count) / (profitData.total_revenue / profitData.order_count) * 100).toFixed(1) : '0')}
-                  changeType="increase"
-                  sparklineData={generateSparklineData(profitData.order_count > 0 ? profitData.total_profit / profitData.order_count : 0, 0.3)}
                   iconVariant="info"
                 />
               </Col>

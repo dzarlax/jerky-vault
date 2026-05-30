@@ -24,6 +24,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   iconVariant = 'primary',
 }) => {
   const { t } = useTranslation('common');
+  const hasSparkline = sparklineData.length > 0;
 
   const getIconVariantClass = () => {
     switch (iconVariant) {
@@ -39,7 +40,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   };
 
   return (
-    <div className="stat-card">
+    <div className={`stat-card ${hasSparkline ? 'stat-card-with-sparkline' : 'stat-card-compact'}`}>
       <div className="stat-card-heading">
         <div className={`stat-icon ${getIconVariantClass()}`}>{icon}</div>
         <div className="stat-label">{title}</div>
@@ -60,7 +61,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             </div>
           )}
         </div>
-        {sparklineData && sparklineData.length > 0 && (
+        {hasSparkline && (
           <div className="stat-sparkline">
             <Sparkline data={sparklineData} color={sparklineColor} />
           </div>
