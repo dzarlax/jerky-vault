@@ -1,27 +1,28 @@
 import React from 'react';
-import { Card } from 'react-bootstrap';
 import styles from './Skeleton.module.css';
 
 const ProductCardSkeleton: React.FC = () => {
   return (
-    <Card className={`h-100 ${styles.skeletonCard}`}>
-      <div className={`${styles.skeletonImage} position-relative`}>
-        <div className={styles.shimmer}></div>
-      </div>
-      <div className="p-3">
-        <div className={`${styles.skeletonTitle} mb-2`}></div>
-        <div className={`${styles.skeletonText} mb-3`}></div>
-        <div className="d-flex gap-2 mb-2">
-          <div className={`${styles.skeletonBadge} flex-grow-1`}></div>
-          <div className={`${styles.skeletonBadge} flex-grow-1`}></div>
+    <div className={`product-card product-card-skeleton ${styles.skeletonCard}`}>
+      <div className="product-card-content">
+        <div className="product-card-header">
+          <div className="product-card-heading">
+            <div className={`${styles.skeletonTitle} mb-2`}></div>
+            <div className={`${styles.skeletonBadge} product-skeleton-package`}></div>
+          </div>
+          <div className={`${styles.skeletonBadge} product-skeleton-action`}></div>
         </div>
-        <div className="metrics-row d-flex flex-wrap gap-2">
-          <div className={`${styles.skeletonMetric} mb-2`}></div>
-          <div className={`${styles.skeletonMetric} mb-2`}></div>
-          <div className={`${styles.skeletonMetric} mb-2`}></div>
+        <div className={`${styles.skeletonText} mb-2`}></div>
+        <div className={`${styles.skeletonText} product-skeleton-description mb-3`}></div>
+        <div className={`${styles.skeletonBadge} product-skeleton-recipes mb-3`}></div>
+        <div className="product-card-metrics">
+          <div className={styles.skeletonMetric}></div>
+          <div className={styles.skeletonMetric}></div>
+          <div className={styles.skeletonMetric}></div>
+          <div className={styles.skeletonMetric}></div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

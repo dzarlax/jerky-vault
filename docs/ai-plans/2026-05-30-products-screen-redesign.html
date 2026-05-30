@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: Products Screen Redesign</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --border: #e5e7eb;
+      --brand: #8b2635;
+      --brand-soft: #f3e8ea;
+      --ok: #166534;
+      --warn: #b45309;
+      --danger: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    header { margin-bottom: 20px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    h1 { margin-bottom: 8px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    code {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.92em;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 6px 0; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .callout { border-left: 4px solid var(--brand); }
+    .risk { border-left: 4px solid var(--danger); }
+    .approval { border-left: 4px solid var(--warn); }
+    .success { color: var(--ok); font-weight: 700; }
+    .wireframe {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfbfc;
+    }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      width: 88px;
+      height: 30px;
+      border-radius: 999px;
+      background: #eef0f3;
+      border: 1px solid #dfe3e8;
+    }
+    .chip.active { background: var(--brand); border-color: var(--brand); }
+    .chip.add { width: 36px; background: #fff; border: 1px dashed var(--brand); }
+    .card {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .line {
+      height: 10px;
+      border-radius: 999px;
+      background: #d8dde4;
+      margin: 7px 0;
+    }
+    .line.title { width: 42%; background: #2f3338; }
+    .line.short { width: 64%; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .metric { height: 34px; border-radius: 7px; background: #f3f5f7; border: 1px solid #e7eaee; }
+    @media (max-width: 760px) {
+      main { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="badge">Approval required before implementation</p>
+    <h1>Implementation Plan: Products Screen Redesign</h1>
+    <p class="meta">Created 2026-05-30 for branch <code>codex/products-screen-redesign</code>.</p>
+  </header>
+
+  <section class="callout">
+    <h2>Task Summary</h2>
+    <p>Redesign the Products screen around image-free detail cards and make product packaging a first-class page control via package chips above the card list.</p>
+    <p>The approved mockup direction is <strong>Detail Cards + Package Chips Above Cards</strong>. Product images should not drive the layout because most users are unlikely to upload them.</p>
+  </section>
+
+  <section>
+    <h2>Current Behavior</h2>
+    <ul>
+      <li><code>src/pages/products.tsx</code> fetches products, recipes, and packages with workspace-aware SWR keys.</li>
+      <li>The page currently renders a header, three dropdown filters, and a <code>.products-grid</code> of <code>ProductCard</code> components.</li>
+      <li><code>src/components/ProductCard.tsx</code> reserves a large top area for <code>product.image</code> or <code>product.image_url</code>, with a box icon fallback when no image exists.</li>
+      <li><code>src/components/modal/Products/ProductModal.tsx</code> already lets users pick a package and open <code>PackageModal</code> from inside the product modal.</li>
+      <li><code>src/components/modal/Products/PackageModal.tsx</code> creates packages by name only, even though <code>ProductPackage</code> in <code>src/types/api.ts</code> includes <code>weight</code>.</li>
+      <li>BatchVault UI conventions say dense operational screens should use stable compact layouts, translated labels, <code>SelectDropdown</code>, and put product-level visual decisions in <code>src/styles/batchvault-adapter.css</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <div class="grid">
+      <div>
+        <h3>Products Page</h3>
+        <ul>
+          <li>Keep the page as a catalog, not a pure table.</li>
+          <li>Remove the image-first card layout.</li>
+          <li>Add a package chip strip above the products, including an <code>All packages</code> state and an add-package icon action.</li>
+          <li>Keep recipe and product search/filter controls compact above or beside the chip strip.</li>
+          <li>Show each card with product name, package chip, description, recipe summary, price, cost, profit, and margin.</li>
+        </ul>
+      </div>
+      <div class="wireframe" aria-label="Approved layout sketch">
+        <div class="chips">
+          <div class="chip active"></div>
+          <div class="chip"></div>
+          <div class="chip"></div>
+          <div class="chip"></div>
+          <div class="chip add"></div>
+        </div>
+        <div class="card">
+          <div class="line title"></div>
+          <div class="line"></div>
+          <div class="line short"></div>
+          <div class="metrics">
+            <div class="metric"></div>
+            <div class="metric"></div>
+            <div class="metric"></div>
+            <div class="metric"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="line title"></div>
+          <div class="line"></div>
+          <div class="line short"></div>
+          <div class="metrics">
+            <div class="metric"></div>
+            <div class="metric"></div>
+            <div class="metric"></div>
+            <div class="metric"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Assumptions And Unknowns</h2>
+    <ul>
+      <li>Assumption: this frontend-only pass should not change backend package APIs or database schema.</li>
+      <li>Assumption: package creation remains name-only in this phase; package <code>weight</code> should not be introduced in the UI until the backend contract is verified.</li>
+      <li>Assumption: product images can remain in the API type and modal field for backward compatibility, but cards should not reserve image space.</li>
+      <li>Unknown: whether users need package edit/delete on the Products page. This plan includes create package only, matching current behavior.</li>
+      <li>Unknown: whether package names may be long enough to require truncation; implementation should handle this defensively.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Files Likely To Change</h2>
+    <ul>
+      <li><code>src/pages/products.tsx</code> - add package-chip state/handlers, route package creation from the page, adjust filters, and pass richer display data into cards.</li>
+      <li><code>src/components/ProductCard.tsx</code> - replace image-first card with image-free detail card layout and recipe/package summaries.</li>
+      <li><code>src/components/modal/Products/ProductModal.tsx</code> - keep package selection and nested package creation working; remove image field from the primary visual hierarchy if needed.</li>
+      <li><code>src/components/modal/Products/PackageModal.tsx</code> - make it usable from both page chip strip and product modal without duplicating SWR refresh behavior.</li>
+      <li><code>src/styles/batchvault-adapter.css</code> - add BatchVault-specific product card, package chip strip, and responsive layout styling.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, <code>locales/rs/common.json</code> - add any new labels for package chip actions and compact card metadata.</li>
+      <li><code>src/components/skeletons/ProductCardSkeleton.tsx</code> - update loading skeleton to match the image-free card shape.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Proposed Implementation Steps</h2>
+    <ol>
+      <li>Confirm branch and working tree state before production edits.</li>
+      <li>Extract package chip UI into the Products page or a small local component if the page becomes hard to read.</li>
+      <li>Update package filtering so clicking a chip sets the selected package and the clear action resets recipe/product/package filters.</li>
+      <li>Wire the add-package chip to open <code>PackageModal</code> from the Products page, while preserving nested package creation inside <code>ProductModal</code>.</li>
+      <li>Redesign <code>ProductCard</code> to remove image space and show compact operational metadata.</li>
+      <li>Update the product skeleton to the same image-free structure to avoid loading jumps.</li>
+      <li>Add responsive styles in <code>batchvault-adapter.css</code>: horizontal chip scroll on mobile, one-column cards on narrow viewports, stable metric grid.</li>
+      <li>Add or reuse translation keys for package chip labels and card metadata in all three locale files.</li>
+      <li>Run lint/build checks and fix TypeScript or lint failures caused by the refactor.</li>
+      <li>Update this plan after implementation with actual changes, checks, known limitations, and follow-up recommendations.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>UX Impact</h2>
+    <ul>
+      <li>Products become easier to scan when most products have no images.</li>
+      <li>Packaging becomes visible as a primary organizing control instead of being buried in a dropdown or modal.</li>
+      <li>The page remains useful for both browsing and repeated operational maintenance.</li>
+      <li>No auth, permission, deployment, migration, or API contract change is planned in this phase.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li>Run <code>npm run lint</code>. Expected: no new lint errors from touched files.</li>
+      <li>Run <code>npm run build:no-ssg</code>. Expected: Next.js build completes with the project's existing SSG bypass behavior.</li>
+      <li>Use the existing dev compose stack for browser QA: <code>docker compose -f docker-compose.dev.yml ps</code>, then inspect <code>http://127.0.0.1:3000/products</code> in desktop and mobile widths.</li>
+      <li>Verify package chip filtering with mock or live data: all packages, individual package, recipe filter plus package filter, product filter plus package filter, and clear filters.</li>
+      <li>Verify creating a package from the chip strip updates package options and can be selected without full page reload.</li>
+      <li>Verify creating a package from inside <code>ProductModal</code> still selects the new package for the product being edited.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Products page renders without product images and without a large empty placeholder area.</li>
+      <li>Long product names, long package names, and long descriptions do not overlap or stretch cards awkwardly.</li>
+      <li>Package chips are keyboard and pointer usable, with selected state visible in light and dark themes.</li>
+      <li>Add Product remains prominent in the header.</li>
+      <li>Add Package is discoverable near the package chip strip.</li>
+      <li>Cards remain readable on mobile, tablet, and desktop widths.</li>
+      <li>ProductModal remains scrollable and footer actions remain reachable on mobile.</li>
+      <li>Empty, loading, and error states still match the new card/list structure.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks And Edge Cases</h2>
+    <ul>
+      <li>Duplicating package creation in both page and product modal can cause stale SWR data if mutations are not coordinated.</li>
+      <li>Package chip strip can become crowded if a workspace has many packages; mobile should use horizontal scrolling instead of wrapping into a tall block.</li>
+      <li>Removing image prominence could surprise existing users who already added images, so the image URL should not be deleted from edit data in this phase.</li>
+      <li>Translation files currently contain duplicate <code>failedToDeleteProduct</code> keys; avoid broad locale cleanup unless it blocks this work.</li>
+      <li>The backend package model includes <code>weight</code>, but current package modal creates only <code>name</code>; avoid exposing weight until backend behavior is confirmed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <p>Rollback is limited to frontend files. Revert the branch changes to <code>src/pages/products.tsx</code>, product modal/package modal components, product card/skeleton components, locale keys, and <code>src/styles/batchvault-adapter.css</code>. No database or backend rollback is expected because this plan does not change backend contracts.</p>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should package chips show counts, such as <code>100g (6)</code>, or should that wait until after the first implementation pass?</li>
+      <li>Should the image URL field remain visible in the product modal, move to an optional advanced area, or be removed from the modal while preserving stored values?</li>
+      <li>Should package edit/delete be added later as a separate package-management pass?</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Notes</h2>
+    <p><span class="badge">Implemented 2026-05-30</span> The Products page now uses image-free detail cards and a package chip strip above the card grid.</p>
+    <ul>
+      <li><code>src/pages/products.tsx</code> now renders package chips with product counts, keeps the selected package as the package filter, and opens <code>PackageModal</code> from the add-package chip.</li>
+      <li><code>src/components/ProductCard.tsx</code> no longer reserves card space for product images. Cards now emphasize name, package, description, recipe summary, price, cost, profit, and margin.</li>
+      <li><code>src/components/skeletons/ProductCardSkeleton.tsx</code> now matches the image-free card shape.</li>
+      <li><code>src/components/modal/Products/ProductModal.tsx</code> keeps destructive delete out of the primary action row: desktop uses the header icon, while mobile shows a separate danger action below Cancel and Save.</li>
+      <li><code>src/components/modal/Products/PackageModal.tsx</code> now uses the shared modal form-section styling instead of forcing a light background inside dark mode.</li>
+      <li><code>src/styles/batchvault-adapter.css</code> contains the package chip strip, image-free product card, responsive metric grid, and mobile chip-scroll styles.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code> include the new <code>noDescription</code> fallback.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>npm run lint</code>: passed with no ESLint warnings or errors. Next still reports the existing warning that the Next.js plugin was not detected in the ESLint configuration.</li>
+      <li><code>npm run build:no-ssg</code>: passed; the <code>/products</code> route compiled successfully.</li>
+      <li>Locale JSON parse check for <code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code>: passed.</li>
+      <li>Dev compose QA: existing <code>docker-compose.dev.yml</code> stack was running for <code>backend</code> and <code>frontend</code>; browser QA used <code>http://127.0.0.1:3000/products</code>.</li>
+      <li>Browser QA: signed in with test credentials <code>123</code>/<code>123</code>, loaded Products, verified package chips and package filtering, opened the Add Package modal from the chip strip, and checked mobile width at 390px.</li>
+      <li>Product modal QA: verified desktop edit modal keeps Delete in the header and shows Cancel/Save in one footer row; verified mobile edit modal hides header Delete and shows a separated Delete action below Cancel/Save with no horizontal overflow.</li>
+      <li>Mobile overflow check: document width stayed at 390px while the package chip strip scrolled internally.</li>
+      <li>Browser console check after compose QA: no console messages found.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Known Limitations And Follow-up</h2>
+    <ul>
+      <li>Package edit/delete remains out of scope. The page supports package creation and filtering only.</li>
+      <li>Package <code>weight</code> is still not exposed because this pass intentionally avoided backend contract changes.</li>
+      <li>Products now resolve recipe labels from the separately loaded recipes list when the product option carries only <code>recipe_id</code> or a zero-value embedded recipe object from the backend.</li>
+      <li>The image URL field remains in the product modal for backward compatibility, but card layout no longer depends on images.</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p><strong>Implementation must not start until the user explicitly approves this plan.</strong></p>
+    <p>Approval means proceeding with the image-free detail card catalog, package chips above cards, and frontend-only package creation flow described here.</p>
+  </section>
+</main>
+</body>
+</html>

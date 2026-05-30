@@ -121,7 +121,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
               <Button
                 variant="outline-danger"
                 onClick={onDelete}
-                className="btn-icon"
+                className="btn-icon product-modal-delete-header d-none d-sm-inline-flex"
                 title={t("delete")}
                 aria-label={t("delete") + " " + product.name}
               >
@@ -285,7 +285,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             <Row className="g-2">
               <Col md={6}>
                 <Form.Group controlId="packageId" className="mb-3">
-                  <div className="d-flex align-items-center mb-2">
+                  <div className="product-modal-field-header d-flex align-items-center mb-2">
                     <Form.Label className="mb-0 me-1">
                       <FaBoxOpen className="me-1" />
                       {t("package")} <span className="text-danger">*</span>
@@ -317,15 +317,17 @@ const ProductModal: React.FC<ProductModalProps> = ({
               </Col>
               <Col md={6}>
                 <Form.Group controlId="recipeIds" className="mb-3">
-                  <Form.Label>
-                    <FaUtensils className="me-1" />
-                    {t("recipes")} <span className="text-danger">*</span>
+                  <div className="product-modal-field-header d-flex align-items-center mb-2">
+                    <Form.Label className="mb-0 me-1">
+                      <FaUtensils className="me-1" />
+                      {t("recipes")} <span className="text-danger">*</span>
+                    </Form.Label>
                     {selectedRecipes.length > 0 && (
                       <span className="badge bg-primary ms-2">
                         {selectedRecipes.length}
                       </span>
                     )}
-                  </Form.Label>
+                  </div>
                   <SelectDropdown
                     isMulti
                     options={recipeOptions}
@@ -345,7 +347,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </Form>
       </Modal.Body>
-      <Modal.Footer className="border-0 pt-3 px-3 px-md-4 d-flex flex-column flex-sm-row">
+      <Modal.Footer className="border-0 pt-3 px-3 px-md-4 product-modal-footer">
         <Button variant="outline-secondary" onClick={onClose} className="w-100 mb-2 mb-sm-0 me-sm-2">
           <FaTimes className="me-2" /> {t("cancel")}
         </Button>
@@ -356,6 +358,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
         >
           <FaSave className="me-2" /> {t("save")}
         </Button>
+        {product && (
+          <div className="product-modal-danger-zone d-sm-none">
+            <Button
+              variant="outline-danger"
+              onClick={onDelete}
+              className="w-100"
+              aria-label={t("delete") + " " + product.name}
+            >
+              <FaTrash className="me-2" /> {t("delete")}
+            </Button>
+          </div>
+        )}
       </Modal.Footer>
       
       <PackageModal 

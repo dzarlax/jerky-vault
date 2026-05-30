@@ -131,6 +131,7 @@
   "name": "Name",
   "newPackage": "New Package",
   "newPassword": "New Password",
+  "noDescription": "No description",
   "noOrders": "No orders yet",
   "noOrdersFound": "No Orders Found",
   "noExistingIngredientsFound": "No existing ingredients found",

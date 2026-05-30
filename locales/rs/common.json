@@ -127,6 +127,7 @@
   "name": "Име",
   "newPackage": "Ново паковање",
   "newPassword": "Нова лозинка",
+  "noDescription": "Без описа",
   "noOrders": "Још нема наруџбина",
   "noOrdersFound": "Нема пронађених наруџбина",
   "noExistingIngredientsFound": "Нема пронађених постојећих састојака",
