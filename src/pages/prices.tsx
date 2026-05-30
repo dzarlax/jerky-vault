@@ -5,14 +5,16 @@ import useTranslation from 'next-translate/useTranslation';
 import { Form, Button, Table } from 'react-bootstrap';
 import TableSkeleton from '../components/skeletons/TableSkeleton';
 import EmptyState from '../components/EmptyState';
+import IngredientTypeBadge from '../components/IngredientTypeBadge';
 import { useRouter } from 'next/router';
-import { FaPlus, FaDollarSign, FaTimes, FaUtensils, FaFlask, FaTint, FaTag, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
+import { FaPlus, FaDollarSign, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import AddPriceModal from '../components/modal/Prices/AddPriceModal';
 import { useAuth } from '../utils/authContext';
 import { Ingredient, Price, WorkspaceIngredient } from '../types/api';
 import SelectDropdown from '../components/SelectDropdown';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { ClearFiltersButton, FilterBar, FilterField } from '../components/filters/FilterBar';
 
 const formatLocalDateInputValue = (dateValue: string) => {
   const date = new Date(dateValue);
@@ -50,22 +52,6 @@ const Prices = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   const router = useRouter();
-
-  // Ingredient type options with icons
-  const ingredientTypeOptions = [
-    { value: 'base', label: t('base'), icon: FaUtensils },
-    { value: 'spice', label: t('spice'), icon: FaFlask },
-    { value: 'sauce', label: t('sauce'), icon: FaTint },
-  ];
-
-  const getTypeIcon = (type: string) => {
-    const typeOption = ingredientTypeOptions.find(option => option.value === type);
-    if (typeOption) {
-      const IconComponent = typeOption.icon;
-      return <IconComponent className="me-1" />;
-    }
-    return <FaTag className="me-1" />;
-  };
 
   useEffect(() => {
     if (router.locale !== lang) {
@@ -235,7 +221,7 @@ const Prices = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-bar">
+      <FilterBar>
         <div className="filter-group">
           <SelectDropdown
             value={ingredientOptions.find(option => String(option.value) === filterIngredientId) || null}
@@ -246,27 +232,20 @@ const Prices = () => {
             label={t('ingredient')}
           />
         </div>
-        <div className="filter-group">
-          <label className="filter-label">{t('date')}</label>
+        <FilterField label={t('date')}>
           <Form.Control
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="form-control"
+            className="form-control filter-control"
           />
-        </div>
-        {hasActiveFilters && (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={clearFilters}
-            className="ms-auto"
-          >
-            <FaTimes className="me-2" />
-            {t('clear')}
-          </Button>
-        )}
-      </div>
+        </FilterField>
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={clearFilters}
+          visible={!!hasActiveFilters}
+        />
+      </FilterBar>
 
       <div className="mobile-sort-bar">
         <div className="filter-group">
@@ -328,14 +307,7 @@ const Prices = () => {
               {filteredPrices.map((price: Price) => (
               <tr key={price.id}>
                 <td data-label={t('ingredientType')}>
-                  <span className={`badge badge-${
-                    price.ingredient.type === 'base' ? 'primary' :
-                    price.ingredient.type === 'spice' ? 'warning' :
-                    price.ingredient.type === 'sauce' ? 'info' : 'secondary'
-                  }`}>
-                    {getTypeIcon(price.ingredient.type)}
-                    {t(price.ingredient.type)}
-                  </span>
+                  <IngredientTypeBadge type={price.ingredient.type} label={t(price.ingredient.type)} />
                 </td>
                 <td data-label={t('ingredientName')}>{price.ingredient.name}</td>
                 <td className="fw-semibold" data-label={t('price')}>{price.price} {t("currency")}</td>

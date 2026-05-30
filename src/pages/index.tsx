@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from 'react';
-import { Container, Row, Col, Card, Table, Button, Badge, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, ProgressBar } from 'react-bootstrap';
 import useSWR from 'swr';
 import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
@@ -12,6 +12,7 @@ import StatusModal from '../components/modal/Orders/StatusModal';
 import DeleteModal from '../components/modal/Orders/DeleteModal';
 import { MetricCard } from '../components/MetricCard';
 import { DonutChart } from '../components/charts';
+import StatusBadge from '../components/StatusBadge';
 import { swrConfigs } from '../utils/swrConfig';
 import {
   FaBook,
@@ -39,6 +40,32 @@ import { formatDate } from '../utils/contactHelpers';
 import { useNotification } from '../hooks/useNotification';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+
+type DashboardStatusVariant = 'brand' | 'success' | 'warning' | 'error' | 'info';
+
+const dashboardChartColors = [
+  'var(--chart-accent-brand)',
+  'var(--chart-accent-warn)',
+  'var(--chart-accent-info)',
+  'var(--chart-accent-good)',
+  'var(--chart-accent-danger)',
+] as const;
+
+const getOrderStatusVariant = (status: string): DashboardStatusVariant => {
+  switch (status) {
+    case 'new':
+      return 'brand';
+    case 'in_progress':
+      return 'warning';
+    case 'finished':
+    case 'completed':
+      return 'success';
+    case 'canceled':
+      return 'error';
+    default:
+      return 'info';
+  }
+};
 
 const Dashboard = () => {
   const { t } = useTranslation('common');
@@ -645,11 +672,11 @@ const Dashboard = () => {
                 {orderStats.total > 0 ? (
                   <DonutChart
                     data={[
-                      { label: t('new'), value: orderStats.new, color: '#8B2635' },
-                      { label: t('inProgress'), value: orderStats.in_progress, color: '#F59E0B' },
-                      { label: t('ready'), value: orderStats.ready, color: '#9C27B0' },
-                      { label: t('finished'), value: orderStats.finished, color: '#10B981' },
-                      { label: t('canceled'), value: orderStats.canceled, color: '#EF4444' }
+                      { label: t('new'), value: orderStats.new, color: 'var(--chart-accent-brand)' },
+                      { label: t('inProgress'), value: orderStats.in_progress, color: 'var(--chart-accent-warn)' },
+                      { label: t('ready'), value: orderStats.ready, color: 'var(--chart-accent-info)' },
+                      { label: t('finished'), value: orderStats.finished, color: 'var(--chart-accent-good)' },
+                      { label: t('canceled'), value: orderStats.canceled, color: 'var(--chart-accent-danger)' }
                     ].filter(d => d.value > 0)}
                     size={200}
                     innerRadius={60}
@@ -678,7 +705,7 @@ const Dashboard = () => {
                     data={ingredientTypesData.labels.map((label, i) => ({
                       label,
                       value: ingredientTypesData.datasets[0].data[i],
-                      color: ['#8B2635', '#F59E0B', '#10B981', '#0EA5E9', '#9C27B0'][i % 5]
+                      color: dashboardChartColors[i % dashboardChartColors.length]
                     }))}
                     size={200}
                     innerRadius={60}
@@ -705,9 +732,9 @@ const Dashboard = () => {
                 {profitChartData && profitData && profitData.total_revenue > 0 ? (
                   <DonutChart
                     data={[
-                      { label: t('totalRevenue'), value: profitData.total_revenue, color: '#10B981' },
-                      { label: t('totalCosts'), value: profitData.total_costs, color: '#F59E0B' },
-                      { label: t('totalProfit'), value: Math.abs(profitData.total_profit), color: profitData.total_profit >= 0 ? '#0EA5E9' : '#EF4444' }
+                      { label: t('totalRevenue'), value: profitData.total_revenue, color: 'var(--chart-accent-good)' },
+                      { label: t('totalCosts'), value: profitData.total_costs, color: 'var(--chart-accent-warn)' },
+                      { label: t('totalProfit'), value: Math.abs(profitData.total_profit), color: profitData.total_profit >= 0 ? 'var(--chart-accent-info)' : 'var(--chart-accent-danger)' }
                     ]}
                     size={200}
                     innerRadius={60}
@@ -761,10 +788,7 @@ const Dashboard = () => {
                       <tbody>
                         {(dashboardStats?.recent_orders?.length ? dashboardStats.recent_orders : pendingOrders).map((order) => {
                           const isApiOrder = 'client_name' in order;
-                          const statusVariant = order.status === 'new' ? 'primary' : 
-                                                order.status === 'in_progress' ? 'warning' : 
-                                                order.status === 'ready' ? 'info' : 
-                                                order.status === 'completed' ? 'success' : 'danger';
+                          const statusVariant = getOrderStatusVariant(order.status);
                           
                           return (
                             <tr key={order.id}>
@@ -779,9 +803,7 @@ const Dashboard = () => {
                                 }
                               </td>
                               <td>
-                                <Badge bg={statusVariant} className="px-2 py-1">
-                                  {t(order.status)}
-                                </Badge>
+                                <StatusBadge status={t(order.status)} variant={statusVariant} />
                               </td>
                               <td className="fw-bold text-success">
                                 {isApiOrder 

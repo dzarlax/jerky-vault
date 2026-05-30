@@ -5,6 +5,7 @@ import fetcher from '../../../utils/fetcher';
 import { useAuth } from '../../../utils/authContext';
 import { Ingredient, Recipe } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
+import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
 
 const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe, onCloneRecipe, onUpdateRecipe }) => {
   const { auth } = useAuth();
@@ -34,26 +35,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
     const selectedIngredient = ingredients.find((ingredient: Ingredient) => ingredient.id === parseInt(ingredientId));
     if (!selectedIngredient) return;
 
-    let units = [];
-    switch (selectedIngredient.type) {
-      case 'base':
-        units = ['kg', 'g'];
-        break;
-      case 'spice':
-        units = ['g'];
-        break;
-      case 'sauce':
-        units = ['ml'];
-        break;
-      case 'electricity':
-        units = ['hh'];
-        break;
-      case 'packing':
-        units = ['pieces'];
-        break;
-      default:
-        units = [];
-    }
+    const units = getUnitsForIngredientType(selectedIngredient.type);
     setUnits(units.map(unit => ({ value: unit, label: t(unit) })));
     setUnit(units[0] ? { value: units[0], label: t(units[0]) } : null);
   };
@@ -168,9 +150,9 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
   };
 
   return (
-    <Modal show={show} onHide={onHide}>
+    <Modal show={show} onHide={onHide} className="recipe-edit-modal">
       <Modal.Header closeButton>
-        <Button variant="danger" onClick={onDeleteRecipe} style={{ position: 'relative', background: 'transparent', color: 'darkred' }}>
+        <Button variant="outline-danger" onClick={onDeleteRecipe} className="btn-icon-small me-2" aria-label={t('delete')}>
           <FaTrash />
         </Button>
         <Modal.Title>{t('editRecipe')}</Modal.Title>
@@ -269,7 +251,7 @@ const EditRecipeModal = ({ show, onHide, recipe, ingredients, t, onDeleteRecipe,
                 </ListGroup>
               </div>
             ) : (
-              <div className="text-center py-3 mt-3 bg-light rounded">
+              <div className="modal-empty-state text-center py-3 mt-3">
                 <div className="text-muted">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="mb-2" viewBox="0 0 16 16">
                     <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>

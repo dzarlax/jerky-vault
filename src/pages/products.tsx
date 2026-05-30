@@ -8,7 +8,7 @@ import { Button } from 'react-bootstrap';
 import { SingleValue } from 'react-select';
 import ProductModal from '../components/modal/Products/ProductModal';
 import PackageModal from '../components/modal/Products/PackageModal';
-import { FaPlus, FaTag, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaTag } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/skeletons/ProductCardSkeleton';
 import EmptyState from '../components/EmptyState';
@@ -19,6 +19,7 @@ import { useNotification } from '../hooks/useNotification';
 import SelectDropdown from '../components/SelectDropdown';
 import { useWorkspace } from '../utils/workspaceContext';
 import { workspaceFetcher, workspaceKey } from '../utils/workspaceSWR';
+import { ClearFiltersButton, FilterBar } from '../components/filters/FilterBar';
 
 const Products = () => {
   const { t } = useTranslation('common');
@@ -230,6 +231,7 @@ const Products = () => {
   const recipeOptions = recipes?.map(recipe => ({ value: recipe.id, label: recipe.name })) || [];
   const packageOptions = packages?.map(pkg => ({ value: pkg.id, label: pkg.name })) || [];
   const productOptions = products?.map(product => ({ value: product.id, label: product.name })) || [];
+  const hasActiveFilters = !!(selectedRecipe || selectedPackage || selectedProduct);
 
   // Проверяем наличие ошибок
   const hasError = productsError || recipesError || packagesError;
@@ -277,7 +279,7 @@ const Products = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-bar products-filter-bar">
+      <FilterBar className="products-filter-bar">
         <div className="filter-group">
           <SelectDropdown
             options={recipeOptions}
@@ -298,22 +300,16 @@ const Products = () => {
             label={t('product')}
           />
         </div>
-        {selectedRecipe || selectedPackage || selectedProduct ? (
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            onClick={() => {
-              setSelectedRecipe(null);
-              setSelectedPackage(null);
-              setSelectedProduct(null);
-            }}
-            className="ms-auto"
-          >
-            <FaTimes className="me-2" />
-            {t('clear')}
-          </Button>
-        ) : null}
-      </div>
+        <ClearFiltersButton
+          label={t('clear')}
+          onClick={() => {
+            setSelectedRecipe(null);
+            setSelectedPackage(null);
+            setSelectedProduct(null);
+          }}
+          visible={hasActiveFilters}
+        />
+      </FilterBar>
 
       {!isLoading && (
         <div className="package-chip-strip" aria-label={t('package')}>

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dark Theme Modal Consistency Plan</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5f2;
+      --panel: #ffffff;
+      --text: #211b1c;
+      --muted: #6f6265;
+      --border: #ddd4d1;
+      --accent: #8b2635;
+      --accent-soft: #f2e2e5;
+      --risk: #8a4b00;
+      --ok: #116149;
+      --code: #f4eeee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(1040px, calc(100% - 32px));
+      margin: 32px auto 56px;
+    }
+    header, section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(31, 24, 24, 0.05);
+    }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1.2; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3 { font-size: 16px; margin-top: 16px; }
+    p { margin: 0 0 10px; }
+    ul, ol { margin: 8px 0 0 20px; padding: 0; }
+    li { margin: 6px 0; }
+    code {
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: var(--accent-soft); }
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      margin-right: 6px;
+    }
+    .risk { color: var(--risk); font-weight: 700; }
+    .ok { color: var(--ok); font-weight: 700; }
+    .approval {
+      border-color: var(--accent);
+      background: #fff9fa;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="badge">Planning gate</span>
+    <span class="badge">Branch: codex/dark-theme-modals-consistency</span>
+    <h1>Dark Theme Modal Consistency</h1>
+    <p>
+      Plan for making all JerkyVault modal dialogs render consistently in dark theme without changing API contracts,
+      data fetching, auth behavior, or production deployment configuration.
+    </p>
+  </header>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>
+      Audit every modal and normalize dark-theme rendering: modal shells, section surfaces, form controls,
+      select menus, alert blocks, nested item cards, empty states, selected-address panels, and close/action buttons.
+    </p>
+    <p>
+      Adjacent confirmed page-level bug: the ingredients screen search field has a light border in dark theme because
+      its Bootstrap input group addon is not covered by the same tokenized dark styles as modal/form-section controls.
+    </p>
+    <p>
+      The same search-addon border issue is also present on the clients page, so the fix should target shared
+      filter-bar input groups rather than only one page.
+    </p>
+    <p>
+      This is a non-trivial UI task because it touches shared styling and many modal components, so implementation
+      should wait for approval.
+    </p>
+  </section>
+
+  <section>
+    <h2>Current Behavior From Code Inspection</h2>
+    <ul>
+      <li>Global modal styles exist in <code>src/styles/components.css</code>, including dark rules for <code>.modal-content</code>, <code>.modal-header</code>, <code>.modal-footer</code>, alerts, and <code>react-select</code>.</li>
+      <li><code>src/styles/batchvault-adapter.css</code> later overrides <code>.modal-header</code> and <code>.modal-footer</code> back to <code>var(--surface-primary)</code>, which can fight the shared modal dark styling.</li>
+      <li>Several modal bodies contain Bootstrap utility classes such as <code>bg-light</code>, <code>text-dark</code>, and <code>text-muted</code> that are not modal-specific and can look wrong on dark surfaces.</li>
+      <li><code>ClientModal</code> embeds Mapbox Geocoder CSS, which needs explicit dark-theme containment because it is third-party UI inside the modal.</li>
+      <li><code>EditRecipeModal</code> has inline styling for the delete button and a light empty state; both bypass the design token system.</li>
+      <li><code>AddIngredientModal</code> uses light suggestion panels and <code>btn-light</code> suggestion rows inside the dark modal.</li>
+      <li><code>AddPriceModal</code> uses <code>InputGroup.Text</code> for the currency prefix; the existing dark override only targets <code>.form-section .input-group-text</code>, so the <code>₽</code> addon keeps a light Bootstrap background.</li>
+      <li><code>OrderModal</code> and recipe/product modals rely on nested card/section surfaces that should be checked against the modal shell instead of treated as page cards.</li>
+      <li><code>OrderModal</code> footer summary has tokenized surfaces, but <code>.summary-label</code> and <code>.summary-value</code> do not set explicit text colors, making the total price row hard to see or invisible in dark theme.</li>
+      <li>The ingredients and clients page search controls use <code>InputGroup.Text className="bg-transparent"</code> beside tokenized form controls; <code>.input-group-text</code> keeps Bootstrap border behavior outside the scoped product modal <code>.form-section</code> rules.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>All modal headers, bodies, footers, and nested panels use existing design-system tokens in both themes.</li>
+      <li>Dark theme has no bright utility backgrounds inside modal content unless they are intentional alert/status colors.</li>
+      <li>Text, helper text, icons, disabled states, invalid feedback, and selected values remain readable in dark theme.</li>
+      <li>React Select menus stay above modals and use consistent dark surfaces whether rendered inline or through the body portal.</li>
+      <li>Mobile modal layout remains stable: footers do not overflow, buttons remain tappable, and long modal bodies scroll within viewport limits.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Likely File Changes</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Likely change</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>src/styles/components.css</code></td>
+          <td>Consolidate shared modal dark-theme rules, close button treatment, form controls, input groups, list groups, alerts, and react-select portal/menu colors.</td>
+        </tr>
+        <tr>
+          <td><code>src/styles/batchvault-adapter.css</code></td>
+          <td>Remove or narrow conflicting modal overrides; add scoped rules for recipe builder, order item cards, ingredient suggestions, and mobile footer behavior where this file already owns those surfaces.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Clients/ClientModal.tsx</code></td>
+          <td>Replace light/dark Bootstrap utility leakage in selected-address block with semantic classes; keep Mapbox Geocoder behavior unchanged.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Ingredients/AddIngredientModal.tsx</code></td>
+          <td>Replace light suggestion/type panels and <code>btn-light</code> suggestion rows with modal-specific classes.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Recipe/EditRecipeModal.tsx</code></td>
+          <td>Replace inline delete button styling and light empty state with tokenized classes.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Orders/OrderModal.tsx</code>, <code>Products/ProductModal.tsx</code>, <code>Products/PackageModal.tsx</code>, <code>Prices/AddPriceModal.tsx</code></td>
+          <td>Small class adjustments where visual QA confirms inconsistent dark surfaces or controls, including the price modal currency addon and order footer summary text.</td>
+        </tr>
+        <tr>
+          <td><code>src/pages/ingredients.tsx</code>, <code>src/pages/clients.tsx</code>, and shared filter/input CSS</td>
+          <td>Fix the dark-theme search input group border/addon so it matches the rest of the filter bar across list pages.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Create a modal-surface convention using existing tokens: primary shell, secondary nested panel, tertiary header/footer, border, muted text, invalid/alert states.</li>
+      <li>Resolve the global modal header/footer conflict between <code>components.css</code> and <code>batchvault-adapter.css</code> so later rules do not unintentionally flatten dark theme.</li>
+      <li>Replace modal-local Bootstrap light utilities with semantic classes in the components that currently leak light surfaces.</li>
+      <li>Add scoped CSS for third-party and Bootstrap subcomponents inside modals: Mapbox Geocoder, list groups, input groups, disabled controls, close button, and suggestion rows.</li>
+      <li>Apply the same tokenized input-group treatment to filter-bar search fields so the dark-theme border is not light on ingredients or clients pages.</li>
+      <li>Run static verification, then visual QA each modal in the existing compose/dev environment rather than starting a separate local Next.js server.</li>
+      <li>After implementation, update this plan with exact changed files, checks run, known limitations, and follow-up recommendations.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code>.</li>
+      <li><code>npm run build</code>, because prior repo memory says this is the better local verification signal than standalone TypeScript checking for this frontend.</li>
+      <li><code>git diff --check</code>.</li>
+      <li>Manual browser QA in dark theme through the existing dev compose environment: open create/edit flows for clients, ingredients, prices, products/packages, orders/status/delete, and recipes create/edit.</li>
+      <li>Check desktop and mobile widths for footer wrapping, body scrolling, select menus, invalid states, and empty states.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Client modal: selected address panel, Mapbox search input/results, validation summary, required-field footer.</li>
+      <li>Ingredient modal: search suggestions, already-added badge, type explanation panel, validation alert.</li>
+      <li>Price modal: ingredient/unit selects, currency input group, error list.</li>
+      <li>Product and package modals: section cards, nested package modal, multi-select chips, delete action.</li>
+      <li>Order modal: item cards, product select menu, read-only price/cost fields, summary footer.</li>
+      <li>Recipe modals: builder side panel, ingredient list, edit modal list group, empty state, delete/clone actions.</li>
+      <li>Status and delete modals: simple modal shell, close buttons, danger/secondary button contrast.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Risks And Rollback</h2>
+    <ul>
+      <li><span class="risk">Risk:</span> changing shared modal CSS can affect every modal at once. Mitigation: keep rules token-based and scope special cases to modal-specific classes.</li>
+      <li><span class="risk">Risk:</span> React Select menus render through <code>document.body</code>, so theme selectors must still apply correctly. Mitigation: verify open menus in dark theme, not just closed controls.</li>
+      <li><span class="risk">Risk:</span> Mapbox Geocoder CSS can override app variables. Mitigation: contain overrides under <code>[data-theme="dark"] .client-modal</code> and avoid behavior changes.</li>
+      <li><span class="ok">Rollback:</span> revert the CSS/component class changes from this branch. No database, API, or deployment migration is planned.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should this pass be strictly dark-theme parity, or may it also lightly clean obvious modal UI inconsistencies in light theme when the same CSS rule controls both?</li>
+      <li>For old recipe edit UI, should we only fix dark-theme colors, or is it acceptable to bring it closer to the newer recipe builder styling while staying in the same component?</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>
+      Approved for implementation in this session. The first pass stayed scoped to modal and adjacent list-page
+      dark-theme consistency.
+    </p>
+  </section>
+
+  <section>
+    <h2>Implementation Update</h2>
+    <p>
+      Implemented on <code>2026-05-30</code>. The code changes use shared design tokens rather than one-off colors.
+    </p>
+    <ul>
+      <li><code>src/styles/design-system.css</code>: added shared <code>.input-group-text</code> and dark-theme input-group rules for filter bars and modal bodies.</li>
+      <li><code>src/styles/components.css</code>: added dark close-button treatment, reusable modal token panel/option/empty-state classes, dark list-group styling, client modal Mapbox Geocoder dark styling, and explicit order summary text colors.</li>
+      <li><code>src/components/EmptyState.tsx</code> and <code>src/styles/components.css</code>: replaced Bootstrap <code>Alert variant="light"</code> empty states with a tokenized empty-state shell shared by products, clients, orders, recipes, ingredients, and prices.</li>
+      <li><code>src/styles/batchvault-adapter.css</code>: restored dark modal header/footer background after later adapter overrides.</li>
+      <li><code>src/components/modal/Ingredients/AddIngredientModal.tsx</code>: replaced light suggestion/type panels and <code>btn-light</code> rows with tokenized modal classes.</li>
+      <li><code>src/components/modal/Clients/ClientModal.tsx</code>: replaced the selected-address light panel and <code>text-dark</code> with tokenized modal classes; also moved field icons and required-fields footer copy off Bootstrap text utilities.</li>
+      <li><code>src/components/modal/Recipe/EditRecipeModal.tsx</code>: removed inline delete-button colors and replaced the light empty state with a tokenized empty state.</li>
+      <li><code>src/pages/ingredients.tsx</code> and <code>src/styles/batchvault-adapter.css</code>: stabilized the ingredients filter row so search, type, price state, and clear action do not jump or overflow at narrow desktop widths.</li>
+      <li><code>src/pages/index.tsx</code>, <code>src/pages/orders.tsx</code>, <code>src/components/StatusBadge.tsx</code>, <code>src/components/charts/DonutChart.tsx</code>, and <code>src/styles/batchvault-adapter.css</code>: replaced bright dashboard status pills and chart colors with shared status badges, muted chart tokens, and distinct low-saturation status variants in dark theme.</li>
+      <li><code>src/utils/ingredientTypes.ts</code> and <code>src/components/IngredientTypeBadge.tsx</code>: centralized ingredient type metadata, badge rendering, icons, and unit mappings so ingredients, prices, and recipe/price modals no longer define type display separately.</li>
+      <li><code>src/components/filters/FilterBar.tsx</code>: added shared filter primitives for filter bars, labeled fields, search inputs, chip groups, and clear buttons.</li>
+      <li><code>src/pages/clients.tsx</code>, <code>src/pages/ingredients.tsx</code>, <code>src/pages/orders.tsx</code>, <code>src/pages/prices.tsx</code>, <code>src/pages/products.tsx</code>, and <code>src/pages/recipes.tsx</code>: moved list-page filters onto the shared primitives while keeping page-specific filtering logic local.</li>
+      <li><code>src/pages/profile.tsx</code> and <code>src/styles/components.css</code>: cleaned up the profile page cards, info rows, status badge, password fields, and password visibility buttons so the profile form follows the same tokenized control treatment in dark theme.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>npm run lint</code>: passed with no ESLint warnings or errors; Next.js still reports the existing plugin-detection warning.</li>
+      <li><code>npm run build</code>: passed and compiled the Next.js production build successfully.</li>
+      <li><code>git diff --check</code>: passed; Git reported line-ending normalization warnings only.</li>
+      <li><code>docker compose -f docker-compose.dev.yml ps</code>: confirmed the existing dev compose frontend and backend were already running.</li>
+      <li>Browser computed-style smoke on <code>http://localhost:3000/auth/signin</code> with <code>data-theme="dark"</code>: confirmed filter search addon, modal currency addon, modal inputs, order summary text, modal token panel, and modal token option resolve to dark token colors and borders.</li>
+      <li>Authenticated browser QA with test login <code>123 / 123</code>: products page package <code>Тест</code> with zero products, clients no-match search, ingredients no-match search, recipes no-match search, and prices date filter all showed tokenized dark empty states.</li>
+      <li>Authenticated browser QA on client modal: confirmed field icons, input addon surfaces, and required-fields footer note resolve to dark token colors.</li>
+      <li>Browser computed-style smoke on the authenticated dashboard in dark theme: confirmed recent-order status pills use muted text/surface/border colors, <code>Новый заказ</code> and <code>Готово</code> resolve to distinct variants, Bootstrap status badges are no longer present in the table, and donut arcs resolve to the muted chart token palette.</li>
+      <li>Browser computed-style smoke on ingredients and prices in dark theme: confirmed both tables render shared <code>.ingredient-type-badge</code> variants and old table-local <code>badge-primary</code>/<code>badge-warning</code>/<code>badge-info</code>/<code>badge-secondary</code> classes are no longer present.</li>
+      <li>Browser layout smoke on clients, ingredients, orders, prices, products, and recipes: confirmed shared filter controls use aligned labels and 40px control height; the recipe search input-group renders as one connected control; ingredients filter does not overflow at 1024px wide.</li>
+      <li>Browser computed-style smoke on profile password controls: confirmed all three password groups use 40px controls, 40x40 visibility buttons, connected dark borders, and no horizontal overflow on a narrow viewport.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Known Limitations</h2>
+    <ul>
+      <li>Authenticated end-to-end modal clicking was limited to non-mutating flows. It did not create, edit, or delete real clients, ingredients, prices, products, orders, or recipes.</li>
+      <li>Orders empty state could not be naturally triggered in the current dev data because the workspace has existing orders; the shared <code>EmptyState</code> component now covers that route when it becomes empty.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

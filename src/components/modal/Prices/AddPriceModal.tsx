@@ -4,6 +4,7 @@ import useTranslation from 'next-translate/useTranslation';
 import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaTag } from 'react-icons/fa';
 import { Ingredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
+import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
 
 interface AddPriceModalProps {
   show: boolean;
@@ -57,26 +58,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
       return;
     }
 
-    let availableUnits: string[] = [];
-    switch (selectedIngredient.type) {
-      case 'base':
-        availableUnits = ['kg', 'g'];
-        break;
-      case 'spice':
-        availableUnits = ['g'];
-        break;
-      case 'sauce':
-        availableUnits = ['ml'];
-        break;
-      case 'electricity':
-        availableUnits = ['hh'];
-        break;
-      case 'packing':
-        availableUnits = ['pieces'];
-        break;
-      default:
-        availableUnits = [];
-    }
+    const availableUnits = getUnitsForIngredientType(selectedIngredient.type);
     setUnits(availableUnits);
     setUnit(availableUnits[0] || '');
   };
