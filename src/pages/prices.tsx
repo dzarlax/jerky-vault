@@ -347,7 +347,7 @@ const Prices = () => {
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleAddPrice}
-        ingredients={ingredients || []}
+        workspaceIngredients={workspaceIngredients || []}
       />
     </div>
   );
