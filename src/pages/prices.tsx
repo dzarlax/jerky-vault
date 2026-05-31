@@ -28,6 +28,16 @@ const formatLocalDateInputValue = (dateValue: string) => {
   return `${year}-${month}-${day}`;
 };
 
+const parsePositiveDecimal = (value: string) => {
+  const normalizedValue = value.trim();
+  if (!/^(?:\d+|\d+\.\d+|\.\d+)$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+};
+
 const Prices = () => {
   const { t, lang } = useTranslation('common');
   const { auth } = useAuth();
@@ -103,11 +113,21 @@ const Prices = () => {
 
     try {
       const currentDate = new Date().toISOString();
+      const price = parsePositiveDecimal(priceData.price);
+      const quantity = parsePositiveDecimal(priceData.quantity);
+
+      if (price === null) {
+        throw new Error(t('validPriceRequired'));
+      }
+
+      if (quantity === null) {
+        throw new Error(t('validQuantityRequired'));
+      }
 
       const requestData = {
         ingredient_id: priceData.ingredient_id,
-        price: parseFloat(priceData.price),
-        quantity: parseInt(priceData.quantity, 10),
+        price,
+        quantity,
         unit: priceData.unit,
         date: currentDate
       };

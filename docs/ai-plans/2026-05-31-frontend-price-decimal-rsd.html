@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Implementation Plan: Frontend Price Decimal and RSD Cleanup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f6f7f9; color: #1f2937; line-height: 1.5; }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px; }
+    section { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    h1, h2, h3 { line-height: 1.2; margin-top: 0; }
+    code { background: #f3f4f6; padding: 2px 5px; border-radius: 4px; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #f9fafb; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #e5e7eb; font-size: 12px; font-weight: 600; }
+    .note { border-left: 4px solid #2563eb; }
+    .risk { border-left: 4px solid #dc2626; }
+    .approval { border-left: 4px solid #d97706; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Implementation Plan: Frontend Price Decimal and RSD Cleanup</h1>
+  <p class="badge">Approval required before implementation</p>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>
+      Continue the web frontend branch <code>codex/fix-currency-symbols</code>. The branch already replaces hardcoded
+      ruble symbols in price/product/order UI with the localized <code>currency</code> value, which is currently
+      <code>RSD</code>. This plan adds the related price-entry fixes needed before backend decimal price quantities ship:
+      preserve decimal quantities, align count units, and verify price display remains correct in RSD.
+    </p>
+  </section>
+
+  <section>
+    <h2>Current Behavior From Code Inspection</h2>
+    <ul>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code> already define <code>"currency": "RSD"</code>.</li>
+      <li>The current branch has uncommitted RSD cleanup in <code>src/components/modal/Prices/AddPriceModal.tsx</code>, <code>src/components/modal/Products/ProductModal.tsx</code>, and <code>src/pages/orders.tsx</code>.</li>
+      <li><code>AddPriceModal</code> accepts quantity as a string, uses <code>type="number"</code> with <code>step="0.01"</code>, and validates with <code>parseFloat</code>.</li>
+      <li><code>src/pages/prices.tsx</code> currently builds the create-price payload with <code>quantity: parseInt(priceData.quantity, 10)</code>, which truncates decimal inputs like <code>2.5</code>.</li>
+      <li><code>src/types/api.ts</code> already models <code>Price.quantity</code> as <code>number</code>, so the response type can represent decimals.</li>
+      <li><code>src/utils/ingredientTypes.ts</code> centralizes units by ingredient type. It currently maps <code>packing</code> to <code>pieces</code>, while the backend calculation path supports <code>pcs</code>.</li>
+      <li>The prices table displays quantity directly as <code>{price.quantity}</code> and unit via <code>{t(price.unit)}</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>All visible money prefixes/suffixes in touched price, product, and order flows use <code>t('currency')</code>, not hardcoded <code>₽</code>.</li>
+      <li>Adding a price from the web UI preserves decimal quantity in the payload sent to <code>POST /api/prices</code>.</li>
+      <li>Decimal inputs accept normal browser decimal entry; comma handling is optional for this web pass unless existing controls allow it cleanly.</li>
+      <li>Count/packing units use a backend-compatible canonical value. Recommendation: send <code>pcs</code> and translate it as pieces/штуки/komadi in locales.</li>
+      <li>Existing price history and ingredient latest-price displays continue to show numeric quantities without forcing integer formatting.</li>
+      <li>No backend schema, API, mobile, or deployment changes in this frontend branch.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Likely File Changes</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>src/pages/prices.tsx</code></td>
+          <td>Replace <code>parseInt</code> quantity submission with decimal parsing and validation before request construction.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Prices/AddPriceModal.tsx</code></td>
+          <td>Keep current RSD prefix via <code>t('currency')</code>; adjust quantity validation only if needed to share decimal normalization with the page.</td>
+        </tr>
+        <tr>
+          <td><code>src/utils/ingredientTypes.ts</code></td>
+          <td>Change packing/count unit from <code>pieces</code> to backend-compatible <code>pcs</code>, if approved.</td>
+        </tr>
+        <tr>
+          <td><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, <code>locales/rs/common.json</code></td>
+          <td>Add <code>pcs</code> labels if unit canonicalization changes; keep existing <code>pieces</code> only if still referenced elsewhere.</td>
+        </tr>
+        <tr>
+          <td><code>src/components/modal/Products/ProductModal.tsx</code>, <code>src/pages/orders.tsx</code></td>
+          <td>Keep existing branch changes that remove hardcoded ruble symbols from product and order flows.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Keep work on branch <code>codex/fix-currency-symbols</code> and preserve the existing uncommitted RSD edits.</li>
+      <li>Add a small local helper in <code>prices.tsx</code> or near the submit handler to normalize numeric strings with <code>trim()</code> and decimal parsing.</li>
+      <li>Change request construction from <code>parseInt(priceData.quantity, 10)</code> to a decimal value. Do not silently submit <code>NaN</code>.</li>
+      <li>If approved, switch packing units from <code>pieces</code> to <code>pcs</code> in <code>ingredientTypes.ts</code> and add locale labels for <code>pcs</code>.</li>
+      <li>Search for remaining hardcoded <code>₽</code> and any price-creation <code>parseInt(...quantity...)</code> paths.</li>
+      <li>Update this plan after implementation with exact changes and checks run.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code>.</li>
+      <li><code>npm run build</code> or <code>npm run build:docker</code>, depending on local env behavior.</li>
+      <li><code>git diff --check</code>.</li>
+      <li>Parse all three locale JSON files after locale edits.</li>
+      <li>Static search: no hardcoded <code>₽</code> remains in <code>src</code> or locale files, except historical docs if intentionally ignored.</li>
+      <li>Static search: no price submission path uses <code>parseInt</code> for <code>quantity</code>.</li>
+      <li>Use the existing dev compose environment for browser QA; do not start a separate local Next.js dev server.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Open the prices page and confirm the Add Price modal currency prefix shows <code>RSD</code>.</li>
+      <li>Create or inspect a price payload with <code>2.5 kg</code> and verify the browser network request sends <code>quantity: 2.5</code>, not <code>2</code>.</li>
+      <li>Verify the prices table displays the decimal quantity after refresh.</li>
+      <li>Open Product modal and confirm price/cost input prefixes show <code>RSD</code>.</li>
+      <li>Open Orders page and confirm order totals show <code>RSD</code>.</li>
+      <li>If packing unit changes to <code>pcs</code>, create/select a packing ingredient in Add Price and confirm the unit label is human-readable in English, Russian, and Serbian.</li>
+    </ul>
+  </section>
+
+  <section class="risk">
+    <h2>Risks and Edge Cases</h2>
+    <ul>
+      <li>Frontend decimal submission depends on backend decimal support; until backend is deployed, decimal values may be rejected or coerced server-side.</li>
+      <li>Changing <code>pieces</code> to <code>pcs</code> can affect existing untranslated display if locale keys are incomplete.</li>
+      <li>Browser <code>type="number"</code> behavior is locale-sensitive; comma decimal entry may not work consistently without changing input handling more broadly.</li>
+      <li>The branch has unrelated untracked local files in the repo. Stage only intended frontend files and this plan.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <ul>
+      <li>RSD display changes can be reverted independently by restoring hardcoded symbols, though this is not recommended because locales already define <code>RSD</code>.</li>
+      <li>If backend decimal support is delayed, keep UI decimal-capable but do not rely on decimal saves in QA, or revert only the <code>parseInt</code> change temporarily.</li>
+      <li>If unit canonicalization causes display issues, revert <code>pcs</code> mapping while keeping decimal quantity preservation.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li><strong>Resolved:</strong> include <code>pieces</code> to <code>pcs</code> canonicalization in this frontend PR because the backend calculation path supports <code>pcs</code> as the count unit.</li>
+      <li><strong>Resolved:</strong> support browser-native dot decimal input in this pass. Comma decimal input is intentionally rejected instead of partially parsed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Outcome</h2>
+    <ul>
+      <li><code>src/pages/prices.tsx</code> now uses a strict positive decimal parser for submitted price and quantity values. It no longer uses <code>parseInt</code> for price quantity.</li>
+      <li><code>AddPriceModal</code> validates price and quantity with the same strict dot-decimal shape before submitting to the page handler.</li>
+      <li><code>src/utils/ingredientTypes.ts</code> now uses <code>pcs</code> as the packing/count unit.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code> now translate <code>pcs</code>.</li>
+      <li>The existing branch changes continue to use <code>t('currency')</code> for price/product/order money display, so the UI shows <code>RSD</code> instead of the ruble symbol.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>rg -n "₽|руб|RUB" src locales</code>: no active UI/source matches.</li>
+      <li><code>rg -n "parseInt\([^\n]*quantity|quantity:\s*parseInt|pieces|pcs" src locales</code>: no quantity <code>parseInt</code> matches; only expected <code>pieces</code> locale aliases and <code>pcs</code> unit mapping/labels remain.</li>
+      <li>Parsed <code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, and <code>locales/rs/common.json</code> with Node JSON parsing.</li>
+      <li><code>npm run lint</code>: passed with no ESLint warnings or errors. Next.js reported the existing plugin-detection notice.</li>
+      <li><code>git diff --check</code>: passed; Git reported line-ending normalization warnings only.</li>
+      <li><code>npm run build:docker</code>: passed.</li>
+      <li>Manual browser QA was not run in this pass; use the existing dev compose environment if visual/network payload verification is needed.</li>
+    </ul>
+  </section>
+
+  <section class="approval">
+    <h2>Approval Gate</h2>
+    <p>
+      Implementation must not start until this plan is explicitly approved. After approval, changes should stay scoped to
+      frontend RSD display cleanup, price decimal quantity preservation, optional count-unit canonicalization, and related
+      verification.
+    </p>
+  </section>
+</main>
+</body>
+</html>

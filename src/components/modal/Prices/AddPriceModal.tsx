@@ -6,6 +6,16 @@ import { Ingredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
 import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
 
+const isPositiveDecimalInput = (value: string) => {
+  const normalizedValue = value.trim();
+  if (!/^(?:\d+|\d+\.\d+|\.\d+)$/.test(normalizedValue)) {
+    return false;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return Number.isFinite(parsedValue) && parsedValue > 0;
+};
+
 interface AddPriceModalProps {
   show: boolean;
   onClose: () => void;
@@ -67,8 +77,8 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
     const validationErrors = [];
     
     if (!ingredientId) validationErrors.push(t('ingredientRequired'));
-    if (!price || parseFloat(price) <= 0) validationErrors.push(t('validPriceRequired'));
-    if (!quantity || parseFloat(quantity) <= 0) validationErrors.push(t('validQuantityRequired'));
+    if (!isPositiveDecimalInput(price)) validationErrors.push(t('validPriceRequired'));
+    if (!isPositiveDecimalInput(quantity)) validationErrors.push(t('validQuantityRequired'));
     if (!unit) validationErrors.push(t('unitRequired'));
     
     setErrors(validationErrors);
@@ -194,7 +204,7 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
                   {t('price')} <span className="text-danger">*</span>
                 </Form.Label>
                 <InputGroup>
-                  <InputGroup.Text>₽</InputGroup.Text>
+                  <InputGroup.Text>{t('currency')}</InputGroup.Text>
                   <Form.Control
                     type="number"
                     step="0.01"
