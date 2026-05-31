@@ -93,6 +93,8 @@ export interface Workspace {
   role: string;
 }
 
+export type UnitProfile = 'mass' | 'fine_mass' | 'volume' | 'count' | 'time';
+
 export interface WorkspaceIngredient {
   id: number;
   created_at: string;
@@ -104,6 +106,9 @@ export interface WorkspaceIngredient {
   category?: string;
   ingredient: Ingredient;
   latest_price?: Price;
+  unit_profile?: UnitProfile;
+  default_unit?: string;
+  allowed_units?: string[];
 }
 
 // ===================== RECIPE TYPES =====================

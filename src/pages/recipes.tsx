@@ -3,8 +3,7 @@ import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
 import useTranslation from 'next-translate/useTranslation';
 import { Button } from 'react-bootstrap';
-import EditRecipeModal from '../components/modal/Recipe/EditRecipeModal';
-import CreateRecipeModal from '../components/modal/Recipe/CreateRecipeModal';
+import RecipeBuilderModal from '../components/modal/Recipe/RecipeBuilderModal';
 import RecipeCalculator from '../components/calculator/RecipeCalculator';
 import RecipeCardSkeleton from '../components/skeletons/RecipeCardSkeleton';
 import EmptyState from '../components/EmptyState';
@@ -197,6 +196,65 @@ const Recipes: React.FC = () => {
     } else {
       showError(t('failedToCloneRecipe'));
     }
+  };
+
+  const refreshEditingRecipe = async (recipeId: number) => {
+    if (!auth.isAuthenticated || !auth.token) {
+      router.push('/auth/signin');
+      throw new Error('Authentication required');
+    }
+
+    const updatedRecipe = await fetcher(`/api/recipes/${recipeId}`, {
+      headers: {
+        'Authorization': `Bearer ${auth.token}`,
+      },
+    });
+
+    setEditingRecipe(updatedRecipe);
+    await loadRecipes();
+  };
+
+  const addIngredientToEditingRecipe = async (ingredient: {
+    ingredient_id: number;
+    quantity: string;
+    unit: string;
+  }) => {
+    if (!editingRecipe) return;
+
+    if (!auth.isAuthenticated || !auth.token) {
+      router.push('/auth/signin');
+      throw new Error('Authentication required');
+    }
+
+    await fetcher(`/api/recipes/${editingRecipe.id}/ingredients`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ingredient),
+    });
+
+    await refreshEditingRecipe(editingRecipe.id);
+  };
+
+  const deleteIngredientFromEditingRecipe = async (ingredientId: number) => {
+    if (!editingRecipe) return;
+
+    if (!auth.isAuthenticated || !auth.token) {
+      router.push('/auth/signin');
+      throw new Error('Authentication required');
+    }
+
+    await fetcher(`/api/recipes/${editingRecipe.id}/ingredients/${ingredientId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    await refreshEditingRecipe(editingRecipe.id);
   };
 
   const handleCreateRecipe = async (name: string, ingredients: any[]) => {
@@ -498,21 +556,24 @@ const Recipes: React.FC = () => {
         </div>
       )}
 
-      <EditRecipeModal
+      <RecipeBuilderModal
+        mode="edit"
         show={showModal}
         onHide={() => setShowModal(false)}
         recipe={editingRecipe}
-        ingredients={ingredients}
+        workspaceIngredients={workspaceIngredients || []}
         t={t}
         onDeleteRecipe={deleteRecipe}
         onCloneRecipe={cloneRecipe}
-        onUpdateRecipe={loadRecipes}
+        onAddIngredientToRecipe={addIngredientToEditingRecipe}
+        onDeleteIngredientFromRecipe={deleteIngredientFromEditingRecipe}
       />
 
-      <CreateRecipeModal
+      <RecipeBuilderModal
+        mode="create"
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
-        ingredients={ingredients}
+        workspaceIngredients={workspaceIngredients || []}
         t={t}
         onCreateRecipe={handleCreateRecipe}
       />

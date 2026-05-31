@@ -116,6 +116,7 @@
   "invalidServerResponse": "Invalid response from server",
   "kg": "Kilograms",
   "kilograms": "Kilograms",
+  "l": "Liters",
   "language": "Language",
   "latestPrice": "Latest Price",
   "latestPriceDate": "Updated {{date}}",

@@ -2,9 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Alert, InputGroup } from 'react-bootstrap';
 import useTranslation from 'next-translate/useTranslation';
 import { FaPlus, FaDollarSign, FaWeight, FaRulerCombined, FaTag } from 'react-icons/fa';
-import { Ingredient } from '../../../types/api';
+import { WorkspaceIngredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
-import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
+import {
+  getWorkspaceIngredientLabel,
+  resolveWorkspaceIngredientUnits,
+  toUnitOptions,
+} from '../../../utils/ingredientUnitContract';
+
+const isPositiveDecimalInput = (value: string) => {
+  const normalizedValue = value.trim();
+  if (!/^(?:\d+|\d+\.\d+|\.\d+)$/.test(normalizedValue)) {
+    return false;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return Number.isFinite(parsedValue) && parsedValue > 0;
+};
 
 const isPositiveDecimalInput = (value: string) => {
   const normalizedValue = value.trim();
@@ -25,14 +39,14 @@ interface AddPriceModalProps {
     quantity: string;
     unit: string;
   }) => Promise<void>;
-  ingredients: Ingredient[];
+  workspaceIngredients: WorkspaceIngredient[];
 }
 
 const AddPriceModal: React.FC<AddPriceModalProps> = ({ 
   show, 
   onClose, 
   onSave, 
-  ingredients = [] 
+  workspaceIngredients = []
 }) => {
   const { t } = useTranslation('common');
   const [ingredientId, setIngredientId] = useState('');
@@ -59,18 +73,18 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
   }, [show]);
 
   const updateUnits = () => {
-    const selectedIngredient = ingredients?.find((ingredient: Ingredient) => 
-      ingredient.id === parseInt(ingredientId, 10)
+    const selectedWorkspaceIngredient = workspaceIngredients?.find((workspaceIngredient) =>
+      workspaceIngredient.ingredient_id === parseInt(ingredientId, 10)
     );
-    if (!selectedIngredient) {
+    if (!selectedWorkspaceIngredient) {
       setUnits([]);
       setUnit('');
       return;
     }
 
-    const availableUnits = getUnitsForIngredientType(selectedIngredient.type);
+    const { units: availableUnits, defaultUnit } = resolveWorkspaceIngredientUnits(selectedWorkspaceIngredient);
     setUnits(availableUnits);
-    setUnit(availableUnits[0] || '');
+    setUnit(defaultUnit);
   };
 
   const validateForm = () => {
@@ -138,15 +152,12 @@ const AddPriceModal: React.FC<AddPriceModalProps> = ({
     }
   };
 
-  const ingredientOptions = ingredients ? ingredients.map((ingredient: Ingredient) => ({
-    value: ingredient.id,
-    label: ingredient.name
+  const ingredientOptions = workspaceIngredients ? workspaceIngredients.map((workspaceIngredient) => ({
+    value: workspaceIngredient.ingredient_id,
+    label: getWorkspaceIngredientLabel(workspaceIngredient)
   })) : [];
   
-  const unitOptions = units.map((unit: string) => ({ 
-    value: unit, 
-    label: t(unit) 
-  }));
+  const unitOptions = toUnitOptions(units, t);
 
   return (
     <Modal show={show} onHide={onClose} size="lg" className="add-price-modal">

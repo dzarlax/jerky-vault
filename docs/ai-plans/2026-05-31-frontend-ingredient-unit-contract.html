@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Frontend Plan: Backend Ingredient Unit Contract</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f7f4ef; color: #202124; line-height: 1.5; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.2; }
+    h2 { margin: 0 0 12px; font-size: 20px; }
+    section { background: #fff; border: 1px solid #ded8ce; border-radius: 8px; padding: 18px; margin: 14px 0; }
+    code { background: #f0eee9; padding: 1px 5px; border-radius: 4px; }
+    pre { background: #18191b; color: #f5f5f5; padding: 14px; border-radius: 8px; overflow: auto; }
+    li { margin: 6px 0; }
+    .meta { color: #5f6673; }
+    .stop { color: #9f2638; font-weight: 700; }
+    .note { background: #fff8e1; border-color: #ead8a1; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Frontend Plan: Backend Ingredient Unit Contract</h1>
+  <p class="meta">Repo: <code>D:\Projects\Code\Personal\jerky-vault</code>. Source plan copied from <code>D:\Projects\Code\Personal\BatchVault\Batc&#1088;Vault Android\docs\ai-plans\2026-05-31-frontend-ingredient-unit-contract.html</code>.</p>
+
+  <section>
+    <h2>Task Summary</h2>
+    <p>
+      Update the web/admin frontend so price and recipe unit choices come from the backend workspace ingredient contract:
+      <code>unit_profile</code>, <code>default_unit</code>, and <code>allowed_units</code>.
+      The web UI should stop treating local ingredient type metadata as the primary source of unit truth while retaining a temporary fallback for staged rollout safety.
+    </p>
+  </section>
+
+  <section>
+    <h2>Backend Evidence</h2>
+    <ul>
+      <li><code>jerky-vault-back/models/workspace_ingredient.go</code> now exposes transient response fields <code>unit_profile</code>, <code>default_unit</code>, and <code>allowed_units</code>.</li>
+      <li><code>jerky-vault-back/constants/unit_profiles.go</code> maps workspace category first, then ingredient type, into profiles <code>mass</code>, <code>fine_mass</code>, <code>volume</code>, <code>count</code>, and <code>time</code>.</li>
+      <li>Canonical backend defaults are <code>kg</code> for mass, <code>g</code> for fine mass, <code>ml</code> for volume, <code>pcs</code> for count, and <code>hh</code> for time.</li>
+      <li>Allowed backend units are <code>["kg", "g"]</code>, <code>["g", "kg"]</code>, <code>["ml", "l"]</code>, <code>["pcs"]</code>, and <code>["hh"]</code>, depending on profile.</li>
+      <li>The backend deliberately keeps price and recipe writes permissive in this pass. Frontend should guide users with <code>allowed_units</code> but not assume strict server-side validation has landed.</li>
+      <li>Swagger has been regenerated in the backend for the additive workspace ingredient fields.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Current Frontend Behavior</h2>
+    <ul>
+      <li><code>src/types/api.ts</code> does not type the new workspace ingredient unit fields.</li>
+      <li><code>src/utils/ingredientTypes.ts</code> stores local unit arrays on type metadata and exports <code>getUnitsForIngredientType</code>.</li>
+      <li><code>src/pages/prices.tsx</code> fetches <code>/api/workspace-ingredients</code>, but flattens the rows to nested <code>Ingredient[]</code> before opening <code>AddPriceModal</code>.</li>
+      <li><code>AddPriceModal</code> uses <code>getUnitsForIngredientType(selectedIngredient.type)</code> and picks the first local unit as default.</li>
+      <li><code>src/pages/recipes.tsx</code> also fetches workspace ingredients and flattens them to <code>Ingredient[]</code> before passing data into create/edit recipe modals.</li>
+      <li><code>CreateRecipeModal</code> and <code>EditRecipeModal</code> also derive unit dropdown options from the local ingredient type helper.</li>
+      <li>Locale files already include <code>kg</code>, <code>g</code>, <code>ml</code>, <code>pcs</code>, and <code>hh</code>. A current static search did not show <code>l</code>, so implementation should add it to all locale files if still missing.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Desired Behavior</h2>
+    <ul>
+      <li>Price and recipe forms receive the full <code>WorkspaceIngredient</code> object when they need unit choices.</li>
+      <li>If <code>allowed_units</code> is non-empty, the dropdown uses it exactly in backend order.</li>
+      <li>If <code>default_unit</code> is present and exists in <code>allowed_units</code>, the dropdown defaults to that unit.</li>
+      <li>If backend unit fields are missing, empty, or malformed, the UI falls back to the existing local <code>getUnitsForIngredientType</code> behavior.</li>
+      <li>Existing saved recipe rows and price table rows continue rendering their stored <code>unit</code> values, including legacy/custom values.</li>
+      <li>Ingredient type metadata remains available for labels, icons, filters, and badges. Unit arrays can stay temporarily as fallback until backend rollout is complete.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Assumptions</h2>
+    <ul>
+      <li>The active ingredient source for price and recipe creation remains <code>GET /api/workspace-ingredients</code>, not global <code>GET /api/ingredients</code>.</li>
+      <li>The backend contract is additive and deployed independently, so the frontend must tolerate old responses during local/dev/prod skew.</li>
+      <li>The request payloads for prices and recipe ingredients remain unchanged: <code>ingredient_id</code>, <code>quantity</code>, and <code>unit</code>.</li>
+      <li>No UI for editing unit profiles or overrides is part of this pass.</li>
+      <li>No separate local Next.js dev server should be started for QA in this repo; use the existing dev compose environment if browser verification is needed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Likely File Changes</h2>
+    <ul>
+      <li><code>src/types/api.ts</code>: add <code>UnitProfile</code> and optional <code>unit_profile</code>, <code>default_unit</code>, <code>allowed_units</code> fields to <code>WorkspaceIngredient</code>.</li>
+      <li><code>src/utils/ingredientTypes.ts</code>: keep current unit arrays as fallback and optionally add a small helper for fallback unit resolution only.</li>
+      <li>New or existing helper under <code>src/utils/</code>: centralize workspace unit option resolution so price and recipe modals do not duplicate fallback rules.</li>
+      <li><code>src/pages/prices.tsx</code>: pass <code>workspaceIngredients</code> into <code>AddPriceModal</code> instead of flattened <code>ingredients</code> for unit-sensitive behavior.</li>
+      <li><code>src/components/modal/Prices/AddPriceModal.tsx</code>: select unit options from the selected workspace ingredient contract and default to <code>default_unit</code>.</li>
+      <li><code>src/pages/recipes.tsx</code>: pass workspace ingredients to create/edit recipe modals while preserving existing filter and display behavior.</li>
+      <li><code>src/components/modal/Recipe/CreateRecipeModal.tsx</code>: use backend unit contract for new recipe ingredient rows.</li>
+      <li><code>src/components/modal/Recipe/EditRecipeModal.tsx</code>: use backend unit contract when adding an ingredient to an existing recipe.</li>
+      <li><code>locales/en/common.json</code>, <code>locales/ru/common.json</code>, <code>locales/rs/common.json</code>: add <code>l</code> if still missing.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Implementation Steps</h2>
+    <ol>
+      <li>Type the backend response in <code>src/types/api.ts</code>, keeping the new fields optional.</li>
+      <li>Add a shared unit resolution helper that accepts a <code>WorkspaceIngredient</code> and returns ordered unit options plus the default selected unit.</li>
+      <li>Make the helper validate basic shape: non-empty string units only, no duplicate units, and use backend values only when at least one valid unit exists.</li>
+      <li>Keep fallback to <code>getUnitsForIngredientType(workspaceIngredient.ingredient.type)</code> for missing old backend responses.</li>
+      <li>Update price page data flow so <code>AddPriceModal</code> receives workspace ingredient rows and maps labels from <code>workspaceIngredient.alias || ingredient.name</code> if useful.</li>
+      <li>Update <code>AddPriceModal</code> selection, unit option calculation, and reset behavior around the selected workspace ingredient.</li>
+      <li>Update recipe page data flow so create/edit modals receive workspace ingredient rows for unit decisions, while filters can continue using flattened ingredient options.</li>
+      <li>Update recipe create/edit unit dropdowns to use the shared helper and preserve the existing duplicate-ingredient and quantity validations.</li>
+      <li>Add missing <code>l</code> locale label in all supported languages if not already present at implementation time.</li>
+      <li>Run static search to confirm no unit-sensitive price or recipe form still uses <code>getUnitsForIngredientType</code> as the primary source when workspace contract fields are available.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Test Plan</h2>
+    <ul>
+      <li><code>npm run lint</code></li>
+      <li><code>npm run build</code> or <code>npm run build:no-ssg</code> if the standard build is blocked by authenticated static generation behavior.</li>
+      <li>Static search: <code>rg -n "getUnitsForIngredientType|allowed_units|default_unit|unit_profile" src</code>.</li>
+      <li>Type check through the project build because this repo currently relies on the Next.js TypeScript build path.</li>
+      <li>If browser QA is needed, use the existing dev compose environment and verify the Add Price modal plus create/edit recipe ingredient rows for mass, spice, liquid, count, and time ingredients.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual QA Checklist</h2>
+    <ul>
+      <li>Open Prices, add a price for a base/mass ingredient, and confirm units default to <code>kg</code> with <code>kg</code>/<code>g</code> choices.</li>
+      <li>Open Prices, add a price for a spice/fine-mass ingredient, and confirm units default to <code>g</code> with <code>g</code>/<code>kg</code> choices.</li>
+      <li>Open Prices, add a price for a sauce/liquid ingredient, and confirm units default to <code>ml</code> with <code>ml</code>/<code>l</code> choices.</li>
+      <li>Create a recipe and confirm the ingredient row unit dropdown follows the same backend contract.</li>
+      <li>Edit an existing recipe and confirm adding a new ingredient follows the same backend contract.</li>
+      <li>Confirm existing recipe ingredient rows and price rows still display previously saved unit values.</li>
+      <li>Temporarily inspect behavior against an old response shape or mocked missing fields to confirm fallback still works.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Risks</h2>
+    <ul>
+      <li>Passing flattened <code>Ingredient[]</code> into modals would silently discard backend unit metadata and make the change look complete while still using local mapping.</li>
+      <li>Backend category has priority over ingredient type, so frontend should not recompute the profile from type when backend fields are present.</li>
+      <li>The unit <code>l</code> may render as the raw key until locale entries are added.</li>
+      <li>Strict client-only validation could reject legacy/custom unit data that the backend still intentionally accepts. This pass should guide new entries, not rewrite history.</li>
+      <li>Manual auth/workspace headers still exist in some recipe/price paths. This plan should avoid broad request plumbing refactors unless necessary for the unit contract.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rollback Plan</h2>
+    <ul>
+      <li>Revert the frontend changes to modal props and unit helper usage.</li>
+      <li>Keep backend additive fields in place because old frontend code ignores unknown response fields.</li>
+      <li>If a partial rollback is needed, leave the type additions and locale key in place and restore local unit selection in the three affected modals.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open Questions</h2>
+    <ul>
+      <li>Should ingredient labels in the modals show workspace aliases when present, or keep global ingredient names for now?</li>
+      <li>Should the UI expose the backend unit profile label anywhere, or keep it purely internal to dropdown choices?</li>
+      <li>Should the fallback local unit arrays be removed immediately after frontend and backend deploy, or kept through one release cycle for older environments?</li>
+    </ul>
+  </section>
+
+  <section class="note">
+    <h2>Approval Gate</h2>
+    <p class="stop">
+      Approved in chat on 2026-05-31: proceed on a new frontend implementation branch.
+    </p>
+  </section>
+
+  <section>
+    <h2>Implementation Result</h2>
+    <ul>
+      <li>Created branch <code>codex/frontend-ingredient-unit-contract</code>.</li>
+      <li>Typed the additive backend fields on <code>WorkspaceIngredient</code>: <code>unit_profile</code>, <code>default_unit</code>, and <code>allowed_units</code>.</li>
+      <li>Added <code>src/utils/ingredientUnitContract.ts</code> to resolve unit choices from backend fields first, with local ingredient-type fallback for old responses.</li>
+      <li>Updated <code>AddPriceModal</code> to receive full workspace ingredient rows and default the unit selector from backend <code>default_unit</code>.</li>
+      <li>Replaced separate recipe create/edit modal implementations with one shared <code>RecipeBuilderModal</code> that supports <code>create</code> and <code>edit</code> modes.</li>
+      <li>Recipe create/edit now share the same layout, ingredient picker, quantity/unit controls, backend unit resolver, and summary list structure.</li>
+      <li>Kept existing price and recipe request payloads unchanged.</li>
+      <li>Added missing <code>l</code> locale labels for English, Russian, and Serbian.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Checks Run</h2>
+    <ul>
+      <li><code>rg -n "getUnitsForIngredientType|allowed_units|default_unit|unit_profile|resolveWorkspaceIngredientUnits|workspaceIngredients" src</code></li>
+      <li><code>npm run lint</code></li>
+      <li><code>npm run build</code></li>
+      <li><code>npx tsc --noEmit</code></li>
+      <li><code>git diff --check</code></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Known Limitations</h2>
+    <ul>
+      <li>No browser QA was run in this pass; use the existing dev compose environment for manual modal checks.</li>
+      <li>The local unit arrays remain in <code>ingredientTypes.ts</code> as fallback until old backend response shapes are no longer relevant.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

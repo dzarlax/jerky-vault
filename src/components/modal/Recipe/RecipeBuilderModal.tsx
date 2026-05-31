@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { FaExclamationTriangle, FaLayerGroup, FaPlus, FaTrash } from 'react-icons/fa';
-import { Ingredient } from '../../../types/api';
+import { WorkspaceIngredient } from '../../../types/api';
 import SelectDropdown from '../../../components/SelectDropdown';
 import { formatCount } from '../../../utils/pluralize';
-import { getUnitsForIngredientType } from '../../../utils/ingredientTypes';
+import {
+  getWorkspaceIngredientLabel,
+  resolveWorkspaceIngredientUnits,
+  toUnitOptions,
+} from '../../../utils/ingredientUnitContract';
 
 type UnitOption = {
   value: string;
@@ -19,27 +23,55 @@ type DraftIngredient = {
   unit: UnitOption;
 };
 
-type CreateRecipeModalProps = {
+type RecipeIngredientRow = {
+  id?: number;
+  ingredient_id: number;
+  quantity: string;
+  unit: string;
+  ingredient?: {
+    name?: string;
+    type?: string;
+  };
+  ingredientCost?: string;
+  calculated_cost?: string | number;
+};
+
+type RecipeBuilderModalProps = {
+  mode: 'create' | 'edit';
   show: boolean;
   onHide: () => void;
-  ingredients?: Ingredient[];
+  workspaceIngredients?: WorkspaceIngredient[];
   t: (key: string) => string;
-  onCreateRecipe: (name: string, ingredients: DraftIngredient[]) => Promise<void>;
+  recipe?: any;
+  onCreateRecipe?: (name: string, ingredients: DraftIngredient[]) => Promise<void>;
+  onAddIngredientToRecipe?: (ingredient: { ingredient_id: number; quantity: string; unit: string }) => Promise<void>;
+  onDeleteIngredientFromRecipe?: (ingredientId: number) => Promise<void>;
+  onDeleteRecipe?: () => void;
+  onCloneRecipe?: () => void;
 };
 
-const getUnitsForIngredient = (ingredient?: Ingredient) => {
-  if (!ingredient) return [];
+const getRecipeIngredients = (recipe: any): RecipeIngredientRow[] => (
+  Array.isArray(recipe?.recipe_ingredients) ? recipe.recipe_ingredients : []
+);
 
-  return getUnitsForIngredientType(ingredient.type);
-};
+const isDraftIngredient = (
+  ingredient: DraftIngredient | RecipeIngredientRow
+): ingredient is DraftIngredient => 'name' in ingredient;
 
-const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
+const RecipeBuilderModal: React.FC<RecipeBuilderModalProps> = ({
+  mode,
   show,
   onHide,
-  ingredients = [],
+  workspaceIngredients = [],
   t,
+  recipe,
   onCreateRecipe,
+  onAddIngredientToRecipe,
+  onDeleteIngredientFromRecipe,
+  onDeleteRecipe,
+  onCloneRecipe,
 }) => {
+  const isEdit = mode === 'edit';
   const [recipeName, setRecipeName] = useState('');
   const [draftIngredients, setDraftIngredients] = useState<DraftIngredient[]>([]);
   const [ingredientId, setIngredientId] = useState('');
@@ -49,33 +81,47 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [ingredientError, setIngredientError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const selectedIngredient = useMemo(
-    () => ingredients.find((ingredient) => ingredient.id === parseInt(ingredientId, 10)),
-    [ingredients, ingredientId]
+  const selectedWorkspaceIngredient = useMemo(
+    () => workspaceIngredients.find((workspaceIngredient) =>
+      workspaceIngredient.ingredient_id === parseInt(ingredientId, 10)
+    ),
+    [workspaceIngredients, ingredientId]
+  );
+
+  const selectedIngredient = selectedWorkspaceIngredient?.ingredient;
+
+  const resolvedUnits = useMemo(
+    () => resolveWorkspaceIngredientUnits(selectedWorkspaceIngredient),
+    [selectedWorkspaceIngredient]
   );
 
   const unitOptions = useMemo(
-    () => getUnitsForIngredient(selectedIngredient).map((unitValue) => ({
-      value: unitValue,
-      label: t(unitValue),
-    })),
-    [selectedIngredient, t]
+    () => toUnitOptions(resolvedUnits.units, t),
+    [resolvedUnits.units, t]
   );
 
   const ingredientOptions = useMemo(
-    () => ingredients.map((ingredient) => ({
-      value: String(ingredient.id),
-      label: ingredient.type ? `${ingredient.name} · ${t(ingredient.type)}` : ingredient.name,
+    () => workspaceIngredients.map((workspaceIngredient) => ({
+      value: String(workspaceIngredient.ingredient_id),
+      label: workspaceIngredient.ingredient.type
+        ? `${getWorkspaceIngredientLabel(workspaceIngredient)} · ${t(workspaceIngredient.ingredient.type)}`
+        : getWorkspaceIngredientLabel(workspaceIngredient),
     })),
-    [ingredients, t]
+    [workspaceIngredients, t]
   );
 
   const selectedIngredientOption = ingredientId
     ? ingredientOptions.find((option) => option.value === ingredientId) || null
     : null;
 
-  const canAddIngredient = Boolean(ingredientId && quantity.trim() && unit);
-  const canSave = Boolean(recipeName.trim() && draftIngredients.length > 0 && !isSaving);
+  const existingIngredients = useMemo(
+    () => getRecipeIngredients(recipe),
+    [recipe]
+  );
+
+  const summaryIngredients = isEdit ? existingIngredients : draftIngredients;
+  const canAddIngredient = Boolean(ingredientId && quantity.trim() && unit && !isSaving);
+  const canSaveCreate = Boolean(recipeName.trim() && draftIngredients.length > 0 && !isSaving);
 
   useEffect(() => {
     if (!show) {
@@ -87,13 +133,21 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       setFormError('');
       setIngredientError('');
       setIsSaving(false);
+      return;
     }
-  }, [show]);
+
+    if (isEdit) {
+      setRecipeName(recipe?.name || '');
+    }
+  }, [isEdit, recipe?.name, show]);
 
   useEffect(() => {
-    setUnit(unitOptions[0] || null);
+    const defaultOption = resolvedUnits.defaultUnit
+      ? unitOptions.find((option) => option.value === resolvedUnits.defaultUnit)
+      : null;
+    setUnit(defaultOption || unitOptions[0] || null);
     setIngredientError('');
-  }, [unitOptions]);
+  }, [resolvedUnits.defaultUnit, unitOptions]);
 
   const resetIngredientEntry = () => {
     setIngredientId('');
@@ -107,11 +161,17 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     return Number.isFinite(numericQuantity) && numericQuantity > 0;
   };
 
-  const addIngredient = () => {
+  const hasIngredient = (id: number) => (
+    isEdit
+      ? existingIngredients.some((ingredient) => ingredient.ingredient_id === id)
+      : draftIngredients.some((ingredient) => ingredient.id === id)
+  );
+
+  const addIngredient = async () => {
     setIngredientError('');
     setFormError('');
 
-    if (!selectedIngredient) {
+    if (!selectedWorkspaceIngredient || !selectedIngredient) {
       setIngredientError(t('ingredientRequired'));
       return;
     }
@@ -126,34 +186,78 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       return;
     }
 
-    if (draftIngredients.some((ingredient) => ingredient.id === selectedIngredient.id)) {
+    if (hasIngredient(selectedWorkspaceIngredient.ingredient_id)) {
       setIngredientError(t('ingredientAlreadyExists'));
       return;
     }
 
-    setDraftIngredients((currentIngredients) => [
-      ...currentIngredients,
-      {
-        id: selectedIngredient.id,
-        name: selectedIngredient.name,
-        type: selectedIngredient.type,
+    if (!isEdit) {
+      setDraftIngredients((currentIngredients) => [
+        ...currentIngredients,
+        {
+          id: selectedIngredient.id,
+          name: getWorkspaceIngredientLabel(selectedWorkspaceIngredient),
+          type: selectedIngredient.type,
+          quantity: quantity.trim(),
+          unit,
+        },
+      ]);
+      resetIngredientEntry();
+      return;
+    }
+
+    if (!onAddIngredientToRecipe) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await onAddIngredientToRecipe({
+        ingredient_id: selectedWorkspaceIngredient.ingredient_id,
         quantity: quantity.trim(),
-        unit,
-      },
-    ]);
-    resetIngredientEntry();
+        unit: unit.value,
+      });
+      resetIngredientEntry();
+    } catch (error) {
+      setFormError(t('failedToAddIngredient'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const removeIngredient = (ingredientId: number) => {
-    setDraftIngredients((currentIngredients) =>
-      currentIngredients.filter((ingredient) => ingredient.id !== ingredientId)
-    );
+  const removeIngredient = async (ingredientIdToRemove: number) => {
+    setFormError('');
+
+    if (!isEdit) {
+      setDraftIngredients((currentIngredients) =>
+        currentIngredients.filter((ingredient) => ingredient.id !== ingredientIdToRemove)
+      );
+      return;
+    }
+
+    if (!onDeleteIngredientFromRecipe) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await onDeleteIngredientFromRecipe(ingredientIdToRemove);
+    } catch (error) {
+      setFormError(t('errorOccurred'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError('');
     setIngredientError('');
+
+    if (isEdit) {
+      onHide();
+      return;
+    }
 
     if (!recipeName.trim()) {
       setFormError(t('recipeNameRequired'));
@@ -162,6 +266,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
     if (draftIngredients.length === 0) {
       setFormError(t('atLeastOneIngredientRequired'));
+      return;
+    }
+
+    if (!onCreateRecipe) {
       return;
     }
 
@@ -177,13 +285,50 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     }
   };
 
+  const getSummaryName = (ingredient: DraftIngredient | RecipeIngredientRow) => {
+    if (isDraftIngredient(ingredient)) {
+      return ingredient.name;
+    }
+
+    return ingredient.ingredient?.name || t('unknown');
+  };
+
+  const getSummaryType = (ingredient: DraftIngredient | RecipeIngredientRow) => {
+    if (isDraftIngredient(ingredient)) {
+      return ingredient.type;
+    }
+
+    return ingredient.ingredient?.type
+      || workspaceIngredients.find((workspaceIngredient) =>
+        workspaceIngredient.ingredient_id === ingredient.ingredient_id
+      )?.ingredient.type;
+  };
+
+  const getSummaryQuantity = (ingredient: DraftIngredient | RecipeIngredientRow) => {
+    if (isDraftIngredient(ingredient)) {
+      return `${ingredient.quantity} ${t(ingredient.unit.value)}`;
+    }
+
+    return `${ingredient.quantity} ${t(ingredient.unit)}`;
+  };
+
+  const getSummaryKey = (ingredient: DraftIngredient | RecipeIngredientRow) => (
+    isDraftIngredient(ingredient) ? ingredient.id : ingredient.id || ingredient.ingredient_id
+  );
+
+  const getRemoveId = (ingredient: DraftIngredient | RecipeIngredientRow) => (
+    isDraftIngredient(ingredient) ? ingredient.id : ingredient.ingredient_id
+  );
+
   return (
     <Modal show={show} onHide={onHide} size="lg" className="recipe-builder-modal" centered>
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
           <div>
-            <Modal.Title>{t('addRecipe')}</Modal.Title>
-            <div className="recipe-builder-subtitle">{t('recipeBuilderSubtitle')}</div>
+            <Modal.Title>{isEdit ? t('editRecipe') : t('addRecipe')}</Modal.Title>
+            <div className="recipe-builder-subtitle">
+              {isEdit ? recipe?.name || t('recipe') : t('recipeBuilderSubtitle')}
+            </div>
           </div>
         </Modal.Header>
 
@@ -195,13 +340,14 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   <Form.Label>{t('recipeName')}</Form.Label>
                   <Form.Control
                     type="text"
-                    value={recipeName}
+                    value={isEdit ? recipe?.name || '' : recipeName}
                     onChange={(event) => {
                       setRecipeName(event.target.value);
                       setFormError('');
                     }}
                     placeholder={t('recipeName')}
-                    isInvalid={Boolean(formError && !recipeName.trim())}
+                    isInvalid={Boolean(formError && !recipeName.trim() && !isEdit)}
+                    readOnly={isEdit}
                   />
                 </Form.Group>
               </section>
@@ -263,7 +409,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     className="recipe-builder-add-button"
                   >
                     <FaPlus className="me-2" />
-                    {t('add')}
+                    {isSaving ? t('loading') : t('add')}
                   </Button>
                 </div>
 
@@ -281,33 +427,34 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 <div>
                   <h3>{t('recipeComposition')}</h3>
                   <p>
-                    {draftIngredients.length} {t('of')} {formatCount(t, ingredients.length, 'ingredient')}
+                    {summaryIngredients.length} {t('of')} {formatCount(t, workspaceIngredients.length, 'ingredient')}
                   </p>
                 </div>
                 <div className="recipe-builder-count">
                   <FaLayerGroup />
-                  {draftIngredients.length}
+                  {summaryIngredients.length}
                 </div>
               </div>
 
-              {draftIngredients.length > 0 ? (
+              {summaryIngredients.length > 0 ? (
                 <div className="recipe-builder-list">
-                  {draftIngredients.map((ingredient) => (
-                    <div key={ingredient.id} className="recipe-builder-list-item">
+                  {summaryIngredients.map((ingredient) => (
+                    <div key={getSummaryKey(ingredient)} className="recipe-builder-list-item">
                       <div>
-                        <strong>{ingredient.name}</strong>
-                        {ingredient.type && <span>{t(ingredient.type)}</span>}
+                        <strong>{getSummaryName(ingredient)}</strong>
+                        {getSummaryType(ingredient) && <span>{t(getSummaryType(ingredient) || '')}</span>}
                       </div>
                       <div className="recipe-builder-list-quantity">
-                        {ingredient.quantity} {t(ingredient.unit.value)}
+                        {getSummaryQuantity(ingredient)}
                       </div>
                       <Button
                         type="button"
                         variant="outline-danger"
                         size="sm"
-                        onClick={() => removeIngredient(ingredient.id)}
+                        onClick={() => removeIngredient(getRemoveId(ingredient))}
                         aria-label={t('removeIngredientFromRecipe')}
                         className="recipe-builder-remove-button"
+                        disabled={isSaving}
                       >
                         <FaTrash />
                       </Button>
@@ -317,7 +464,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               ) : (
                 <div className="recipe-builder-empty">
                   <FaLayerGroup />
-                  <strong>{t('noIngredientsAddedYet')}</strong>
+                  <strong>{isEdit ? t('noIngredientsInRecipe') : t('noIngredientsAddedYet')}</strong>
                   <span>{t('recipeBuilderEmptyHelp')}</span>
                 </div>
               )}
@@ -334,15 +481,31 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
         <Modal.Footer>
           <div className="recipe-builder-footer-status">
-            {draftIngredients.length > 0
-              ? formatCount(t, draftIngredients.length, 'ingredient')
+            {isEdit || summaryIngredients.length > 0
+              ? formatCount(t, summaryIngredients.length, 'ingredient')
               : t('recipeBuilderNotReady')}
           </div>
           <div className="recipe-builder-footer-actions">
-            <Button variant="outline-secondary" onClick={onHide} disabled={isSaving}>
+            {isEdit && onDeleteRecipe && (
+              <Button variant="outline-danger" type="button" onClick={onDeleteRecipe} disabled={isSaving}>
+                <FaTrash className="me-2" />
+                {t('delete')}
+              </Button>
+            )}
+            {isEdit && onCloneRecipe && (
+              <Button variant="outline-secondary" type="button" onClick={onCloneRecipe} disabled={isSaving}>
+                {t('cloneRecipe')}
+              </Button>
+            )}
+            <Button variant="outline-secondary" type="button" onClick={onHide} disabled={isSaving}>
               {t('cancel')}
             </Button>
-            <Button variant="primary" type="submit" disabled={!canSave}>
+            <Button
+              variant="primary"
+              type={isEdit ? 'button' : 'submit'}
+              onClick={isEdit ? onHide : undefined}
+              disabled={isEdit ? isSaving : !canSaveCreate}
+            >
               {isSaving ? t('loading') : t('save')}
             </Button>
           </div>
@@ -352,4 +515,4 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   );
 };
 
-export default CreateRecipeModal;
+export default RecipeBuilderModal;
