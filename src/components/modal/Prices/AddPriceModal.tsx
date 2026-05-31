@@ -20,16 +20,6 @@ const isPositiveDecimalInput = (value: string) => {
   return Number.isFinite(parsedValue) && parsedValue > 0;
 };
 
-const isPositiveDecimalInput = (value: string) => {
-  const normalizedValue = value.trim();
-  if (!/^(?:\d+|\d+\.\d+|\.\d+)$/.test(normalizedValue)) {
-    return false;
-  }
-
-  const parsedValue = Number(normalizedValue);
-  return Number.isFinite(parsedValue) && parsedValue > 0;
-};
-
 interface AddPriceModalProps {
   show: boolean;
   onClose: () => void;
