@@ -230,7 +230,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     {t("price")} <span className="text-danger">*</span>
                   </Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>₽</InputGroup.Text>
+                    <InputGroup.Text>{t('currency')}</InputGroup.Text>
                     <Form.Control
                       type="number"
                       value={price}
@@ -255,7 +255,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     {t("cost")} <span className="text-danger">*</span>
                   </Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>₽</InputGroup.Text>
+                    <InputGroup.Text>{t('currency')}</InputGroup.Text>
                     <Form.Control
                       type="number"
                       value={cost}

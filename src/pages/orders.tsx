@@ -301,7 +301,7 @@ const Orders = () => {
   const isLoading = !ordersData;
 
   const formatCurrency = (value: number) => {
-    return `${value.toFixed(2)} ₽`;
+    return `${value.toFixed(2)} ${t('currency')}`;
   };
 
   return (

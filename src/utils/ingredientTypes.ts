@@ -21,7 +21,7 @@ const INGREDIENT_TYPES: IngredientTypeMeta[] = [
   { value: 'base', labelKey: 'base', icon: FaUtensils, badgeClass: 'is-base', units: ['kg', 'g'] },
   { value: 'spice', labelKey: 'spice', icon: FaFlask, badgeClass: 'is-spice', units: ['g'] },
   { value: 'sauce', labelKey: 'sauce', icon: FaTint, badgeClass: 'is-sauce', units: ['ml'] },
-  { value: 'packing', labelKey: 'packing', icon: FaBoxOpen, badgeClass: 'is-packing', units: ['pieces'] },
+  { value: 'packing', labelKey: 'packing', icon: FaBoxOpen, badgeClass: 'is-packing', units: ['pcs'] },
   { value: 'electricity', labelKey: 'electricity', icon: FaBolt, badgeClass: 'is-electricity', units: ['hh'] },
 ];
 
